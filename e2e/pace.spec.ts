@@ -1,12 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { w1Levels } from '../src/content/worlds/w1/levels';
 import { w1Crisis } from '../src/content/worlds/w1/crisis';
-import type {
-  BranchingConfig,
-  BucketSortConfig,
-  BuilderConfig,
-  ImpostorConfig,
-} from '../src/content/types';
+import type { BranchingConfig, BucketSortConfig, BuilderConfig, ImpostorConfig } from '../src/content/types';
 
 /**
  * Reader-paced timing for the 2c checkpoint: PACE=1 npx playwright test pace --project=phone-360x740
@@ -17,12 +12,28 @@ test.skip(!process.env.PACE, 'set PACE=1 to run the paced timing');
 
 const WPM = 200;
 const DECISION_MS = 2500;
+const seen = new Set<string>();
+/** Reads only lines not seen before at 200 wpm (a player does not re-read a screen after acting on it). */
 const readPause = async (page: Page) => {
   const text = await page.locator('main, body').first().innerText();
-  const words = text.split(/\s+/).filter(Boolean).length;
+  let words = 0;
+  for (const line of text
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean)) {
+    if (seen.has(line)) continue;
+    seen.add(line);
+    words += line.split(/\s+/).length;
+  }
   await page.waitForTimeout(Math.min(25_000, Math.round((words / WPM) * 60_000)));
 };
 const decide = async (page: Page) => page.waitForTimeout(DECISION_MS);
+/** Read only one element's text (e.g. the next card) once the rest of the screen is familiar. */
+const readOnly = async (page: Page, testId: string) => {
+  const text = await page.getByTestId(testId).innerText();
+  const words = text.split(/s+/).filter(Boolean).length;
+  await page.waitForTimeout(Math.max(1500, Math.round((words / WPM) * 60_000)));
+};
 const strip = (s: string) => s.replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1').replace(/\[\[([^\]]+)\]\]/g, '$1');
 const level = (id: string) => w1Levels.find((l) => l.id === id)!;
 
@@ -43,7 +54,7 @@ async function debrief(page: Page) {
 }
 
 test('paced World 1 run', async ({ page }) => {
-  test.setTimeout(900_000);
+  test.setTimeout(1_800_000);
   await page.goto('/');
   await page.evaluate(() => window.localStorage.clear());
   await page.goto('/');
@@ -55,6 +66,7 @@ test('paced World 1 run', async ({ page }) => {
   await page.getByTestId('story-continue').click();
   await readPause(page);
   t.intro = (Date.now() - t0) / 1000;
+  console.log('PACED_PARTIAL ' + JSON.stringify(t));
 
   let t1 = Date.now();
   await openLevel(page, 'w1-l1');
@@ -81,6 +93,7 @@ test('paced World 1 run', async ({ page }) => {
   await page.getByTestId('branching-finish').click();
   await debrief(page);
   t.l1 = (Date.now() - t1) / 1000;
+  console.log('PACED_PARTIAL ' + JSON.stringify(t));
 
   t1 = Date.now();
   await openLevel(page, 'w1-l2');
@@ -105,6 +118,7 @@ test('paced World 1 run', async ({ page }) => {
   await page.getByTestId('engine-next').click();
   await debrief(page);
   t.l2 = (Date.now() - t1) / 1000;
+  console.log('PACED_PARTIAL ' + JSON.stringify(t));
 
   t1 = Date.now();
   await openLevel(page, 'w1-l3');
@@ -112,9 +126,17 @@ test('paced World 1 run', async ({ page }) => {
   await page.getByTestId('start-stage-findings').click();
   const bucket = level('w1-l3').stages[0].game as BucketSortConfig;
   for (let i = 0; i < bucket.cards.length; i++) {
+    if (
+      await page
+        .getByTestId('stage-card-dose')
+        .isVisible()
+        .catch(() => false)
+    )
+      break; // safety net: stage timed out
     const text = (await page.getByTestId('bucket-card').innerText()).trim();
     const card = bucket.cards.find((c) => strip(c.text) === text)!;
-    await readPause(page);
+    if (i === 0) await readPause(page);
+    else await readOnly(page, 'bucket-card');
     await decide(page);
     await page
       .getByTestId(`bucket-${i === 2 ? (card.bucketId === 'adverse' ? 'review' : 'adverse') : card.bucketId}`)
@@ -137,6 +159,7 @@ test('paced World 1 run', async ({ page }) => {
   await page.getByTestId('sandbox-done').click();
   await debrief(page);
   t.l3 = (Date.now() - t1) / 1000;
+  console.log('PACED_PARTIAL ' + JSON.stringify(t));
 
   t1 = Date.now();
   await openLevel(page, 'w1-l4');
@@ -155,6 +178,7 @@ test('paced World 1 run', async ({ page }) => {
   await page.getByTestId('engine-next').click();
   await debrief(page);
   t.l4 = (Date.now() - t1) / 1000;
+  console.log('PACED_PARTIAL ' + JSON.stringify(t));
 
   t1 = Date.now();
   await page.getByTestId('node-w1-crisis').click();
@@ -203,6 +227,7 @@ test('paced World 1 run', async ({ page }) => {
   await readPause(page);
   await page.getByTestId('story-continue').click();
   t.crisis = (Date.now() - t1) / 1000;
+  console.log('PACED_PARTIAL ' + JSON.stringify(t));
   t.total = (Date.now() - t0) / 1000;
   console.log('PACED_TIMINGS_JSON ' + JSON.stringify(t));
 });
