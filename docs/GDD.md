@@ -1,6 +1,9 @@
 # Trial Quest — Game Design Document
 
-Version 0.1 · 2026-09-18 · Status: approved draft
+Version 0.2 · 2026-09-18 · Status: draft for approval (Amendment 1 applied)
+
+Changes from v0.1 are marked **[A1]**. Where this document and SPEC.md differ, SPEC
+Amendment 1 wins.
 
 ## 1. Vision
 
@@ -12,13 +15,15 @@ of that job, and hand your work to the next role.
 
 Design pillars:
 
-1. **Learn by doing the job.** Every level is a simulation of the role's real
-   work, not a quiz about it (boss quizzes are the exception, and they are fast).
+1. **Learn by doing the job.** **[A1]** Every main-path level is a simulation of the
+   role's real work with visible consequences. No main-path pass condition is
+   recall-only. Quizzes exist only as the optional "Test Yourself" mode.
 2. **Failure teaches.** Every mistake explains why and names the real-world
    consequence. Hearts make mistakes matter; retries are cheap.
-3. **Hand-offs are the plot.** The relay from role to role is the thing players
-   should remember. The Handoff Map, the debrief hand-off line, and the finale
-   relay chain all reinforce it.
+3. **Hand-offs are the plot.** **[A1]** Hand-offs are playable: the protocol you
+   write shapes the eCRF you build, the dose you pick shapes the Phase I escalation
+   and the clinical hold. The Handoff Map, the debrief hand-off line, and the finale
+   relay chain reinforce it.
 4. **Respect the phone.** 360 px, one thumb, no hover, 44 px targets, relaxed-mode
    timers, reduced motion.
 
@@ -26,275 +31,335 @@ Audience: students, new hires at sponsors/CROs/vendors, curious non-experts. Zer
 prior knowledge assumed. Reading level: 9th grade. Every acronym defined on first
 use and tappable for a glossary tooltip.
 
-## 2. Core loop (one node ≈ 3–7 minutes)
+## 2. Core loop (one node ≈ 3–7 minutes) **[A1]**
 
 ```
-World Map ──tap node──▶ Badge Swap (1.5 s) ──▶ Role Card (≥ 30 s, must flip/scroll)
+World Map ──tap node──▶ Badge Swap (1.5 s) ──▶ Role Card (must flip)
      ▲                                                     │
      │                                              "Start task"
      │                                                     ▼
-  Unlock next node ◀── Debrief (stars, XP, learned, consequences, hand-off) ◀── Task (60–180 s)
+  Unlock next node ◀── Debrief (stars, XP, consequences, artifact handed off) ◀── Task (60–180 s)
 ```
 
-1. **World Map.** Winding vertical path, 8 worlds, Duolingo style. Node states:
-   `locked` (grey, lock glyph), `current` (pulsing ring, Dose mascot standing
-   beside it), `done` (badge art + 1–3 stars), `review` (rotating-arrows glyph,
-   optional), `boss` (crown glyph). Only the current node and any done node are
-   tappable. World header shows story progress for Maya and the three meters.
-2. **Badge Swap.** A lanyard drops in, the old badge slides out, the new badge
-   (role title, employer colour, world number) slides in. 1.5 s, skippable,
-   replaced by a cross-fade under `prefers-reduced-motion`.
-3. **Role Card.** Front face: title, employer chip (Sponsor / CRO / Site /
-   Regulator / Vendor / Patient), "What I do", 3–5 responsibilities. Back face
-   (tap "Flip" or scroll on small screens): skills and background, "I receive
-   from ➜ I hand off to" (tappable role chips), documents and systems touched,
-   "Day in the life" fun fact. **Start task** is disabled until the back face has
-   been shown at least once. First view of a card grants +5 XP and files it in
-   the Career Codex.
-4. **Task.** One of nine engines, configured from content data. HUD: hearts,
-   timer (or "Relaxed" chip), the three meters, pause button. Pause menu:
-   Resume, Re-read Role Card, Relaxed mode toggle, Quit to map (attempt not
-   counted).
-5. **Debrief.** Stars (1–3) with a short burst, XP tally counting up, "What you
-   just learned" (2 sentences), a "Consequences" list built from the mistakes
-   actually made (each with its real-world consequence), and the hand-off line.
-   Buttons: Continue, Retry (for more stars), View Role Card.
-6. **Unlock.** Path animates to the next node. After the last role of a world:
-   Boss Quiz, then a story beat with Maya, then the next world opens.
+1. **World Map.** Winding vertical path, 8 worlds. Node states: `locked`,
+   `current` (pulsing ring, Dose beside it), `done` (badge + stars), `review`
+   (optional), `crisis` (siren glyph, end of world). Completed level nodes also show
+   a small "Test Yourself" ribbon slot (see §7).
+2. **Badge Swap.** Lanyard drops, new badge slides in. 1.5 s, skippable, cross-fade
+   under reduced motion.
+3. **Role Card.** Front: title, employer, "What I do", responsibilities. Back:
+   skills, "I receive from ➜ I hand off to", documents, day-in-the-life. **Start task**
+   unlocks after the back face has been shown. First view: +5 XP, filed in the Codex.
+4. **Task.** One of nine engines, configured from content. **[A1]** Every task is a
+   "do the job" simulation: sort, build, decide, allocate, spot, manage a queue. Where
+   the job is a judgement with a numeric answer (starting dose, sample size, next
+   dose, price), the engine ends with a **consequence simulation**: the player commits
+   a value and watches what happens (§6.2). The HUD shows hearts, timer or "Relaxed"
+   chip, the three meters, pause.
+5. **Debrief.** Stars, XP tally, "What you just learned", a "Consequences" list built
+   from the mistakes actually made, the hand-off line, and **[A1]** the artifact you
+   just produced ("You handed off: Starting dose 3 mg/kg (cautious)").
+6. **Unlock.** Next node opens. **[A1]** End of each world = a **Crisis Boss** (§8):
+   one cross-role emergency on a shared clock, resolved by rapid badge-swapping
+   through that world's roles. Then a story beat with Maya.
+
+Optional at any time: **Test Yourself** (§7) from the Codex or from a completed node.
+It never gates progress.
 
 ## 3. Worlds, nodes, and story beats
 
-44 role levels + 8 boss quizzes + 10 review nodes + 1 finale = 63 nodes.
+44 role levels + 8 crisis bosses + 10 review nodes + 1 finale = 63 nodes.
 
-| World | Title                   | Role levels | Review nodes | Story beat at end                                                                                                                 |
-| ----- | ----------------------- | ----------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Diagnosis & Discovery   | 4           | 1            | Maya gets a name for her illness; a lab finds VX-101. "Most molecules never leave this room."                                     |
-| 2     | Designing the Trial     | 5           | 1            | The protocol exists on paper. Regulators allow the trial to begin.                                                                |
-| 3     | Study Start-Up          | 7           | 2            | Sites are open, drug is on shelves, systems are live. Nobody has been dosed yet.                                                  |
-| 4     | Phase I: Is it safe?    | 4           | 1            | **Scripted setback:** a clinical hold after a liver enzyme signal. Player must resolve it (see 3.1). Then: safe dose range found. |
-| 5     | Phase II: Does it work? | 5           | 1            | Maya enrols. She doesn't know if she is on VX-101 or placebo. The right dose is found.                                            |
-| 6     | Phase III: Prove it     | 7           | 2            | Database lock, unblinding: VX-101 worked. Maya was on placebo the whole time.                                                     |
-| 7     | Submission & Approval   | 5           | 1            | The regulator approves VX-101 with a label.                                                                                       |
-| 8     | Launch & Beyond         | 7           | 1            | Maya receives the approved medicine. Finale: relay chain, years/cost vs. real averages, certificate.                              |
+| World | Title                   | Levels | Reviews | Crisis (end of world)                                                                            | Story beat                                                                        |
+| ----- | ----------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| 1     | Diagnosis & Discovery   | 4      | 1       | Unexpected toxicity signal in an animal study: classify findings, reformulate, check the backup, tell the community | Maya has a name for it; VX-101 exists. "Most molecules never leave this room." |
+| 2     | Designing the Trial     | 5      | 1       | Regulator returns the IND/CTA with questions: fix the endpoint, re-power, answer the IRB, re-budget | The protocol exists. The trial may begin.                                       |
+| 3     | Study Start-Up          | 7      | 2       | A site's freezer fails the night before first dose: reship, re-file, re-validate, re-consent plan | Sites open, drug on shelves, systems live.                                     |
+| 4     | Phase I                 | 4      | 1       | Liver enzyme spike in cohort 3: screen, manage the visit, read PK, decide on the hold (**scripted setback**, shaped by chain c) | Safe dose range found.                                        |
+| 5     | Phase II                | 5      | 1       | A site's data looks too clean: monitor, query, code, triage the SAE that surfaces                | Maya enrols, blinded. The right dose is found.                                  |
+| 6     | Phase III               | 7      | 2       | Interim analysis week: DSMB, lock, program, write, all before the deadline                       | Unblinding: it worked. Maya was on placebo.                                     |
+| 7     | Submission & Approval   | 5      | 1       | Day-74 filing review letter: publish fix, answer questions, host the inspector, negotiate the label | Approved, with a label.                                                       |
+| 8     | Launch & Beyond         | 7      | 1       | Post-market signal: pull the off-label claim, brief MSLs, confirm the signal, update the label   | Maya receives the medicine. Finale.                                             |
 
-Review nodes are placed after roughly every 3–4 role levels and before each boss.
-They are optional; they never block the path.
+Review nodes are optional and never block. **[A1]** They replay missed *situations*
+as 20-second micro-rounds (§4.6), not quiz questions.
 
-### 3.1 The World 4 clinical hold (scripted setback)
+### 3.1 The World 4 clinical hold (scripted setback) **[A1]**
 
-After the Clinical Pharmacologist level, a "Clinical Hold" screen interrupts the
-map: a volunteer's liver enzymes spiked. The Safety Review Committee level (a
-branching scenario) becomes the hold-resolution task: the player must choose to
-pause dosing, investigate, amend the protocol (lower dose step, add liver
-monitoring), and respond to the regulator. Choosing to "push on" costs a heart
-and Patient Safety −20 and re-prompts. Clearing the level lifts the hold with a
-short story beat: "Holds are common. Handling them well is the job."
+Shaped by artifact chain (c). The `dose.starting` artifact from the Toxicologist
+(`cautious` / `standard` / `aggressive`) and `phase1.escalation` from the Clinical
+Pharmacologist (`slow` / `standard` / `fast`) select the Safety Review Committee
+scenario variant: an aggressive start plus fast escalation gives a harsher signal,
+a longer hold text, and a −20 Safety opening hit; cautious choices give a mild signal
+that still needs the correct process. Every variant is winnable; the process is what
+is graded.
 
 ### 3.2 Finale
 
-After the last World 8 level: Maya's scene, then a scrolling "relay chain" of
-every badge collected in order with the hand-off lines, then a stat card:
-"Your journey: N years, $X — real-world averages: 10–15 years, $1–2+ billion,
-roughly 1 in 10 molecules entering Phase I reaches approval" (numbers sourced in
-CONTENT_REVIEW.md), then the certificate.
+Maya's scene, the relay chain of every badge with hand-off lines and the artifacts
+that travelled down the chain, the years/cost stat card, then the certificate.
+**[A1]** The certificate carries an optional "Knowledge checks: N of 44" line only if
+the player opened Test Yourself at least once.
 
 ## 4. Economy
 
-All numbers live in `src/content/economy.ts` so they can be tuned without code
-changes.
+All numbers live in `src/content/economy.ts`.
 
 ### 4.1 Scoring and stars (shared by all engines)
 
-Every engine reports `accuracy` (0–1) and `speed` (0–1; 1 when finishing with
-full time left, 0 at the limit; fixed at 0.5 in relaxed mode so relaxed players
-can still earn 3 stars with perfect accuracy).
+Every engine reports `accuracy` (0–1) and `speed` (0–1; fixed at 0.5 when untimed or
+in relaxed mode).
 
 ```
-score = round(80 × accuracy + 20 × speed)      // 0–100
+score = round(80 × accuracy + 20 × speed)
 stars: ≥ 85 → 3, ≥ 65 → 2, ≥ 45 → 1, < 45 → fail (retry, no XP)
 ```
 
-Best stars per level are kept; the map shows the best.
+**[A1]** "Accuracy" is always a measure of *doing the job well*: correct buckets,
+correct order, correct parts, defensible value in the simulation band, best/ok/bad
+choices in a scenario. It is never a count of recalled facts.
 
 ### 4.2 XP
 
-| Source                                 | XP                                                                  |
-| -------------------------------------- | ------------------------------------------------------------------- |
-| Level completed                        | 15 × stars (15 / 30 / 45)                                           |
-| Perfect run (no hearts lost)           | +10                                                                 |
-| First-time completion bonus            | +10                                                                 |
-| Role Card first viewed                 | +5                                                                  |
-| Boss quiz                              | 0–100 (points ÷ max points × 100, rounded), +20 if passed first try |
-| Review node completed                  | +15, +5 if all correct                                              |
-| World completed with each meter ≥ 70   | +15 per meter (max +45)                                             |
-| Streak milestones 3 / 7 / 14 / 30 days | +25 / +50 / +100 / +200                                             |
+| Source                                          | XP                                   |
+| ----------------------------------------------- | ------------------------------------ |
+| Level completed                                 | 15 × stars                           |
+| Perfect run (no hearts lost)                    | +10                                  |
+| First-time completion                           | +10                                  |
+| Role Card first viewed                          | +5                                   |
+| **[A1]** Crisis boss                            | 0–100 by points ÷ max, +20 first try |
+| Review node completed                           | +15, +5 if all clean                 |
+| World completed with each meter ≥ 70            | +15 per meter                        |
+| Streak milestones 3 / 7 / 14 / 30 days          | +25 / +50 / +100 / +200              |
+| **[A1]** Test Yourself (per role, first ≥ 80 %) | +10 and the Knowledge Check ribbon   |
+| **[A1]** Test Yourself (replays)                | +2 per correct, once per role per day, max +10 |
 
-Max reachable in one clean run ≈ 44×65 + 44×5 + 8×120 + 10×20 + 8×45 ≈ 4,600.
-
-Ranks (cumulative XP, shown on the map header and certificate):
-Intern 0 · Trainee 250 · Associate 700 · Specialist 1,400 · Manager 2,200 ·
-Director 3,000 · VP Development 3,800 · Chief Development Officer 4,400.
+Ranks unchanged: Intern 0 · Trainee 250 · Associate 700 · Specialist 1,400 ·
+Manager 2,200 · Director 3,000 · VP Development 3,800 · Chief Development Officer 4,400.
+Test Yourself XP is bonus on top; every rank is reachable without it.
 
 ### 4.3 Hearts
 
-- Max 5. Shown as capsule icons in the HUD and on the map.
-- A **mistake event** (defined per engine in §6) costs 1 heart.
-- At 0 hearts the level ends in failure. The debrief still shows what was
-  learned and the consequences, then offers Retry (needs ≥ 1 heart).
-- Refill: +1 heart every 30 minutes of wall-clock time, computed from a stored
-  timestamp on load (no background timers). Reviewing any Role Card in the Codex
-  gives +1 heart, once per card per calendar day. Completing a review node
-  refills fully. World 1 is forgiving: the first mistake in each World 1 level is
-  free (Dose explains why, no heart lost).
-- Relaxed mode does **not** change hearts; it only removes time pressure.
+Max 5. A **mistake event** (per engine, §6) costs 1 heart. 0 hearts ends the level;
+debrief still shows consequences. Refill +1 per 30 min, +1 per Codex card review per
+day, full refill on a review node. World 1: first mistake per level is free.
+**[A1]** Test Yourself never touches hearts. Crisis boss: a failed round costs 1 heart.
 
 ### 4.4 Meters (Patient Safety, Data Integrity, Timeline/Budget)
 
-- Each 0–100, shown as three slim bars with icon and label (never colour alone).
-- Start of game: 100 / 100 / 100. At the start of each world all meters are
-  raised to at least 60 ("new phase, fresh budget").
-- Engines that affect meters: branching-scenario (per choice, ±5 to ±20),
-  allocator (result bands), dash-manager (each expired item: −5 on the meter the
-  level names), bucket-sort in safety levels (each wrong bucket: Safety −5).
-  Every other mistake event costs Data Integrity −3 by default so meters stay
-  live in all levels.
-- A meter reaching 0 triggers a setback overlay: Safety → **Clinical Hold**,
-  Integrity → **Inspection Finding**, Timeline/Budget → **Portfolio Review**.
-  The level must be retried; the offending meter is reset to 40. Setback text
-  explains what would happen in real life.
-- Meters also feed the end-of-world XP bonus (§4.2) and the finale stats.
+Each 0–100, start 100, raised to ≥ 60 at each world start. Setbacks at 0: Clinical
+Hold / Inspection Finding / Portfolio Review (retry level, meter reset to 40).
+
+**[A1] Meters carry the stakes.** Every main-path level contains at least one
+**tempting shortcut**: an option that improves Timeline/Budget and hurts Safety or
+Integrity (e.g. "skip the repeat assay, ship on time": Timeline +10, Integrity −15).
+Content marks such options with `shortcut: true`; the validator warns when a level
+has none. Shortcuts are never the "right" answer for stars, but they are not
+mistake events either: the meters are the cost. This is how the trade-off is taught.
+
+Test Yourself never moves meters.
 
 ### 4.5 Streak
 
-- One day of activity = completing at least one level, boss, or review node.
-- Streak freezes: earn 1 per world completed, hold max 2, applied automatically
-  on the first missed day. Days computed in local time from `YYYY-MM-DD`.
-- Dose nudges on the map ("2 days in a row! Keep going.") — no notifications.
+Unchanged: one completed level, crisis, or review per local calendar day; freezes
+earned per world, max 2, auto-applied.
 
-### 4.6 Spaced repetition (review nodes)
+### 4.6 Spaced repetition (review nodes) **[A1]**
 
-- Every quiz question, sort item, pair, and impostor card carries a `conceptId`
-  (usually a glossary term id). A mistake puts the concept in Leitner box 1.
-- Boxes: 1 → due next session, 2 → +1 day, 3 → +3 days, 4 → +7 days, 5 → retired.
-  Correct answer promotes; wrong demotes to box 1.
-- A review node draws up to 8 due concepts (oldest first), rendered as a short
-  quiz-blitz with the original question or a generated "which definition
-  matches" item. If nothing is due it shows a friendly "All caught up" and grants
-  the heart refill anyway.
+- Every scorable item in every engine has an `id`. A mistake records the
+  **situation** `levelId:itemId` in Leitner box 1 (boxes 1→5, delays 0/1/3/7 days,
+  5 = retired).
+- A review node picks up to 6 due situations (oldest first) and builds a playlist of
+  **20-second micro-rounds**, each running the original engine restricted to that
+  item (`onlyItems`), with the original level's artifact defaults. No hearts at
+  stake. Completing the playlist refills hearts.
+- Nothing due: "All caught up", hearts refilled, no XP.
 
-### 4.7 Boss quiz (Kahoot style)
+### 4.7 Crisis boss **[A1]** (replaces the boss quiz)
 
-- 8 questions (World 1–2) to 10 questions (World 3–8), mixing every role in the
-  world. 4 options, each with a colour **and** a shape (red ▲, blue ◆, yellow ●,
-  green ■). 15 s per question (relaxed: no timer, speed fixed at 0.5).
-- Points per correct answer: `100 + round(50 × timeLeft / 15)`.
-  Streak multiplier: ×1.25 after 3 correct in a row, ×1.5 after 5.
-- Pass: ≥ 60 % correct. Stars from points ÷ max (same 85/65/45 thresholds).
-- Wrong answer costs 1 heart and shows a 3-second explanation.
+- One story situation, an ordered playlist of 4–7 **micro-rounds** (15–40 s each),
+  each a badge-swap into one role of that world running one existing engine with a
+  small config (≤ 4 items / 1 decision / 1 build slot group).
+- **Shared clock:** total = Σ round seconds + 15 % slack. Unused seconds carry over
+  to the next round (Diner Dash pressure). Clock expiry ends the crisis; rounds not
+  reached count as failed. Relaxed mode: no clock, speed fixed at 0.5.
+- **Round result:** `cleared` when round accuracy ≥ 0.6. Points per cleared round =
+  `100 + round(50 × timeLeft/roundSeconds)` × streak multiplier (×1.25 after 3
+  cleared in a row, ×1.5 after 5). A failed round costs 1 heart and applies the
+  round's `meterHit`.
+- **Pass:** ≥ 60 % of rounds cleared before the clock runs out. Stars from
+  `computeScore(mean round accuracy, mean time-left fraction)`. XP = points ÷ max ×
+  100, +20 if passed first try. Pass unlocks the next world and its story beat.
+- **Resolution text** is chosen by outcome (`success`, `partial`, `fail`) and names
+  the meters' state ("You kept patients safe but the timeline slipped two months").
+
+### 4.8 Test Yourself **[A1]** (optional knowledge check)
+
+- Reuses the quiz-blitz engine unchanged (colour + shape answers, 1–4 keys,
+  countdown, speed bonus, streak multiplier; relaxed mode removes the timer).
+- Entry points: a "Test Yourself" button on any completed Role Card in the Codex,
+  and on any completed level node on the map (long-press or the node's detail sheet).
+  Questions are drawn from `KnowledgeCheck` content for roles the player has
+  finished; the world-node variant mixes all finished roles in that world.
+- Rewards are cosmetic/bonus only (§4.2): small XP, the **Knowledge Check ribbon** on
+  the role badge (Codex + map), and an optional certificate line. No hearts, no
+  meters, no unlocks. A player who never opens it can 100 % the game.
 
 ## 5. Difficulty curve
 
-| World | Timer scale | Items per task | Distractors         | Hearts rule        |
-| ----- | ----------- | -------------- | ------------------- | ------------------ |
-| 1     | ×1.4        | 4–6            | obvious             | first mistake free |
-| 2     | ×1.2        | 5–7            | plausible           | normal             |
-| 3–4   | ×1.0        | 6–8            | plausible           | normal             |
-| 5–6   | ×0.9        | 8–10           | subtle, two-step    | normal             |
-| 7–8   | ×0.85       | 8–12           | subtle, cross-world | normal             |
+| World | Timer scale | Items per task | Distractors           | Hearts rule        |
+| ----- | ----------- | -------------- | --------------------- | ------------------ |
+| 1     | ×1.4        | 4–6            | obvious               | first mistake free |
+| 2     | ×1.2        | 5–7            | plausible             | normal             |
+| 3–4   | ×1.0        | 6–8            | plausible             | normal             |
+| 5–6   | ×0.9        | 8–10           | subtle, two-step      | normal             |
+| 7–8   | ×0.85       | 8–12           | subtle, cross-world   | normal             |
 
-Engines are introduced one at a time in the first 12 levels so each has a tutorial
-moment (Dose speech bubble, "tap here" pointer, dismissable). Dash-manager and
-spot-the-impostor get harder by adding concurrency (more queues) and more
-red-herring evidence rather than shorter timers.
+Engines are introduced one at a time across the first 12 levels with a Dose tutorial
+bubble. **[A1]** Crisis bosses use engines the player has already met in that world.
 
 ## 6. Mini-game engines
 
-All engines share: `TaskShell` (HUD, pause, timer, relaxed mode), `useTaskRun`
-(state machine: intro → playing → paused → complete/failed), `scoring.ts`,
-`hearts.ts`, `meters.ts`. Each engine is a React component taking its typed
-config and calling `onComplete({ accuracy, speed, mistakes[] })`.
+All engines share `TaskShell`, `useTaskRun`, `scoring.ts`, `hearts.ts`, `meters.ts`.
+Each engine takes its typed config and calls
+`onComplete({ accuracy, speed, mistakes[], outcomes })`.
 
-| Engine             | Input model (touch + keyboard)                                                     | Mistake event                             | accuracy / speed                                                           |
-| ------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------- |
-| quiz-blitz         | Tap one of 4 big buttons; keys 1–4                                                 | wrong answer                              | correct ÷ N; avg time left                                                 |
-| sequence-sort      | Tap item then tap slot (or drag); arrow keys + Enter                               | submit with ≥1 wrong position             | correct positions ÷ N on final submit; time left                           |
-| match-pairs        | Tap left, tap right; Tab/Enter                                                     | wrong pair                                | correct ÷ (correct + wrong); time left                                     |
-| bucket-sort        | Swipe (2 buckets) or drag/tap bucket button (2–4); keys 1–4                        | wrong bucket                              | correct ÷ N; avg time left per card (optional per-card deadline)           |
-| dash-manager       | Tap a queued item, then tap stations in order; Tab cycles items, keys 1–5 stations | item's patience expires, or wrong station | served ÷ total; avg patience remaining                                     |
-| spot-the-impostor  | Tap card to inspect (flip), tap Accuse; Enter/Space                                | wrong accusation                          | correct accusations ÷ total accusations; time left                         |
-| builder            | Tap part in tray, tap slot; Enter                                                  | submit with ≥1 wrong/empty slot           | correct slots ÷ slots on final submit; time left                           |
-| branching-scenario | Tap a choice (2–3 per node)                                                        | choosing a `bad` option                   | sum of choice quality ÷ max (best=1, ok=0.5, bad=0); speed = 0.5 (untimed) |
-| allocator          | Steppers (−/+, 44 px) or slider per category; arrow keys                           | submit outside constraints                | categories within target ÷ categories; time left                           |
+| Engine             | Input model (touch + keyboard)                          | Mistake event                     | accuracy / speed                                         |
+| ------------------ | ------------------------------------------------------- | --------------------------------- | -------------------------------------------------------- |
+| quiz-blitz **[A1]** *Test Yourself only* | Tap one of 4 buttons; keys 1–4     | wrong answer (no heart)           | correct ÷ N; avg time left                               |
+| sequence-sort      | Tap item then slot (or drag); arrows + Enter            | submit with ≥ 1 wrong position    | correct positions ÷ N on final submit; time left         |
+| match-pairs        | Tap left, tap right; Tab/Enter                          | wrong pair                        | correct ÷ (correct + wrong); time left                   |
+| bucket-sort        | Swipe (2 buckets) or tap bucket button (2–4); keys 1–4  | wrong bucket                      | correct ÷ N; avg time left per card                      |
+| dash-manager       | Tap queued item, tap stations in order; Tab, keys 1–5   | patience expires or wrong station | served ÷ total; avg patience remaining                   |
+| spot-the-impostor  | Tap card to inspect, tap Accuse; Enter/Space            | wrong accusation                  | correct accusations ÷ accusations; time left             |
+| builder            | Tap part in tray, tap slot; Enter                       | submit with ≥ 1 wrong/empty slot  | correct slots ÷ slots; time left                         |
+| branching-scenario | Tap a choice (2–3 per node)                             | choosing a `bad` option           | Σ choice quality ÷ max (best 1, ok 0.5, bad 0); speed 0.5 |
+| allocator          | Steppers (−/+) or slider per category; arrow keys       | submit outside constraints        | categories within target ÷ categories; time left         |
 
-Drag-and-drop is an enhancement layered over tap-to-select / tap-to-place; the
-tap path is the one tested.
+All engines support `onlyItems?: string[]` (for review micro-rounds and crisis
+rounds) and every scorable item has a stable `id`.
 
-## 7. Screens and flow
+### 6.1 Shortcut options **[A1]**
+
+Any option/item/choice may carry `shortcut: { meters: { timeline: +10, safety: −15 },
+why: "…" }`. Choosing it applies the meters immediately, shows a one-line Dose aside,
+and is recorded for the debrief. It is not a mistake event.
+
+### 6.2 Consequence simulation **[A1]**
+
+An optional `simulation` block on **allocator** (numeric inputs) and **builder**
+(discrete choice) configs. The engine's normal interaction ends with "Commit", then
+the simulation plays a 3–6 second reveal and shows the outcome band:
+
+| Kind            | Player commits              | Reveal                                                        | Used by                          |
+| --------------- | --------------------------- | ------------------------------------------------------------- | -------------------------------- |
+| `dose-response` | starting dose (slider)      | first cohort of 6 avatars: responders / adverse events / fine | Toxicologist (W1), SRC (W4)      |
+| `trial-power`   | sample size (slider)        | power, cost, months update live; then "run it 100 times" bar  | Biostatistician (W2)             |
+| `pk-next-dose`  | next dose on a PK chart     | exposure curve vs. safety ceiling                             | Clinical Pharmacologist (W4)     |
+| `price-access`  | price (slider)              | payer coverage %, patients reached, revenue index             | Market Access (W8)               |
+
+Bands are ordered ranges over the committed value. Each band has a `tag` (this is
+what becomes the artifact), narration, meter deltas, and kind-specific visual
+numbers. Accuracy = 1 for the target band, 0.5 for an adjacent band, 0 otherwise;
+the player can watch the outcome, then "Try another value" costs no heart until the
+timer is up (one heart per extra attempt after the first in worlds 3+).
+
+## 7. Screens and flow **[A1]**
 
 ```
-Title ─▶ (first run) Intro story + tutorial prompt ─▶ World Map
-World Map ─▶ Badge Swap ─▶ Role Card ─▶ Task ─▶ Debrief ─▶ World Map
-World Map ─▶ Boss Quiz ─▶ Story Beat ─▶ World Map (next world)
-World Map ─▶ Review Node ─▶ Debrief ─▶ World Map
-World Map ─▶ Clinical Hold overlay (W4 only) ─▶ SRC level
-Last level ─▶ Finale (relay chain, stats) ─▶ Certificate
-Bottom nav (Map · Codex · Handoff · Glossary · Settings) available everywhere
-except inside a running task.
+Title ─▶ (first run) Intro ─▶ World Map
+World Map ─▶ Badge Swap ─▶ Role Card ─▶ Task (+ simulation) ─▶ Debrief ─▶ World Map
+World Map ─▶ Crisis Boss (rounds with mini badge swaps) ─▶ Resolution ─▶ Story Beat ─▶ next world
+World Map ─▶ Review Node (micro-round playlist) ─▶ Debrief ─▶ World Map
+World Map ─▶ Clinical Hold overlay (W4) ─▶ SRC level (variant by chain c)
+Codex ─▶ Role Card ─▶ Test Yourself (optional) ─▶ Knowledge Check result
+Map node (done) ─▶ Test Yourself for that world (optional)
+Last level ─▶ Finale ─▶ Certificate
 ```
 
-Screens: Title, Intro, WorldMap, BadgeSwap (overlay), RoleCard, Level (hosts an
-engine), Debrief, BossQuiz, StoryBeat, ReviewNode, Setback (overlay), Codex,
-Glossary, HandoffMap, Settings, Finale, Certificate.
+Screens: Title, Intro, WorldMap, BadgeSwap, RoleCard, Level, Debrief, **CrisisBoss**
+(replaces BossQuiz), **TestYourself** (hosts quiz-blitz), StoryBeat, ReviewNode,
+Setback, Codex, Glossary, HandoffMap, Settings, Finale, Certificate.
 
-Settings: sound on/off (default off), relaxed mode, reduce motion (follows OS by
-default, overridable), theme (system/light/dark), text size, reset progress
-(two-step confirm), about/disclaimer, content version.
+## 8. Crisis boss design notes **[A1]**
 
-## 8. Mascot and tone
+- Open with a 2-line situation card and the shared clock. Each round starts with a
+  0.6 s mini badge swap (skippable, cross-fade under reduced motion) and a one-line
+  brief ("You're the Toxicologist. Which findings are adverse?").
+- Round order tells the story of the hand-off: the output tag of a round can select
+  the variant of a later round in the same crisis (same `variants` mechanism as
+  levels, scoped to the crisis).
+- World 1 crisis (proposed content): *"Day 212: the 28-day rat study shows liver
+  changes at the mid dose."*
+  1. Toxicologist, bucket-sort, 30 s: sort 4 findings into Adverse / Not adverse /
+     Needs pathology review.
+  2. CMC Scientist, builder, 35 s: rebuild the capsule with a slower-release
+     excipient set (3 slots, 6 parts, one tempting "ship current batch" shortcut).
+  3. Discovery Scientist, spot-the-impostor, 30 s: among 4 backup compounds, find
+     the one whose selectivity data is the off-target liability.
+  4. Patient Advocate, branching-scenario, 40 s: tell the community about a 3-month
+     delay without over- or under-promising (2 decisions).
 
-Dose is a capsule (half white, half teal) in a lab coat with a lanyard. Dose
-appears on the map beside the current node, in tutorial bubbles, on the debrief,
-and in setbacks. Dose is warm, brief, never sarcastic about mistakes. Copy rule:
-one idea per sentence, no jargon without a glossary link.
+## 9. Mascot and tone
 
-## 9. Content model (types live in `src/content/types.ts`)
+Unchanged. Dose is warm, brief, never sarcastic. **[A1]** Dose voices the shortcut
+aside ("Faster, sure. But that's a finding waiting to happen.").
 
-- `World { id, number, title, subtitle, storyIntro, storyOutro, nodeIds[] }`
-- `Role { id, title, employer, worldId, card: RoleCard }`
-- `RoleCard { whatIDo, responsibilities[3–5], skills[], receivesFrom: RoleId[],
-handsOffTo: RoleId[], documents[], funFact }`
-- `Level { id, worldId, roleId, title, intro, game: MiniGameConfig, debrief:
-{ learned, handoffLine }, meterFocus?: MeterId }`
-- `MiniGameConfig` = discriminated union on `engine`, one interface per engine,
-  each item carrying `conceptId` and `explanation` + `consequence` text.
-- `BossQuiz { id, worldId, questions[] }`, `ReviewNode { id, worldId, afterLevelId }`
-- `GlossaryTerm { id, term, short, long?, aliases[] }`
-- `PlayerProgress` (schemaVersion 1): xp, hearts + heartsUpdatedAt, streak
-  {count, lastDay, freezes}, levels {stars, bestScore, attempts, completedAt},
-  cardsViewed {roleId → firstViewedAt, lastHeartClaimDay}, meters, concepts
-  {conceptId → box, dueAt}, badges[], settings.
-- Build-time validation (Vitest suite `content.validate.test.ts`, also run by
-  `npm run validate:content`): every role has a card with 3–5 responsibilities
-  and a fun fact; every `receivesFrom`/`handsOffTo` id exists; every level has a
-  role, a debrief with both fields, and at least one item; every conceptId maps
-  to a glossary term; every glossary term used in copy (`[[term]]` markup) exists;
-  world node lists cover every level exactly once; boss quizzes cover every role
-  in their world at least once.
+## 10. Content model (types live in `src/content/types.ts`)
 
-## 10. Technical notes
+Unchanged from v0.1 except as proposed in `docs/AMENDMENT1_TYPES.md`: `CrisisBoss`,
+`KnowledgeCheck`, artifact types, `SimulationBlock`, `MayaCameo`, `shortcut`, and
+`id` on every scorable item. `BossQuiz` is retired; its questions become
+`KnowledgeCheck` content.
 
-- Vite + React 19 + TypeScript strict + Tailwind v4 + Zustand + Framer Motion.
-- Routing: hash-based (works on GitHub Pages without rewrites), tiny custom router.
-- Code splitting: `src/worlds/w1..w8/index.ts` each lazily import that world's
-  content + engine bundles; engines are separate chunks; Framer Motion loaded in
-  the core (it is needed on the map). Budget: core ≤ 300 KB gzipped, checked in
-  CI via `vite build` size report.
-- Persistence: single `trialquest.progress.v1` key, JSON, wrapped in try/catch,
-  `migrate(from, to)` chain, "reset progress" in Settings.
-- PWA: manifest, precached shell, runtime-cached lazy chunks, offline fallback.
-- Sound: Web Audio API synthesised tones (tap, correct, wrong, star, unlock).
-- Certificate: rendered to `<canvas>` 1200×800, "Save image" via `toBlob`.
-- Accessibility: focus-visible rings, `aria-live` for timer warnings and results,
-  every colour paired with a shape/label, all timers pausable and relaxable,
-  `prefers-reduced-motion` disables path/badge animations.
-- Disclaimer footer on Title, Map, Settings, Certificate.
+Validation additions: crisis rounds reference roles in their world; each crisis has
+≥ 4 rounds within 15–40 s; every `consumes` artifact is emitted by an earlier level
+in node order (fail); every level has ≥ 1 shortcut option (warn); every
+`mayaCameo.itemId` exists in that level's config (fail); every `KnowledgeCheck`
+question keeps the quiz-question shape (fail).
+
+## 11. Playable hand-offs: the artifact system **[A1]**
+
+**Goal:** earlier choices change later content, without code in content files and
+without breaking standalone play or replay.
+
+- An **artifact** is a small JSON-serialisable record with a `key`, a discrete
+  `tag` (the outcome that later content branches on), optional `data`, and
+  provenance (`emittedBy`, `emittedAt`).
+- **Emitting:** a level declares `emits: [{ key, outcomes: [{ tag, when }] }]`.
+  `when` rules are engine-agnostic (`accuracyAtLeast`, `endNode`, `band`,
+  `chosePart`, `bucketOf`) and are evaluated against the engine result on completion;
+  first match wins; `default` tag if none match.
+- **Consuming:** a level declares `consumes: ['dose.starting']` and
+  `variants: [{ when: { 'dose.starting': 'aggressive' }, patch: { intro, game: {…} } }]`.
+  Patches are shallow-merged into the level's copy at load time. A missing artifact
+  resolves to the key's `defaultTag`, so every level works standalone, on deep
+  link, and on replay. Replaying an emitter overwrites its artifact.
+- **Chains in scope now:**
+  a) `protocol.criteria` (W2 Clinical Scientist) → `ecrf.fields` (W3 EDC) →
+     `screening.eligibility` (W4 PI) → `monitoring.deviations` (W5 CRA)
+  b) `ae.report` (W4 CRC) → `ae.coded` (W5 Coder) → `safety.report` (W5 PV) →
+     `label.warnings` (W7 Labeling)
+  c) `dose.starting` (W1 Toxicologist) → `phase1.escalation` (W4 Pharmacologist) →
+     `phase1.hold` (W4 SRC, the scripted setback)
+- **Persistence:** `PlayerProgress` schema v2 adds `artifacts` and `knowledge`;
+  migration v1→v2 fills both with `{}`.
+- **Visibility:** the debrief shows the artifact produced; the Handoff Map shows
+  artifacts travelling along edges; the finale relay chain lists them.
+
+## 12. Maya on screen **[A1]**
+
+From World 5 on, levels may set `mayaCameo: { itemId, presentation, debriefLine }`.
+The engine renders that item with Maya's presentation: `queue` (portrait in the
+CRC's visit queue), `data-row` (anonymised "Participant 0417" row in a query list),
+`blinded-point` (an unlabeled point in the DSMB chart, revealed in the debrief),
+`dialogue` (she speaks in a scenario), `consent` (her consent form in a builder).
+The debrief line ("That query was Maya's visit 6 blood draw") lands after the task so
+the cameo never leaks the blind mid-level.
+
+## 13. Technical notes
+
+Unchanged from v0.1 (Vite, React 19, TS strict, Tailwind v4, Zustand, Framer Motion,
+hash routing, per-world lazy chunks, ≤ 300 KB gzipped core, PWA, Web Audio tones,
+canvas certificate, WCAG AA). **[A1]** Quiz-blitz stays in the core bundle only if
+Test Yourself is on the map; otherwise it moves to the Codex chunk.

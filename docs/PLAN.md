@@ -1,65 +1,91 @@
 # Trial Quest — Delivery Plan
 
+Version 0.2 · 2026-09-18 · revised for SPEC Amendment 1
+
 ## Milestone 0 — Design docs
 
-- `docs/GDD.md`, `docs/PLAN.md`. Approved 2026-09-18.
+Done. GDD v0.2 and this plan supersede v0.1 after approval.
 
-## Milestone 1 — "Make it fun before wide"
+## Milestone 1 — Scaffold + World 1 (quiz-blitz placeholder) — DONE 2026-09-18
 
-Scope:
+Delivered: scaffold, tokens, world map, role cards, quiz-blitz engine, World 1 content,
+persistence, 51 unit tests, Playwright smoke at 360×740 and 1440×900. Commit `2118fc5`.
 
-- Vite + React + TS scaffold, Tailwind v4 tokens (light/dark, WCAG AA palette,
-  employer colours, star/heart/meter colours), ESLint + Prettier, Vitest + RTL,
-  Playwright config with 360×740 and 1440×900 projects.
-- Content types (`src/content/types.ts`), `economy.ts`, World 1 content: 4 roles
-  with full Role Cards, 4 levels, 1 review node, 1 boss quiz, ~25 glossary terms.
-- Engine core: `TaskShell`, `useTaskRun`, `scoring.ts`, `hearts.ts`, timer with
-  relaxed mode, `quiz-blitz` engine (also powers boss quiz and review nodes).
-- Screens: Title, Intro, WorldMap (all 8 worlds drawn, only W1 unlocked), Badge
-  Swap, Role Card (flip gating), Level, Debrief, BossQuiz, StoryBeat, Settings
-  (reset progress), Codex (W1 cards).
-- Zustand progress store + localStorage persistence with schema version + reset.
-- Dose mascot (SVG) with tutorial bubbles on the first three screens.
-- Content validation suite.
+### World 1 audit against Amendment 1
 
-Note: World 1's intended engines (branching, impostor, bucket, builder) arrive in
-Milestone 2. In M1 the four W1 levels ship as quiz-blitz "story quizzes" so the
-world is fully playable end to end; M2 swaps in the intended engines without
-touching the screens.
+| Node      | Role                 | Built as                                         | Pass condition today                             | Amendment 1 status                                           |
+| --------- | -------------------- | ------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------ |
+| w1-l1     | Patient Advocate     | quiz-blitz, 6 questions, `meterFocus: safety`    | score ≥ 45 from recall                           | **Rebuild** on branching-scenario                            |
+| w1-l2     | Discovery Scientist  | quiz-blitz, 6 questions                          | score ≥ 45 from recall                           | **Rebuild** on spot-the-impostor (find the hit)              |
+| w1-l3     | Toxicologist         | quiz-blitz, 6 questions, `meterFocus: safety`    | score ≥ 45 from recall                           | **Rebuild** on bucket-sort + allocator `dose-response` sim; emits `dose.starting` |
+| w1-l4     | CMC Scientist        | quiz-blitz, 6 questions                          | score ≥ 45 from recall                           | **Rebuild** on builder                                       |
+| w1-r1     | Review               | quiz-blitz over missed `conceptId`s              | n/a (optional)                                   | **Rebuild** as micro-round playlist over missed situations   |
+| w1-boss   | Boss quiz            | quiz-blitz, 8 questions, 15 s, ≥ 60 % to pass    | recall, gates World 2                            | **Replace** with World 1 Crisis Boss                         |
 
-Exit: title → World 1 complete in < 10 min on a phone; lint, tsc, unit tests,
-Playwright smoke green; progress survives reload; commit.
+Other findings:
 
-## Milestone 2 — Remaining engines
+- All 4 levels are 100 % recall-gated. 24 level questions + 8 boss questions = 32
+  authored questions; all move into `KnowledgeCheck` content (none deleted).
+- Quiz mistakes currently cost hearts and move meters (`src/screens/Level.tsx`,
+  `src/screens/BossQuiz.tsx`). Both must be removed from the quiz path.
+- Spaced repetition is keyed by `conceptId`; must be re-keyed by situation
+  (`levelId:itemId`).
+- `BossQuiz` type, `bossQuizzes` registry, `content.bossById`, `boss` map-node kind,
+  `economy.boss`, `progress.bosses` all need renaming/retirement to crisis.
+- No level has a shortcut option or an artifact. Store schema must bump to v2.
 
-- sequence-sort, match-pairs, bucket-sort, dash-manager, spot-the-impostor,
-  builder, branching-scenario, allocator. Each: component, config type, unit
-  tests (state machine + scoring), one demo level in a hidden "Engine lab" route,
-  keyboard + tap paths tested.
-- Swap World 1 levels to their intended engines.
+## Milestone 2 — Engines, crisis boss, artifacts, World 1 retrofit
 
-Exit: all 9 engines playable on 360 px with touch and keyboard; tests green; commit.
+Order matters: engines first, then the systems they plug into, then the retrofit.
 
-## Milestone 3 — Content
+1. **Types and validation** (from `docs/AMENDMENT1_TYPES.md`): `id` on every scorable
+   item, `shortcut`, `SimulationBlock`, artifact types, `CrisisBoss`, `KnowledgeCheck`,
+   `MayaCameo`. Retire `BossQuiz`. Extend the validator (artifact refs fail, missing
+   shortcut warns, crisis round rules).
+2. **Store v2**: `artifacts`, `knowledge`, situations-based `review`; migration v1→v2
+   with tests; `crises` replaces `bosses`.
+3. **Engines** (each: component, config type, `onlyItems`, shortcut handling, unit
+   tests, demo level in a hidden `#/lab` route): branching-scenario,
+   spot-the-impostor, bucket-sort, builder, allocator (+ `simulation` with
+   `dose-response`, `trial-power`, `pk-next-dose`, `price-access` renderers),
+   sequence-sort, match-pairs, dash-manager.
+4. **Artifact runtime**: `emits` evaluation, `consumes`/`variants` patching with
+   defaults, debrief "You handed off" card, Handoff Map edge labels.
+5. **Crisis boss screen**: shared clock with carry-over, mini badge swaps, round
+   playlist, points/streak, resolution text, meters/hearts; World 1 crisis content.
+6. **Test Yourself**: `KnowledgeCheck` content for the 4 World 1 roles (the 32 existing
+   questions), entry from Codex cards and completed map nodes, ribbon, bonus XP;
+   quiz-blitz decoupled from hearts/meters.
+7. **World 1 retrofit**: rebuild w1-l1..l4 on their intended engines (with ≥ 1
+   shortcut each; l3 emits `dose.starting`), review node as micro-rounds, remove the
+   boss quiz node, add the crisis node.
+8. Update SPEC.md acceptance criteria (done with this plan), README, GDD.
 
-- Worlds 2–8: 40 roles' cards, 40 levels, 8 boss quizzes, review nodes, story
-  beats, full glossary (~120 terms), `docs/CONTENT_REVIEW.md` for SME flags.
-- Career Codex (all cards, badges), Glossary screen with search and inline
-  tooltips, Handoff Map (fills in as roles unlock).
-- Lazy-loading per world; bundle size check.
+Exit: World 1 completable with zero quiz questions on the main path; all 9 engines
+playable at 360 px with touch and keyboard; validator passes; e2e smoke updated
+(includes crisis boss and one Test Yourself run); commit.
 
-Exit: all 8 worlds completable; content validation green; commit.
+## Milestone 3 — Content for Worlds 2–8
+
+- 40 role cards, 40 levels on intended engines, each with ≥ 1 shortcut; the 4 hybrid
+  simulation levels (Biostatistician, Clinical Pharmacologist, Market Access, plus
+  Toxicologist from M2).
+- Artifact chains a, b, c wired end to end; World 4 clinical hold variants from chain c.
+- 7 crisis bosses (W2–W8), 9 review nodes, story beats, full glossary (~120 terms),
+  `KnowledgeCheck` for all 44 roles, `mayaCameo` in W5–W8 levels.
+- Codex, Glossary, Handoff Map lane diagram with artifact edges, lazy loading per
+  world, bundle check, `docs/CONTENT_REVIEW.md` flags.
+
+Exit: all 8 worlds completable without Test Yourself; validator green; commit.
 
 ## Milestone 4 — Meta and polish
 
-- Meters + setbacks (clinical hold in W4, inspection finding, portfolio review),
-  hearts refill, daily streak + freezes, spaced-repetition review nodes,
-  finale + certificate (canvas), PWA + offline, sound toggle, accessibility pass
-  (axe in Playwright, keyboard walkthrough), performance pass (Lighthouse mobile
-  ≥ 90 perf, ≥ 95 a11y), README (run, build, deploy to GitHub Pages/Netlify,
-  edit content).
+Meters/setbacks, hearts refill, streak + freezes, spaced-repetition micro-rounds,
+finale + certificate (with optional knowledge-check line), PWA/offline, sound,
+accessibility pass (axe in Playwright, keyboard walkthrough), performance pass
+(Lighthouse mobile ≥ 90 / ≥ 95), README deploy + content guide.
 
-Exit: acceptance criteria in SPEC.md all met; commit; summary.
+Exit: SPEC.md acceptance criteria (as amended) all met; commit; summary.
 
-After each milestone: `npm run lint && npm run typecheck && npm test &&
-npm run e2e`, commit with a clear message, summarise what changed and what is next.
+After each milestone: `npm run lint && npm run typecheck && npm test && npm run e2e`,
+commit, summarise what changed and what is next.

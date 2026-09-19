@@ -61,8 +61,8 @@ non-experts. Assume zero prior knowledge. Session length: 3-7 minutes per level.
 5. DEBRIEF: 1-3 stars, XP, "what you just learned" in 2 sentences, the real-world
    consequence of mistakes made, and the handoff line ("You pass the locked
    database to the Biostatistician...").
-6. UNLOCK: next node opens. End of each world = a Kahoot-style timed boss quiz
-   mixing all roles from that world, plus a story beat showing Maya's progress.
+6. UNLOCK: next node opens. End of each world = a cross-role CRISIS BOSS on one
+   shared clock (see Amendment 1), plus a story beat showing Maya's progress.
 
 # META MECHANICS (borrow deliberately)
 
@@ -71,8 +71,8 @@ non-experts. Assume zero prior knowledge. Session length: 3-7 minutes per level.
   nodes that resurface previously missed concepts, mascot nudges.
 - BitDegree: collectible role badges, a "Career Codex", and a shareable completion
   certificate (rendered client-side as an image) listing roles mastered.
-- Kahoot!: fast 4-option color+shape coded quiz rounds with countdown, speed
-  bonus, and answer streak multiplier for the boss quizzes.
+- Kahoot!: countdown, speed bonus, and streak multiplier across crisis boss
+  rounds; the 4-option color+shape quiz survives only in optional "Test Yourself".
 - Diner Dash: time-management levels where patients/tasks queue up and the player
   must sequence actions under pressure (site visits, supply shipments).
 - Among Us: deduction levels, e.g. "one of these data points / documents / claims
@@ -234,7 +234,7 @@ brackets. Write accurate, plain-language content for each.
 /src
   /engine        - the 9 mini-game engines, scoring, meters, hearts, XP, streak
   /content       - worlds.ts, roles.ts, levels/*.ts, glossary.ts (typed schemas)
-  /screens       - Map, RoleCard, Level, Debrief, BossQuiz, Codex, Glossary,
+  /screens       - Map, RoleCard, Level, Debrief, CrisisBoss, TestYourself, Codex, Glossary,
                    HandoffMap, Settings, Certificate
   /components    - shared UI (Button, Card, Timer, Meter, Mascot, Modal...)
   /store         - Zustand stores + localStorage persistence with migrations
@@ -254,7 +254,7 @@ references, or levels without a debrief.
 2. Milestone 1: project scaffold, design tokens, world map, role card, ONE engine
    (quiz-blitz), World 1 fully playable, persistence. Make it fun before wide.
 3. Milestone 2: remaining engines, each with a demo level and unit tests.
-4. Milestone 3: content for Worlds 2-8, boss quizzes, Codex, glossary, handoff map.
+4. Milestone 3: content for Worlds 2-8, crisis bosses, Codex, glossary, handoff map.
 5. Milestone 4: meters + setbacks, streaks, review nodes, certificate, PWA/offline,
    sound, accessibility pass, performance pass.
 6. After each milestone: run lint, type-check, tests (Vitest + React Testing
@@ -273,3 +273,17 @@ references, or levels without a debrief.
 - Adding a new role/level requires editing only files in /src/content.
 - README explains how to run, build, deploy (GitHub Pages/Netlify), and how to
   edit content.
+- No main-path pass condition is recall-only (Amendment 1).
+- The game is 100% completable without opening "Test Yourself" (Amendment 1).
+
+# AMENDMENT 1 (2026-09-18): PLAY-FIRST DESIGN, QUIZ BECOMES OPTIONAL
+Overrides the sections above wherever they conflict. Summary: quiz-blitz is demoted
+to an optional "Test Yourself" mode (no hearts, no meters, cosmetic rewards only);
+each world ends in a cross-role Crisis Boss built from existing engines on a shared
+clock; hybrid levels end in a consequence simulation (allocator/builder
+`simulation` block); levels emit and consume tagged artifacts along three chains
+(protocol -> eCRF -> screening -> monitoring; AE -> coding -> safety report ->
+label; starting dose -> Phase I escalation -> clinical hold); every main-path level
+has a tempting shortcut that trades safety or integrity for timeline; Maya appears
+inside levels from World 5 via `mayaCameo`; review nodes replay missed situations
+as micro-rounds. Full text in docs/GDD.md v0.2 and docs/AMENDMENT1_TYPES.md.
