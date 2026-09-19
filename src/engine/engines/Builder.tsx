@@ -6,7 +6,7 @@ import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/sco
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
-import { seededShuffle, type EngineProps } from './types';
+import { seededShuffle, type EngineProps, type ScoredSnapshot } from './types';
 
 interface Pending {
   kind: FeedbackKind;
@@ -17,8 +17,18 @@ interface Pending {
   finish?: boolean;
 }
 
+type Snap = ScoredSnapshot & {
+  placed: Record<string, string>;
+  selectedPart: string | null;
+  pending: Pending | null;
+  phase: 'build' | 'reveal' | 'sandbox';
+  committed: { placed: Record<string, string>; bandIndex: number; accuracy: number } | null;
+  locked: Record<string, boolean>;
+};
+
 /** Tap a part, then tap a slot (or the other way round). Check when every slot is filled. */
 export function Builder(p: EngineProps<BuilderConfig>) {
+  const snap = p.snapshot as Partial<Snap> | undefined;
   const slots = useMemo(
     () => (p.onlyItems ? p.config.slots.filter((s) => p.onlyItems!.includes(s.id)) : p.config.slots),
     [p.config.slots, p.onlyItems],
@@ -27,27 +37,44 @@ export function Builder(p: EngineProps<BuilderConfig>) {
     const list = p.onlyItems ? p.config.parts.filter((x) => p.onlyItems!.includes(x.id)) : p.config.parts;
     return seededShuffle(list, p.seed);
   }, [p.config.parts, p.onlyItems, p.seed]);
-  const [placed, setPlaced] = useState<Record<string, string>>({}); // slotId -> partId
-  const [selectedPart, setSelectedPart] = useState<string | null>(null);
-  const [pending, setPending] = useState<Pending | null>(null);
+  const [placed, setPlaced] = useState<Record<string, string>>(snap?.placed ?? {}); // slotId -> partId
+  const [selectedPart, setSelectedPart] = useState<string | null>(snap?.selectedPart ?? null);
+  const [pending, setPending] = useState<Pending | null>(snap?.pending ?? null);
   const sim = p.config.simulation;
-  const [phase, setPhase] = useState<'build' | 'reveal' | 'sandbox'>('build');
+  const [phase, setPhase] = useState<'build' | 'reveal' | 'sandbox'>(snap?.phase ?? 'build');
   const [committed, setCommitted] = useState<{
     placed: Record<string, string>;
     bandIndex: number;
     accuracy: number;
-  } | null>(null);
+  } | null>(snap?.committed ?? null);
 
   const { onHold } = p;
   useEffect(() => {
     onHold?.(!!pending || phase !== 'build');
   }, [pending, phase, onHold]);
-  const [locked, setLocked] = useState<Record<string, boolean>>({});
-  const [heartsLost, setHeartsLost] = useState(0);
-  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
-  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);
-  const usedCarriers = useRef(new Set<string>());
+  const [locked, setLocked] = useState<Record<string, boolean>>(snap?.locked ?? {});
+  const [heartsLost, setHeartsLost] = useState(snap?.heartsLost ?? 0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>(snap?.mistakes ?? []);
+  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>(snap?.shortcuts ?? []);
+  const usedCarriers = useRef(new Set<string>(snap?.usedCarriers ?? []));
   const done = useRef(false);
+
+  // Every state change is reported so the host can checkpoint per item (resume after leaving).
+  const { onSnapshot } = p;
+  useEffect(() => {
+    onSnapshot?.({
+      placed,
+      selectedPart,
+      pending,
+      phase,
+      committed,
+      locked,
+      heartsLost,
+      mistakes,
+      shortcuts,
+      usedCarriers: [...usedCarriers.current],
+    } satisfies Snap);
+  }, [onSnapshot, placed, selectedPart, pending, phase, committed, locked, heartsLost, mistakes, shortcuts]);
 
   const evaluate = useCallback(
     (current: Record<string, string>) => {

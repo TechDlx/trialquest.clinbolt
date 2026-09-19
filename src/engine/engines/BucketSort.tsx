@@ -4,7 +4,7 @@ import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { RichText } from '@/components/RichText';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
-import { seededShuffle, type EngineProps } from './types';
+import { seededShuffle, type EngineProps, type ScoredSnapshot } from './types';
 
 interface Pending {
   kind: FeedbackKind;
@@ -15,26 +15,49 @@ interface Pending {
   note?: string;
 }
 
+type Snap = ScoredSnapshot & {
+  index: number;
+  results: Record<string, ItemOutcome>;
+  buckets: Record<string, string>;
+  pending: Pending | null;
+};
+
 /** Cards come one at a time; tap a bucket (or press 1–4). */
 export function BucketSort(p: EngineProps<BucketSortConfig>) {
+  const snap = p.snapshot as Partial<Snap> | undefined;
   const cards = useMemo(() => {
     const list = p.onlyItems ? p.config.cards.filter((c) => p.onlyItems!.includes(c.id)) : p.config.cards;
     return seededShuffle(list, p.seed);
   }, [p.config.cards, p.onlyItems, p.seed]);
-  const [index, setIndex] = useState(0);
-  const [results, setResults] = useState<Record<string, ItemOutcome>>({});
-  const [buckets, setBuckets] = useState<Record<string, string>>({});
-  const [pending, setPending] = useState<Pending | null>(null);
+  const [index, setIndex] = useState(snap?.index ?? 0);
+  const [results, setResults] = useState<Record<string, ItemOutcome>>(snap?.results ?? {});
+  const [buckets, setBuckets] = useState<Record<string, string>>(snap?.buckets ?? {});
+  const [pending, setPending] = useState<Pending | null>(snap?.pending ?? null);
 
   const { onHold } = p;
   useEffect(() => {
     onHold?.(!!pending);
   }, [pending, onHold]);
-  const [heartsLost, setHeartsLost] = useState(0);
-  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
-  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);
-  const usedCarriers = useRef(new Set<string>());
+  const [heartsLost, setHeartsLost] = useState(snap?.heartsLost ?? 0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>(snap?.mistakes ?? []);
+  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>(snap?.shortcuts ?? []);
+  const usedCarriers = useRef(new Set<string>(snap?.usedCarriers ?? []));
   const done = useRef(false);
+
+  // Every state change is reported so the host can checkpoint per item (resume after leaving).
+  const { onSnapshot } = p;
+  useEffect(() => {
+    onSnapshot?.({
+      index,
+      results,
+      buckets,
+      pending,
+      heartsLost,
+      mistakes,
+      shortcuts,
+      usedCarriers: [...usedCarriers.current],
+    } satisfies Snap);
+  }, [onSnapshot, index, results, buckets, pending, heartsLost, mistakes, shortcuts]);
 
   const card = cards[index];
 

@@ -14,7 +14,7 @@ import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/sco
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
-import type { EngineProps } from './types';
+import type { EngineProps, ScoredSnapshot } from './types';
 
 export function interpolateCurve(curve: PreviewCurve, x: number): number {
   const pts = curve.points;
@@ -75,8 +75,17 @@ interface Pending {
 
 type Phase = 'adjust' | 'reveal' | 'sandbox';
 
+type Snap = ScoredSnapshot & {
+  values: Record<string, number>;
+  phase: Phase;
+  pending: Pending | null;
+  activePreset: string | null;
+  committed: { value: number; bandIndex: number; accuracy: number; values: Record<string, number> } | null;
+};
+
 /** Sliders under constraints, optionally ending in a consequence simulation. */
 export function Allocator(p: EngineProps<AllocatorConfig>) {
+  const snap = p.snapshot as Partial<Snap> | undefined;
   const cats = p.config.categories;
   const editable = useMemo(
     () => (p.onlyItems ? cats.filter((c) => p.onlyItems!.includes(c.id)) : cats),
@@ -87,26 +96,43 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
     for (const c of cats) v[c.id] = editable.includes(c) ? c.initial : (c.target[0] + c.target[1]) / 2;
     return v;
   }, [cats, editable]);
-  const [values, setValues] = useState<Record<string, number>>(initialValues);
-  const [phase, setPhase] = useState<Phase>('adjust');
-  const [pending, setPending] = useState<Pending | null>(null);
+  const [values, setValues] = useState<Record<string, number>>(snap?.values ?? initialValues);
+  const [phase, setPhase] = useState<Phase>(snap?.phase ?? 'adjust');
+  const [pending, setPending] = useState<Pending | null>(snap?.pending ?? null);
 
   const { onHold } = p;
   useEffect(() => {
     onHold?.(!!pending || phase !== 'adjust');
   }, [pending, phase, onHold]);
-  const [heartsLost, setHeartsLost] = useState(0);
-  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
-  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);
-  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [heartsLost, setHeartsLost] = useState(snap?.heartsLost ?? 0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>(snap?.mistakes ?? []);
+  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>(snap?.shortcuts ?? []);
+  const [activePreset, setActivePreset] = useState<string | null>(snap?.activePreset ?? null);
   const [committed, setCommitted] = useState<{
     value: number;
     bandIndex: number;
     accuracy: number;
     values: Record<string, number>;
-  } | null>(null);
-  const usedCarriers = useRef(new Set<string>());
+  } | null>(snap?.committed ?? null);
+  const usedCarriers = useRef(new Set<string>(snap?.usedCarriers ?? []));
   const done = useRef(false);
+
+  // Every state change is reported so the host can checkpoint per item (resume after leaving).
+  const { onSnapshot } = p;
+  useEffect(() => {
+    onSnapshot?.({
+      values,
+      phase,
+      pending,
+      activePreset,
+      committed,
+      heartsLost,
+      mistakes,
+      shortcuts,
+      usedCarriers: [...usedCarriers.current],
+    } satisfies Snap);
+  }, [onSnapshot, values, phase, pending, activePreset, committed, heartsLost, mistakes, shortcuts]);
+
   const sim = p.config.simulation;
   const simValue = sim ? (values[sim.input.categoryId] ?? 0) : 0;
 

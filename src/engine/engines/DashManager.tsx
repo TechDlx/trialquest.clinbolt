@@ -4,7 +4,7 @@ import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { RichText } from '@/components/RichText';
 import { Feedback, adaptFeedback } from './Feedback';
-import type { EngineProps } from './types';
+import type { EngineProps, ScoredSnapshot } from './types';
 
 interface Live {
   id: string;
@@ -16,35 +16,62 @@ interface Live {
 
 const TICK = 250;
 
+interface Pending {
+  kind: 'correct' | 'wrong' | 'shortcut';
+  title: string;
+  confirm?: string;
+  explanation: string;
+  note?: string;
+}
+
+type Snap = ScoredSnapshot & {
+  elapsed: number;
+  live: Record<string, Live>;
+  selected: string | null;
+  pending: Pending | null;
+};
+
 /** Queue of items with patience bars; select an item, tap the right station in order. */
 export function DashManager(p: EngineProps<DashConfig>) {
   const items = p.onlyItems ? p.config.items.filter((i) => p.onlyItems!.includes(i.id)) : p.config.items;
   const patienceScale = p.onlyItems ? 1.5 : 1;
+  const snap = p.snapshot as Partial<Snap> | undefined;
   const [, setElapsed] = useState(0);
-  const [live, setLive] = useState<Record<string, Live>>({});
-  const [selected, setSelected] = useState<string | null>(null);
-  const [pending, setPending] = useState<{
-    kind: 'correct' | 'wrong' | 'shortcut';
-    title: string;
-    confirm?: string;
-    explanation: string;
-    note?: string;
-  } | null>(null);
+  const [live, setLive] = useState<Record<string, Live>>(snap?.live ?? {});
+  const [selected, setSelected] = useState<string | null>(snap?.selected ?? null);
+  const [pending, setPending] = useState<Pending | null>(snap?.pending ?? null);
 
   const { onHold } = p;
   useEffect(() => {
     onHold?.(!!pending);
   }, [pending, onHold]);
-  const [heartsLost, setHeartsLost] = useState(0);
-  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
-  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);
-  const usedCarriers = useRef(new Set<string>());
+  const [heartsLost, setHeartsLost] = useState(snap?.heartsLost ?? 0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>(snap?.mistakes ?? []);
+  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>(snap?.shortcuts ?? []);
+  const usedCarriers = useRef(new Set<string>(snap?.usedCarriers ?? []));
   const done = useRef(false);
   const liveRef = useRef(live);
-  const elapsedRef = useRef(0);
+  const elapsedRef = useRef(snap?.elapsed ?? 0);
   useEffect(() => {
     liveRef.current = live;
   }, [live]);
+  // Checkpoint on arrivals, steps and outcomes, not on every patience tick.
+  const liveKey = Object.values(live)
+    .map((l) => `${l.id}:${l.step}:${l.outcome ?? ''}`)
+    .join(',');
+  const { onSnapshot } = p;
+  useEffect(() => {
+    onSnapshot?.({
+      elapsed: elapsedRef.current,
+      live: liveRef.current,
+      selected,
+      pending,
+      heartsLost,
+      mistakes,
+      shortcuts,
+      usedCarriers: [...usedCarriers.current],
+    } satisfies Snap);
+  }, [onSnapshot, liveKey, selected, pending, heartsLost, mistakes, shortcuts]);
 
   const finish = useCallback(
     (state: Record<string, Live>) => {

@@ -7,7 +7,7 @@ import { findNodeOfChoice } from '@/engine/registry';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
-import type { EngineProps } from './types';
+import type { EngineProps, ScoredSnapshot } from './types';
 
 const QUALITY: Record<ScenarioChoice['quality'], number> = { best: 1, ok: 0.5, bad: 0 };
 
@@ -20,6 +20,12 @@ interface Pending {
   next: string;
 }
 
+type Snap = ScoredSnapshot & {
+  nodeId: string;
+  pending: Pending | null;
+  decisions: { choiceId: string; quality: number; outcome: ItemOutcome }[];
+};
+
 /** Dialogue tree. `onlyItems` = [choiceId] replays the single decision that contains that choice. */
 export function Branching(p: EngineProps<BranchingConfig>) {
   const startId = useMemo(() => {
@@ -27,21 +33,36 @@ export function Branching(p: EngineProps<BranchingConfig>) {
     return p.config.start;
   }, [p.config, p.onlyItems]);
   const single = !!p.onlyItems?.length;
-  const [nodeId, setNodeId] = useState(startId);
-  const [pending, setPending] = useState<Pending | null>(null);
+  const snap = p.snapshot as Partial<Snap> | undefined;
+  const [nodeId, setNodeId] = useState(snap?.nodeId ?? startId);
+  const [pending, setPending] = useState<Pending | null>(snap?.pending ?? null);
 
   const { onHold } = p;
   useEffect(() => {
     onHold?.(!!pending);
   }, [pending, onHold]);
   const [decisions, setDecisions] = useState<{ choiceId: string; quality: number; outcome: ItemOutcome }[]>(
-    [],
+    snap?.decisions ?? [],
   );
-  const [heartsLost, setHeartsLost] = useState(0);
-  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
-  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);
-  const usedCarriers = useRef(new Set<string>());
+  const [heartsLost, setHeartsLost] = useState(snap?.heartsLost ?? 0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>(snap?.mistakes ?? []);
+  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>(snap?.shortcuts ?? []);
+  const usedCarriers = useRef(new Set<string>(snap?.usedCarriers ?? []));
   const done = useRef(false);
+
+  // Every state change is reported so the host can checkpoint per item (resume after leaving).
+  const { onSnapshot } = p;
+  useEffect(() => {
+    onSnapshot?.({
+      nodeId,
+      pending,
+      decisions,
+      heartsLost,
+      mistakes,
+      shortcuts,
+      usedCarriers: [...usedCarriers.current],
+    } satisfies Snap);
+  }, [onSnapshot, nodeId, pending, decisions, heartsLost, mistakes, shortcuts]);
 
   const node = p.config.nodes.find((n) => n.id === nodeId);
 

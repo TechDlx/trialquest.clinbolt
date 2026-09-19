@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MainPathConfig, Stage, World } from '@/content/types';
 import { economy } from '@/content/economy';
 import { Button } from '@/components/Button';
@@ -6,7 +6,7 @@ import { TimerBar } from '@/components/Hud';
 import { RichText } from '@/components/RichText';
 import { Speech } from '@/components/Mascot';
 import { EngineHost, configSeconds } from './EngineHost';
-import type { EngineProps } from './engines/types';
+import type { EngineProps, EngineSnapshot } from './engines/types';
 import { useCountdown } from './useCountdown';
 import type { BuiltLevel } from './variants';
 import { aggregateStages } from './pipeline';
@@ -23,11 +23,23 @@ export interface StageRunnerProps extends Pick<
   relaxed: boolean;
   paused: boolean;
   onComplete: (aggregate: EngineResult, byStage: Record<string, EngineResult>) => void;
-  /** Resume from a saved checkpoint: completed stage results and the stage to start at. */
+  /** Resume from a saved checkpoint: completed stage results, the stage to start at, and that stage's in-progress state. */
   initialByStage?: Record<string, EngineResult>;
   initialIndex?: number;
-  /** Called after every completed stage so the host can persist a checkpoint. */
-  onStageDone?: (byStage: Record<string, EngineResult>, nextIndex: number) => void;
+  initialEngine?: EngineSnapshot;
+  initialRemaining?: number;
+  /** Called after every completed stage and after every engine state change, so the host can persist a checkpoint. */
+  onCheckpoint?: (c: StageCheckpoint) => void;
+}
+
+export interface StageCheckpoint {
+  /** Stage being played (or, with no `engine`, the next stage to start). */
+  nextIndex: number;
+  byStage: Record<string, EngineResult>;
+  /** The current stage's engine state; absent between stages. */
+  engine?: EngineSnapshot;
+  /** Seconds left on the stage clock when the engine state was saved. */
+  remaining?: number;
 }
 
 /** Runs a level's stages in order: stage card → engine → next. Aggregates results by weight. */
@@ -43,10 +55,13 @@ export function StageRunner({
   onComplete,
   initialByStage = {},
   initialIndex = 0,
-  onStageDone,
+  initialEngine,
+  initialRemaining,
+  onCheckpoint,
 }: StageRunnerProps) {
   const [index, setIndex] = useState(initialIndex);
-  const [phase, setPhase] = useState<'card' | 'play'>('card');
+  // A saved engine state means the player was mid-stage: skip the stage card and drop back in.
+  const [phase, setPhase] = useState<'card' | 'play'>(initialEngine ? 'play' : 'card');
   const [byStage, setByStage] = useState<Record<string, EngineResult>>(initialByStage);
   const [promptDone, setPromptDone] = useState(false);
   const [held, setHeld] = useState(false);
@@ -60,7 +75,24 @@ export function StageRunner({
     enabled: timed,
     running: phase === 'play' && !paused && !held,
     resetKey: `${level.id}:${stage.id}:${seed}`,
+    initialRemaining,
   });
+  const remainingRef = useRef(countdown.remaining);
+  useEffect(() => {
+    remainingRef.current = countdown.remaining;
+  }, [countdown.remaining]);
+
+  const onSnapshot = useCallback(
+    (engine: EngineSnapshot) => {
+      onCheckpoint?.({
+        nextIndex: index,
+        byStage,
+        engine,
+        remaining: timed ? remainingRef.current : undefined,
+      });
+    },
+    [onCheckpoint, index, byStage, timed],
+  );
 
   const onStageComplete = useCallback(
     (r: EngineResult) => {
@@ -68,7 +100,7 @@ export function StageRunner({
       const next = { ...byStage, [stage.id]: r };
       setByStage(next);
       setHeld(false);
-      onStageDone?.(next, index + 1);
+      onCheckpoint?.({ nextIndex: index + 1, byStage: next });
       if (index + 1 < level.stages.length) {
         setIndex(index + 1);
         setPhase('card');
@@ -83,7 +115,7 @@ export function StageRunner({
         );
       }
     },
-    [byStage, stage.id, index, level.id, level.stages, onComplete, onStageDone],
+    [byStage, stage.id, index, level.id, level.stages, onComplete, onCheckpoint],
   );
 
   const showPrompt = index === 0 && level.shortcutPrompt && !promptDone;
@@ -163,6 +195,8 @@ export function StageRunner({
         onMeters={onMeters}
         onHold={setHeld}
         onComplete={onStageComplete}
+        snapshot={index === initialIndex ? initialEngine : undefined}
+        onSnapshot={onSnapshot}
       />
     </div>
   );

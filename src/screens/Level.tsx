@@ -20,7 +20,7 @@ import { buildLevel } from '@/engine/variants';
 import { evaluateEmits } from '@/engine/artifacts';
 import { msToNextHeart } from '@/engine/hearts';
 import { TaskShell } from '@/engine/TaskShell';
-import { StageRunner } from '@/engine/StageRunner';
+import { StageRunner, type StageCheckpoint } from '@/engine/StageRunner';
 import { Button } from '@/components/Button';
 import { Page, TopBar } from '@/components/Layout';
 import { RichText } from '@/components/RichText';
@@ -56,7 +56,8 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   // Out of hearts mid-level: the engine stays mounted (clock held) while the player recovers a heart.
   const [heartsGate, setHeartsGate] = useState(false);
   // Checkpoint of the attempt in progress: completed stages and where to resume.
-  const [resumeFrom, setResumeFrom] = useState<Pick<LevelAttempt, 'nextIndex' | 'byStage'>>();
+  const [resumeFrom, setResumeFrom] =
+    useState<Pick<LevelAttempt, 'nextIndex' | 'byStage' | 'engine' | 'remaining'>>();
   const savedAttempt = isLab ? undefined : progress.attempts[levelId];
   const freeUsed = useRef(false);
   const usedCarriers = useRef(new Set<string>());
@@ -89,7 +90,16 @@ export function LevelScreen({ levelId }: { levelId: string }) {
       setPaused(false);
       setHeartsGate(false);
       setSeed(attempt?.seed ?? (Date.now() % 1_000_000) + 1);
-      setResumeFrom(attempt ? { nextIndex: attempt.nextIndex, byStage: attempt.byStage } : undefined);
+      setResumeFrom(
+        attempt
+          ? {
+              nextIndex: attempt.nextIndex,
+              byStage: attempt.byStage,
+              engine: attempt.engine,
+              remaining: attempt.remaining,
+            }
+          : undefined,
+      );
       const built = raw ? buildLevel(raw, useProgress.getState().artifacts) : undefined;
       setLevel(built);
       if (raw && !attempt) {
@@ -107,10 +117,10 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   const startFresh = useCallback(() => start(), [start]);
   const resume = useCallback(() => start(savedAttempt), [start, savedAttempt]);
 
-  const onStageDone = useCallback(
-    (byStage: Record<string, EngineResult>, nextIndex: number) => {
+  const onCheckpoint = useCallback(
+    (c: StageCheckpoint) => {
       if (!raw || isLab) return;
-      useProgress.getState().saveAttempt(raw.id, { seed, nextIndex, byStage, freeUsed: freeUsed.current });
+      useProgress.getState().saveAttempt(raw.id, { seed, ...c, freeUsed: freeUsed.current });
     },
     [raw, isLab, seed],
   );
@@ -253,11 +263,11 @@ export function LevelScreen({ levelId }: { levelId: string }) {
               Open the Codex
             </Button>
           </div>
-        ) : savedAttempt && savedAttempt.nextIndex > 0 ? (
+        ) : savedAttempt && (savedAttempt.nextIndex > 0 || savedAttempt.engine) ? (
           <div className="mt-4 flex flex-col gap-2">
             <Button size="lg" full onClick={resume} data-testid="resume-level">
-              Continue from stage {Math.min(savedAttempt.nextIndex, level.stages.length - 1) + 1} of{' '}
-              {level.stages.length}
+              {savedAttempt.engine ? 'Continue where you left off' : 'Continue'} (stage{' '}
+              {Math.min(savedAttempt.nextIndex, level.stages.length - 1) + 1} of {level.stages.length})
             </Button>
             <Button variant="ghost" full onClick={startFresh} data-testid="start-level">
               Start over
@@ -294,9 +304,11 @@ export function LevelScreen({ levelId }: { levelId: string }) {
           onShortcut={onShortcut}
           onMeters={applyDelta}
           onComplete={onComplete}
-          onStageDone={onStageDone}
+          onCheckpoint={onCheckpoint}
           initialIndex={resumeFrom?.nextIndex}
           initialByStage={resumeFrom?.byStage}
+          initialEngine={resumeFrom?.engine}
+          initialRemaining={resumeFrom?.remaining}
         />
         <HeartsSheet
           open={heartsGate}

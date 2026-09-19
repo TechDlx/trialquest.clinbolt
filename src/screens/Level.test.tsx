@@ -149,7 +149,7 @@ describe('Level screen: w1-l3 end to end', () => {
     unmount(); // e.g. quit to the map to collect hearts
 
     render(<LevelScreen levelId="w1-l3" />);
-    expect(screen.getByTestId('resume-level')).toHaveTextContent('Continue from stage 2 of 2');
+    expect(screen.getByTestId('resume-level')).toHaveTextContent('Continue (stage 2 of 2)');
     fireEvent.click(screen.getByTestId('resume-level'));
     expect(screen.getByTestId('start-stage-dose')).toBeInTheDocument(); // straight to stage 2
     fireEvent.click(screen.getByTestId('start-stage-dose'));
@@ -162,5 +162,54 @@ describe('Level screen: w1-l3 end to end', () => {
     expect(s.attempts['w1-l3']).toBeUndefined();
     expect(s.levels['w1-l3']!.stars).toBe(3); // stage 1 results carried over
     expect(s.artifacts['dose.starting']).toMatchObject({ tag: 'standard' });
+  });
+
+  it('quitting mid-stage resumes on the same card with its explanation still up and the clock where it was', async () => {
+    useSettings.getState().setRelaxed(false);
+    const { unmount } = render(<LevelScreen levelId="w1-l3" />);
+    fireEvent.click(screen.getByTestId('start-level'));
+    fireEvent.click(screen.getByTestId('start-stage-findings'));
+    const cfg = content.levelById['w1-l3']!.stages[0]!.game as BucketSortConfig;
+    // Card 1 right, card 2 wrong (free), then leave with the explanation open.
+    const first = cfg.cards.find(
+      (c) => strip(c.text) === screen.getByTestId('bucket-card').textContent!.trim(),
+    )!;
+    fireEvent.click(screen.getByTestId(`bucket-${first.bucketId}`));
+    await gone();
+    const stuckOn = screen.getByTestId('bucket-card').textContent!.trim();
+    const second = cfg.cards.find((c) => strip(c.text) === stuckOn)!;
+    const wrongBucket = cfg.buckets.find((b) => b.id !== second.bucketId && b.id !== 'noise')!.id;
+    fireEvent.click(screen.getByTestId(`bucket-${wrongBucket}`));
+    expect(screen.getByTestId('engine-next')).toBeInTheDocument();
+    const saved = useProgress.getState().attempts['w1-l3']!;
+    expect(saved.nextIndex).toBe(0);
+    expect(saved.engine).toMatchObject({
+      index: 1,
+      results: { [first.id]: 'correct', [second.id]: 'wrong' },
+    });
+    expect(saved.remaining).toBeGreaterThan(0);
+    unmount();
+
+    render(<LevelScreen levelId="w1-l3" />);
+    expect(screen.getByTestId('resume-level')).toHaveTextContent(
+      'Continue where you left off (stage 1 of 2)',
+    );
+    fireEvent.click(screen.getByTestId('resume-level'));
+    // No stage card: straight back to card 2 with the explanation still showing.
+    expect(screen.getByTestId('engine-progress')).toHaveTextContent('Card 2 of');
+    expect(screen.getByTestId('bucket-card').textContent!.trim()).toBe(stuckOn);
+    fireEvent.click(screen.getByTestId('engine-next'));
+    expect(screen.getByTestId('engine-progress')).toHaveTextContent('Card 3 of');
+    for (let i = 2; i < cfg.cards.length; i++) {
+      const card = cfg.cards.find(
+        (c) => strip(c.text) === screen.getByTestId('bucket-card').textContent!.trim(),
+      )!;
+      fireEvent.click(screen.getByTestId(`bucket-${card.bucketId}`));
+      await gone();
+    }
+    expect(screen.getByTestId('start-stage-dose')).toBeInTheDocument();
+    // The earlier wrong turn is still in the stage result, not counted twice.
+    expect(useProgress.getState().attempts['w1-l3']!.byStage.findings!.mistakes).toHaveLength(1);
+    expect(useProgress.getState().hearts).toBe(5);
   });
 });

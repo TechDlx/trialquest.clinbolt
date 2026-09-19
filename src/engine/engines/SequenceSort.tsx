@@ -5,7 +5,7 @@ import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/sco
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
-import { seededShuffle, type EngineProps } from './types';
+import { seededShuffle, type EngineProps, type ScoredSnapshot } from './types';
 
 interface Pending {
   kind: FeedbackKind;
@@ -16,24 +16,49 @@ interface Pending {
   finish?: boolean;
 }
 
+type Snap = ScoredSnapshot & {
+  order: string[];
+  selected: string | null;
+  pending: Pending | null;
+  locked: Record<string, boolean>;
+};
+
 /** Put items in order with up/down buttons (or tap two items to swap). Check when ready. */
 export function SequenceSort(p: EngineProps<SequenceSortConfig>) {
+  const snap = p.snapshot as Partial<Snap> | undefined;
   const correctOrder = useMemo(() => {
     const list = p.onlyItems ? p.config.items.filter((i) => p.onlyItems!.includes(i.id)) : p.config.items;
     return list;
   }, [p.config.items, p.onlyItems]);
-  const [order, setOrder] = useState(() => seededShuffle(correctOrder, p.seed).map((i) => i.id));
-  const [selected, setSelected] = useState<string | null>(null);
-  const [pending, setPending] = useState<Pending | null>(null);
+  const [order, setOrder] = useState(
+    () => snap?.order ?? seededShuffle(correctOrder, p.seed).map((i) => i.id),
+  );
+  const [selected, setSelected] = useState<string | null>(snap?.selected ?? null);
+  const [pending, setPending] = useState<Pending | null>(snap?.pending ?? null);
 
   const { onHold } = p;
   useEffect(() => {
     onHold?.(!!pending);
   }, [pending, onHold]);
-  const [locked, setLocked] = useState<Record<string, boolean>>({});
-  const [heartsLost, setHeartsLost] = useState(0);
-  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
+  const [locked, setLocked] = useState<Record<string, boolean>>(snap?.locked ?? {});
+  const [heartsLost, setHeartsLost] = useState(snap?.heartsLost ?? 0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>(snap?.mistakes ?? []);
   const done = useRef(false);
+
+  // Every state change is reported so the host can checkpoint per item (resume after leaving).
+  const { onSnapshot } = p;
+  useEffect(() => {
+    onSnapshot?.({
+      order,
+      selected,
+      pending,
+      locked,
+      heartsLost,
+      mistakes,
+      shortcuts: [],
+      usedCarriers: [],
+    } satisfies Snap);
+  }, [onSnapshot, order, selected, pending, locked, heartsLost, mistakes]);
 
   const evaluate = useCallback(
     (o: string[]) => {

@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import { CheckIcon, XIcon } from '@/components/Icons';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
-import { seededShuffle, type EngineProps } from './types';
+import { seededShuffle, type EngineProps, type ScoredSnapshot } from './types';
 
 interface Pending {
   kind: FeedbackKind;
@@ -17,27 +17,52 @@ interface Pending {
   finish?: boolean;
 }
 
+type Snap = ScoredSnapshot & {
+  inspected: string | null;
+  seen: Record<string, boolean>;
+  results: Record<string, ItemOutcome>;
+  accused: string[];
+  pending: Pending | null;
+};
+
 /** Tap a card to inspect it; accuse the one that matches the target. */
 export function Impostor(p: EngineProps<ImpostorConfig>) {
+  const snap = p.snapshot as Partial<Snap> | undefined;
   const cards = useMemo(() => {
     const list = p.onlyItems ? p.config.cards.filter((c) => p.onlyItems!.includes(c.id)) : p.config.cards;
     return seededShuffle(list, p.seed);
   }, [p.config.cards, p.onlyItems, p.seed]);
   const impostorCount = cards.filter((c) => c.impostor).length;
-  const [inspected, setInspected] = useState<string | null>(null);
-  const [seen, setSeen] = useState<Record<string, boolean>>({});
-  const [results, setResults] = useState<Record<string, ItemOutcome>>({});
-  const [accused, setAccused] = useState<string[]>([]);
-  const [pending, setPending] = useState<Pending | null>(null);
+  const [inspected, setInspected] = useState<string | null>(snap?.inspected ?? null);
+  const [seen, setSeen] = useState<Record<string, boolean>>(snap?.seen ?? {});
+  const [results, setResults] = useState<Record<string, ItemOutcome>>(snap?.results ?? {});
+  const [accused, setAccused] = useState<string[]>(snap?.accused ?? []);
+  const [pending, setPending] = useState<Pending | null>(snap?.pending ?? null);
 
   const { onHold } = p;
   useEffect(() => {
     onHold?.(!!pending);
   }, [pending, onHold]);
-  const [heartsLost, setHeartsLost] = useState(0);
-  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
-  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);
+  const [heartsLost, setHeartsLost] = useState(snap?.heartsLost ?? 0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>(snap?.mistakes ?? []);
+  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>(snap?.shortcuts ?? []);
   const done = useRef(false);
+
+  // Every state change is reported so the host can checkpoint per item (resume after leaving).
+  const { onSnapshot } = p;
+  useEffect(() => {
+    onSnapshot?.({
+      inspected,
+      seen,
+      results,
+      accused,
+      pending,
+      heartsLost,
+      mistakes,
+      shortcuts,
+      usedCarriers: [],
+    } satisfies Snap);
+  }, [onSnapshot, inspected, seen, results, accused, pending, heartsLost, mistakes, shortcuts]);
 
   const finish = useCallback(
     (res: Record<string, ItemOutcome>, acc: string[], sc: EngineResult['shortcuts']) => {

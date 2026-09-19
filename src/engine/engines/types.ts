@@ -5,6 +5,17 @@ import type { MistakeFeedback } from '@/engine/quiz-blitz/QuizBlitz';
 export type EngineMode = 'level' | 'crisis' | 'review';
 
 /** Props every main-path engine receives from its host (StageRunner, Crisis, Review). */
+/** Serializable in-progress engine state. Each engine defines its own shape. */
+export type EngineSnapshot = Record<string, unknown>;
+
+/** The scoring state every engine snapshot carries. */
+export interface ScoredSnapshot {
+  heartsLost: number;
+  mistakes: Mistake[];
+  shortcuts: ShortcutEvent[];
+  usedCarriers: string[];
+}
+
 export interface EngineProps<C> {
   config: C;
   /** Restrict to these item ids (review micro-rounds, crisis rounds). */
@@ -25,6 +36,10 @@ export interface EngineProps<C> {
   onComplete: (r: EngineResult) => void;
   /** The engine is showing feedback, a reveal or a sandbox: the host may hold its clock. */
   onHold?: (held: boolean) => void;
+  /** Restore in-progress state saved by `onSnapshot` (same config and seed). */
+  snapshot?: EngineSnapshot;
+  /** Fires after every state change with the engine's serializable state, so the host can checkpoint per item. */
+  onSnapshot?: (s: EngineSnapshot) => void;
 }
 
 export function seededShuffle<T>(arr: T[], seed: number): T[] {

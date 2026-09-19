@@ -4,34 +4,59 @@ import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { RichText } from '@/components/RichText';
 import { Feedback, adaptFeedback } from './Feedback';
-import { seededShuffle, type EngineProps } from './types';
+import { seededShuffle, type EngineProps, type ScoredSnapshot } from './types';
+
+interface Pending {
+  title: string;
+  explanation: string;
+  note?: string;
+  finish?: boolean;
+  confirm?: string;
+  kind: 'correct' | 'wrong';
+}
+
+type Snap = ScoredSnapshot & {
+  left: string | null;
+  matched: Record<string, boolean>;
+  wrong: number;
+  pending: Pending | null;
+};
 
 /** Tap a left item, then a right item. */
 export function MatchPairs(p: EngineProps<MatchPairsConfig>) {
+  const snap = p.snapshot as Partial<Snap> | undefined;
   const pairs = useMemo(
     () => (p.onlyItems ? p.config.pairs.filter((x) => p.onlyItems!.includes(x.id)) : p.config.pairs),
     [p.config.pairs, p.onlyItems],
   );
   const rights = useMemo(() => seededShuffle(pairs, p.seed + 17), [pairs, p.seed]);
-  const [left, setLeft] = useState<string | null>(null);
-  const [matched, setMatched] = useState<Record<string, boolean>>({});
-  const [wrong, setWrong] = useState(0);
-  const [pending, setPending] = useState<{
-    title: string;
-    explanation: string;
-    note?: string;
-    finish?: boolean;
-    confirm?: string;
-    kind: 'correct' | 'wrong';
-  } | null>(null);
+  const [left, setLeft] = useState<string | null>(snap?.left ?? null);
+  const [matched, setMatched] = useState<Record<string, boolean>>(snap?.matched ?? {});
+  const [wrong, setWrong] = useState(snap?.wrong ?? 0);
+  const [pending, setPending] = useState<Pending | null>(snap?.pending ?? null);
 
   const { onHold } = p;
   useEffect(() => {
     onHold?.(!!pending);
   }, [pending, onHold]);
-  const [heartsLost, setHeartsLost] = useState(0);
-  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
+  const [heartsLost, setHeartsLost] = useState(snap?.heartsLost ?? 0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>(snap?.mistakes ?? []);
   const done = useRef(false);
+
+  // Every state change is reported so the host can checkpoint per item (resume after leaving).
+  const { onSnapshot } = p;
+  useEffect(() => {
+    onSnapshot?.({
+      left,
+      matched,
+      wrong,
+      pending,
+      heartsLost,
+      mistakes,
+      shortcuts: [],
+      usedCarriers: [],
+    } satisfies Snap);
+  }, [onSnapshot, left, matched, wrong, pending, heartsLost, mistakes]);
 
   const finish = useCallback(
     (m: Record<string, boolean>, w: number) => {

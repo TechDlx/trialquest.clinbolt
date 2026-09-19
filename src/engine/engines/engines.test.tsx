@@ -20,6 +20,7 @@ import { SequenceSort } from './SequenceSort';
 import { MatchPairs } from './MatchPairs';
 import { DashManager } from './DashManager';
 import type { EngineResult } from '@/engine/scoring';
+import type { EngineSnapshot } from './types';
 
 function host() {
   return {
@@ -362,6 +363,58 @@ describe('SequenceSort / MatchPairs / DashManager', () => {
     expect(r.itemResults).toEqual({ p1: 'correct', p2: 'shortcut' });
     expect(h.onShortcut).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
+  });
+});
+
+describe('snapshots: an engine resumes exactly where it stopped', () => {
+  it('branching: the node, decisions, pending explanation and hearts survive a remount', () => {
+    const h = host();
+    const snaps: EngineSnapshot[] = [];
+    const cfg = w1('w1-l1', 0) as BranchingConfig;
+    const { unmount } = render(<Branching {...h} config={cfg} onSnapshot={(x) => snaps.push(x)} />);
+    fireEvent.click(screen.getByTestId('choice-c-later'));
+    next();
+    fireEvent.click(screen.getByTestId('choice-c-fastest')); // a mistake, explanation left open
+    expect(h.onMistake).toHaveBeenCalledTimes(1);
+    const saved = snaps.at(-1)!;
+    unmount();
+
+    const h2 = host();
+    render(<Branching {...h2} config={cfg} snapshot={saved} />);
+    expect(screen.getByTestId('engine-feedback')).toBeInTheDocument(); // same explanation still up
+    expect(h2.onMistake).not.toHaveBeenCalled(); // not charged again
+    next();
+    fireEvent.click(screen.getByTestId('choice-c-hype'));
+    next();
+    fireEvent.click(screen.getByTestId('branching-finish'));
+    const r = h2.onComplete.mock.calls[0]![0];
+    expect(r.outcomes.endNode).toBe('end-hype');
+    expect(r.mistakes).toHaveLength(1);
+    expect(r.heartsLost).toBe(1);
+    expect(r.itemResults).toMatchObject({ 'c-later': 'wrong', 'c-fastest': 'wrong', 'c-hype': 'shortcut' });
+  });
+
+  it('allocator: a committed simulation resumes in the reveal with the binding value', () => {
+    const h = host();
+    const snaps: EngineSnapshot[] = [];
+    const cfg = w1('w1-l3', 1) as AllocatorConfig;
+    const { unmount } = render(<Allocator {...h} config={cfg} onSnapshot={(x) => snaps.push(x)} />);
+    fireEvent.change(screen.getByTestId('slider-dose'), { target: { value: '0.5' } });
+    fireEvent.click(screen.getByTestId('allocator-commit'));
+    expect(screen.getByTestId('reveal')).toHaveAttribute('data-band', 'standard');
+    const saved = snaps.at(-1)!;
+    unmount();
+
+    const h2 = host();
+    render(<Allocator {...h2} config={cfg} snapshot={saved} />);
+    expect(screen.getByTestId('allocator')).toHaveAttribute('data-phase', 'reveal');
+    expect(screen.getByTestId('reveal')).toHaveAttribute('data-band', 'standard');
+    fireEvent.click(screen.getByTestId('reveal-done'));
+    fireEvent.change(screen.getByTestId('slider-dose'), { target: { value: '4' } });
+    fireEvent.click(screen.getByTestId('sandbox-done'));
+    const r = h2.onComplete.mock.calls[0]![0];
+    expect(r.outcomes.band).toBe('standard');
+    expect(r.outcomes.inputValue).toBe(0.5);
   });
 });
 

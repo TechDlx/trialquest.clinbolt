@@ -6,6 +6,7 @@ import type { ArtifactStore, StoredArtifact } from '@/content/artifacts';
 import { gainHearts, loseHeart as loseHeartPure, refillHearts } from '@/engine/hearts';
 import { dayKey, daysBetween } from '@/engine/dates';
 import type { EngineResult, Stars, XpBreakdown } from '@/engine/scoring';
+import type { EngineSnapshot } from '@/engine/engines/types';
 import { safeStorage, STORAGE_KEYS } from './storage';
 
 export const PROGRESS_VERSION = 2;
@@ -94,8 +95,13 @@ export interface ProgressData {
 
 export interface LevelAttempt {
   seed: number;
+  /** Stage in progress (with `engine`) or the next stage to start. */
   nextIndex: number;
   byStage: Record<string, EngineResult>;
+  /** In-progress state of the current stage's engine, so the level resumes on the same item. */
+  engine?: EngineSnapshot;
+  /** Seconds left on that stage's clock. */
+  remaining?: number;
   freeUsed: boolean;
   savedAt: string;
 }

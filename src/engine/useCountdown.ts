@@ -9,6 +9,8 @@ export interface CountdownOptions {
   onExpire?: () => void;
   /** Change this value to restart the countdown from the full duration. */
   resetKey?: number | string;
+  /** Seconds left to start from on first mount (resuming a checkpoint). Later resets use `seconds`. */
+  initialRemaining?: number;
 }
 
 export interface Countdown {
@@ -31,8 +33,10 @@ export function useCountdown({
   running,
   onExpire,
   resetKey = 0,
+  initialRemaining,
 }: CountdownOptions): Countdown {
-  const [remaining, setRemaining] = useState(seconds);
+  const startRef = useRef(initialRemaining);
+  const [remaining, setRemaining] = useState(initialRemaining ?? seconds);
   const [expired, setExpired] = useState(false);
 
   // Restart when the key or duration changes (React's "adjust state on prop change" pattern).
@@ -48,9 +52,10 @@ export function useCountdown({
     onExpireRef.current = onExpire;
   });
 
-  const remainingRef = useRef(seconds);
+  const remainingRef = useRef(initialRemaining ?? seconds);
   useEffect(() => {
-    remainingRef.current = seconds;
+    remainingRef.current = startRef.current ?? seconds;
+    startRef.current = undefined;
   }, [seconds, resetKey]);
 
   const lastTickRef = useRef<number | null>(null);
