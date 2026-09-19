@@ -27,9 +27,10 @@ import {
   PatchError,
   applyStagePatch,
 } from '@/engine/variants';
+import { BUDGETS, cardFrontWords, estimateLevel, words } from './estimate';
 
 export interface Issue {
-  severity: 'fail' | 'warn';
+  severity: 'fail' | 'warn' | 'info';
   file: string;
   id: string;
   message: string;
@@ -109,7 +110,7 @@ export function validateContent(c: Content): Issue[] {
     fail('src/content/worlds.ts', 'nodes', 'Node ids are not globally unique.', 'Rename the duplicate node.');
   const nodeIndex = (id: string) => nodeOrder.indexOf(id);
 
-  for (const w of c.worlds.filter((x) => x.status === 'ready')) validateReadyWorld(c, w, fail);
+  for (const w of c.worlds.filter((x) => x.status === 'ready')) validateReadyWorld(c, w, fail, warn);
 
   for (const role of c.roles) {
     for (const id of [...role.card.receivesFrom, ...role.card.handsOffTo]) {
@@ -203,6 +204,13 @@ export function validateContent(c: Content): Issue[] {
       fail(file, level.id, 'Debrief hand-off line is missing.', 'Say who receives the work next.');
     if (!c.roleRefById[level.roleId])
       fail(file, level.id, `roleId "${level.roleId}" is not in roleIndex.`, 'Use a real role id.');
+    budget(warn, file, level.id, 'intro', level.intro, BUDGETS.levelIntro);
+    budget(warn, file, level.id, 'debrief.learned', level.debrief.learned, BUDGETS.debriefLearned);
+    const est = estimateLevel(level, c.roleById[level.roleId]);
+    const estMsg = `Estimated ${est.seconds} s at 200 wpm (${est.words.total} words, ${est.decisions} decisions)`;
+    if (est.seconds > BUDGETS.levelSeconds)
+      warn(file, level.id, `${estMsg}; budget is ${BUDGETS.levelSeconds} s.`, 'Trim copy or reduce items.');
+    else issues.push({ severity: 'info', file, id: level.id, message: `${estMsg}.`, fix: '' });
 
     const stageIds = level.stages.map((s) => s.id);
     if (new Set(stageIds).size !== stageIds.length)
@@ -267,13 +275,26 @@ export function validateContent(c: Content): Issue[] {
     for (const key of consumedKeys(level)) {
       const emitter = emittedBy[key];
       if (!emitter) {
-        // A consumer in a planned world may be authored before its emitter (Milestone 3); it becomes a failure once the world is ready.
-        (world?.status === 'ready' ? fail : warn)(
-          file,
-          level.id,
-          `Consumes "${key}" but no level emits it${world?.status === 'ready' ? '' : ' yet (world is planned)'}.`,
-          'Add an emits entry to an earlier level.',
-        );
+        // Missing emitters FAIL, unless the key or the level is marked planned: then they are listed
+        // in the summary and skipped, until the owning world is released.
+        const plannedRef = !!(artifactRegistry[key] as { planned?: boolean }).planned || !!level.planned;
+        if (plannedRef && world?.status !== 'ready')
+          issues.push({
+            severity: 'info',
+            file,
+            id: level.id,
+            message: `Planned: consumes "${key}" whose emitting level is not written yet.`,
+            fix: 'Write the emitter before releasing the world.',
+          });
+        else
+          fail(
+            file,
+            level.id,
+            `Consumes "${key}" but no level emits it${plannedRef ? ' and the world is released' : ''}.`,
+            plannedRef
+              ? 'Write the emitting level, or keep the world planned.'
+              : 'Add an emits entry to an earlier level, or mark the key or level planned: true.',
+          );
       } else if (nodeIndex(emitter) >= nodeIndex(level.id) && nodeIndex(level.id) >= 0)
         fail(
           file,
@@ -387,11 +408,7 @@ export function validateContent(c: Content): Issue[] {
   return issues;
 }
 
-function validateReadyWorld(
-  c: Content,
-  world: World,
-  fail: (f: string, i: string, m: string, x: string) => void,
-) {
+function validateReadyWorld(c: Content, world: World, fail: Fail, warn: Fail) {
   for (const node of world.nodes) {
     if (node.kind === 'level') {
       const role = c.roleById[node.roleId];
@@ -401,6 +418,13 @@ function validateReadyWorld(
         continue;
       }
       const card = role.card;
+      if (cardFrontWords(role) > BUDGETS.cardFront)
+        warn(
+          rf,
+          role.id,
+          `Card front is ${cardFrontWords(role)} words; budget is ${BUDGETS.cardFront}.`,
+          'Shorten "What I do".',
+        );
       if (card.whatIDo.length < 40)
         fail(rf, role.id, '"What I do" is too short.', 'Write 2–3 plain sentences.');
       if (card.responsibilities.length < 3 || card.responsibilities.length > 5)
@@ -468,13 +492,25 @@ export function hasItem(config: MiniGameConfig, itemId: string): boolean {
 
 type Fail = (file: string, id: string, message: string, fix: string) => void;
 
+/** WARN when a copy field is over its word budget (docs/CONTENT_GUIDE.md §12). */
+function budget(warn: Fail, file: string, id: string, field: string, text: string | undefined, max: number) {
+  const n = words(text);
+  if (n > max)
+    warn(file, id, `${field} is ${n} words; budget is ${max}.`, 'Tighten the sentence; keep the fact.');
+}
+
 function validateExplained(
   file: string,
   id: string,
-  e: { explanation?: string; consequence?: string; conceptId?: string },
+  e: { explanation?: string; consequence?: string; conceptId?: string; confirm?: string; text?: string },
   fail: Fail,
   c: Content,
+  warn: Fail = () => {},
 ) {
+  budget(warn, file, id, 'explanation', e.explanation, BUDGETS.explanation);
+  budget(warn, file, id, 'consequence', e.consequence, BUDGETS.consequence);
+  budget(warn, file, id, 'confirm', e.confirm, BUDGETS.confirm);
+  if (typeof e.text === 'string') budget(warn, file, id, 'text', e.text, BUDGETS.cardText);
   if (!e.explanation || e.explanation.length < 10)
     fail(file, id, 'Missing explanation (why the right answer is right).', 'Add one or two sentences.');
   if (!e.consequence || e.consequence.length < 10)
@@ -520,7 +556,7 @@ export function validateStage(file: string, id: string, stage: Stage, fail: Fail
       'Item ids must be unique across all collections of a stage.',
     );
   const explained = (items: { id: string }[]) =>
-    items.forEach((it) => validateExplained(file, `${id}/${it.id}`, it as never, fail, c));
+    items.forEach((it) => validateExplained(file, `${id}/${it.id}`, it as never, fail, c, warn));
 
   switch (g.engine) {
     case 'bucket-sort': {
@@ -623,10 +659,12 @@ function validateBranching(file: string, id: string, g: BranchingConfig, fail: F
       );
     if (n.choices?.length && n.end)
       fail(file, `${id}/${n.id}`, 'Node has both choices and an end.', 'Pick one.');
+    budget(warn, file, `${id}/${n.id}`, 'node text', n.text, BUDGETS.scenarioNode);
     for (const ch of n.choices ?? []) {
+      budget(warn, file, `${id}/${ch.id}`, 'choice', ch.text, BUDGETS.choice);
       if (!nodeIds.has(ch.next))
         fail(file, `${id}/${ch.id}`, `Choice goes to unknown node "${ch.next}".`, 'Point next at a node id.');
-      validateExplained(file, `${id}/${ch.id}`, ch, fail, c);
+      validateExplained(file, `${id}/${ch.id}`, ch, fail, c, warn);
       if (ch.shortcut && ch.quality !== 'bad')
         fail(
           file,
@@ -867,11 +905,11 @@ function validateCrisis(
     );
   const pool =
     crisis.rounds.reduce((s, r) => s + r.seconds, 0) * (1 + (crisis.slack ?? economy.crisis.slack));
-  if (crisis.worldId === 'w1' && pool > economy.crisis.world1PoolMax)
+  if (pool > economy.crisis.poolMax)
     fail(
       file,
       crisis.id,
-      `World 1 crisis pool is ${Math.round(pool)} s; must be ≤ ${economy.crisis.world1PoolMax}.`,
+      `Crisis pool is ${Math.round(pool)} s; must be ≤ ${economy.crisis.poolMax}.`,
       'Shorten the rounds.',
     );
   const localEmitted = new Set<string>();

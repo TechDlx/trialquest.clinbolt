@@ -3,12 +3,13 @@ import type { BucketSortConfig } from '@/content/types';
 import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { RichText } from '@/components/RichText';
-import { Feedback, type FeedbackKind } from './Feedback';
+import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import { seededShuffle, type EngineProps } from './types';
 
 interface Pending {
   kind: FeedbackKind;
   title: string;
+  confirm?: string;
   correctAnswer?: string;
   explanation: string;
   note?: string;
@@ -91,7 +92,12 @@ export function BucketSort(p: EngineProps<BucketSortConfig>) {
     }
     if (bucketId === card.bucketId) {
       setResults((r) => ({ ...r, [card.id]: 'correct' }));
-      setPending({ kind: 'correct', title: 'Correct!', explanation: card.explanation });
+      setPending({
+        kind: 'correct',
+        title: 'Correct!',
+        confirm: card.confirm,
+        explanation: card.explanation,
+      });
       return;
     }
     const m = {
@@ -140,6 +146,8 @@ export function BucketSort(p: EngineProps<BucketSortConfig>) {
   if (!card) return null;
   const correctSoFar = Object.values(results).filter((v) => v === 'correct').length;
 
+  const shown = adaptFeedback(p.mode, pending);
+
   return (
     <div className="flex flex-1 flex-col gap-3" data-testid="bucket-sort">
       <div className="flex items-center justify-between text-sm text-muted">
@@ -174,13 +182,16 @@ export function BucketSort(p: EngineProps<BucketSortConfig>) {
           </button>
         ))}
       </div>
-      {pending && (
+      {shown && (
         <Feedback
-          kind={pending.kind}
-          title={pending.title}
-          correctAnswer={pending.correctAnswer}
-          explanation={pending.explanation}
-          note={pending.note}
+          auto={shown.auto}
+          inline={shown.inline}
+          ms={shown.ms}
+          kind={shown.kind}
+          title={shown.title}
+          correctAnswer={shown.correctAnswer}
+          explanation={shown.explanation}
+          note={shown.note}
           nextLabel={index + 1 < cards.length ? 'Next card' : 'Finish'}
           onNext={next}
         />

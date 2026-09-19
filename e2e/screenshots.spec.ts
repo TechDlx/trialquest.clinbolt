@@ -64,7 +64,8 @@ test('capture key screens', async ({ page }, info) => {
   // Crisis intro (needs all levels done: fake it via the store)
   await page.evaluate(() => {
     const raw = JSON.parse(window.localStorage.getItem('trialquest.progress')!);
-    for (const id of ['w1-l1', 'w1-l2', 'w1-l3', 'w1-l4']) raw.state.levels[id] = { stars: 2, bestScore: 70, attempts: 1, completedAt: new Date().toISOString() };
+    for (const id of ['w1-l1', 'w1-l2', 'w1-l3', 'w1-l4'])
+      raw.state.levels[id] = { stars: 2, bestScore: 70, attempts: 1, completedAt: new Date().toISOString() };
     window.localStorage.setItem('trialquest.progress', JSON.stringify(raw));
   });
   await page.goto('/#/map/w1');

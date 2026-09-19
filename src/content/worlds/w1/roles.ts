@@ -75,7 +75,7 @@ export const w1Roles: Role[] = [
     ...ref('preclinical-toxicologist'),
     card: {
       whatIDo:
-        'Before a molecule ever touches a human, I find out what it does to a living body. I run lab and animal studies under strict [[glp|GLP]] rules to learn which doses are safe and which organs to watch, and I calculate the first dose that can be given to people.',
+        'Before a molecule touches a human, I find out what it does to a living body. I run lab and animal studies under strict [[glp|GLP]] rules to learn which doses are safe and which organs to watch, then set the first human dose.',
       responsibilities: [
         'Design and run GLP [[toxicology]] studies',
         'Find the [[noael|NOAEL]] and identify organs at risk',

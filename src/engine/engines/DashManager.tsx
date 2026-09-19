@@ -3,7 +3,7 @@ import type { DashConfig } from '@/content/types';
 import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { RichText } from '@/components/RichText';
-import { Feedback } from './Feedback';
+import { Feedback, adaptFeedback } from './Feedback';
 import type { EngineProps } from './types';
 
 interface Live {
@@ -26,6 +26,7 @@ export function DashManager(p: EngineProps<DashConfig>) {
   const [pending, setPending] = useState<{
     kind: 'correct' | 'wrong' | 'shortcut';
     title: string;
+    confirm?: string;
     explanation: string;
     note?: string;
   } | null>(null);
@@ -188,6 +189,8 @@ export function DashManager(p: EngineProps<DashConfig>) {
 
   const queue = items.filter((it) => live[it.id] && !live[it.id]!.outcome);
 
+  const shown = adaptFeedback(p.mode, pending);
+
   return (
     <div className="flex flex-1 flex-col gap-3" data-testid="dash-manager">
       <p className="text-sm font-semibold">
@@ -246,12 +249,15 @@ export function DashManager(p: EngineProps<DashConfig>) {
           </button>
         ))}
       </div>
-      {pending && (
+      {shown && (
         <Feedback
-          kind={pending.kind}
-          title={pending.title}
-          explanation={pending.explanation}
-          note={pending.note}
+          auto={shown.auto}
+          inline={shown.inline}
+          ms={shown.ms}
+          kind={shown.kind}
+          title={shown.title}
+          explanation={shown.explanation}
+          note={shown.note}
           nextLabel="Continue"
           onNext={() => setPending(null)}
         />

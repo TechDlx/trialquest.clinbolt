@@ -3,7 +3,7 @@ import type { MatchPairsConfig } from '@/content/types';
 import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { RichText } from '@/components/RichText';
-import { Feedback } from './Feedback';
+import { Feedback, adaptFeedback } from './Feedback';
 import { seededShuffle, type EngineProps } from './types';
 
 /** Tap a left item, then a right item. */
@@ -21,6 +21,7 @@ export function MatchPairs(p: EngineProps<MatchPairsConfig>) {
     explanation: string;
     note?: string;
     finish?: boolean;
+    confirm?: string;
     kind: 'correct' | 'wrong';
   } | null>(null);
 
@@ -66,7 +67,13 @@ export function MatchPairs(p: EngineProps<MatchPairsConfig>) {
       setMatched(next);
       setLeft(null);
       const all = Object.keys(next).length === pairs.length;
-      setPending({ kind: 'correct', title: 'Match!', explanation: pair.explanation, finish: all });
+      setPending({
+        kind: 'correct',
+        title: 'Match!',
+        confirm: pair.confirm,
+        explanation: pair.explanation,
+        finish: all,
+      });
       return;
     }
     const chosen = pairs.find((x) => x.id === rightId)!;
@@ -92,6 +99,8 @@ export function MatchPairs(p: EngineProps<MatchPairsConfig>) {
     setPending(null);
     if (wasFinish) finish(matched, wrong);
   };
+
+  const shown = adaptFeedback(p.mode, pending);
 
   return (
     <div className="flex flex-1 flex-col gap-3" data-testid="match-pairs">
@@ -129,13 +138,16 @@ export function MatchPairs(p: EngineProps<MatchPairsConfig>) {
           ))}
         </div>
       </div>
-      {pending && (
+      {shown && (
         <Feedback
-          kind={pending.kind}
-          title={pending.title}
-          explanation={pending.explanation}
-          note={pending.note}
-          nextLabel={pending.finish ? 'Finish' : 'Next'}
+          auto={shown.auto}
+          inline={shown.inline}
+          ms={shown.ms}
+          kind={shown.kind}
+          title={shown.title}
+          explanation={shown.explanation}
+          note={shown.note}
+          nextLabel={shown.finish ? 'Finish' : 'Next'}
           onNext={next}
         />
       )}

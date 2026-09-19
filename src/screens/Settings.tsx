@@ -5,6 +5,7 @@ import { navigate } from '@/app/router';
 import { Page, TopBar, Disclaimer } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
+import { clearSegments, timingSummary, useTimingSegments } from '@/engine/timing';
 
 function Toggle({
   label,
@@ -133,6 +134,29 @@ export function SettingsScreen() {
         </Button>
       </section>
 
+      <section className="mt-6">
+        <h2 className="text-sm font-bold">Developer</h2>
+        <div className="mt-2">
+          <Toggle
+            label="Timing log"
+            hint="Local only. Logs how long each screen takes, for playtests."
+            checked={s.debug}
+            onChange={s.setDebug}
+            testId="setting-debug"
+          />
+        </div>
+        {s.debug && <TimingPanel />}
+        {s.debug && (
+          <a
+            href="#/lab"
+            className="tap mt-2 inline-flex items-center rounded-2xl bg-surface px-4 py-2 text-sm font-semibold shadow-card"
+            data-testid="open-lab"
+          >
+            Open the engine lab
+          </a>
+        )}
+      </section>
+
       <section className="mt-6 text-sm text-muted">
         <h2 className="text-sm font-bold text-fg">About</h2>
         <p className="mt-1">
@@ -176,5 +200,33 @@ export function SettingsScreen() {
         </div>
       </Modal>
     </Page>
+  );
+}
+
+function TimingPanel() {
+  const segments = useTimingSegments();
+  const [copied, setCopied] = useState(false);
+  const summary = timingSummary();
+  const done = segments.filter((x) => x.endedAt);
+  return (
+    <div className="mt-2 rounded-2xl bg-surface p-3 text-sm shadow-card" data-testid="timing-panel">
+      <pre className="max-h-64 overflow-auto whitespace-pre-wrap text-xs">{summary}</pre>
+      <div className="mt-2 flex gap-2">
+        <Button
+          variant="secondary"
+          onClick={() => {
+            navigator.clipboard
+              ?.writeText(summary)
+              .then(() => setCopied(true))
+              .catch(() => setCopied(false));
+          }}
+        >
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+        <Button variant="ghost" onClick={clearSegments} disabled={done.length === 0}>
+          Clear
+        </Button>
+      </div>
+    </div>
   );
 }

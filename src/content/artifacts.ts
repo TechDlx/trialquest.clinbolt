@@ -10,6 +10,8 @@ export interface ArtifactSpecBody {
   tags: readonly string[];
   defaultTag: string;
   fields?: Record<string, { label: string; fallback: string | number }>;
+  /** The emitting level is not written yet; consumers may reference it without failing validation. */
+  planned?: boolean;
 }
 
 export const artifactRegistry = {
@@ -78,6 +80,7 @@ export const artifactRegistry = {
     description: 'How fast the Phase I doses step up, chosen by the Clinical Pharmacologist.',
     tags: ['slow', 'standard', 'fast'],
     defaultTag: 'standard',
+    planned: true,
   },
   'phase1.hold': {
     title: 'Hold resolution',

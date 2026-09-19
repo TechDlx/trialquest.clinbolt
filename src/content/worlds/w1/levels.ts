@@ -27,7 +27,8 @@ export const w1Levels: Level[] = [
               choices: [
                 {
                   id: 'c-yes',
-                  text: 'Yes. That interview is how researchers learn what a bad day is, and what a treatment would have to change.',
+                  text: 'Yes. That is how researchers learn what a bad day is, and what to change.',
+                  confirm: 'Right: research starts by listening to patients.',
                   quality: 'best',
                   next: 'n-outcome',
                   conceptId: 'natural-history',
@@ -67,6 +68,7 @@ export const w1Levels: Level[] = [
                 {
                   id: 'c-fatigue',
                   text: 'Days without crushing fatigue, reported by the patients themselves',
+                  confirm: 'Yes: measure what patients actually feel.',
                   quality: 'best',
                   next: 'n-press',
                   conceptId: 'patient-reported-outcome',
@@ -105,7 +107,8 @@ export const w1Levels: Level[] = [
               choices: [
                 {
                   id: 'c-honest',
-                  text: 'Give the interview, but insist on honest words: early research, most molecules fail, no cure yet.',
+                  text: 'Give the interview, but insist on honest words: early research, no cure yet.',
+                  confirm: 'Honest hope. The community will remember it.',
                   quality: 'best',
                   next: 'end-good',
                   conceptId: 'attrition',
@@ -203,6 +206,7 @@ export const w1Levels: Level[] = [
                 'No assay interference',
               ],
               impostor: true,
+              confirm: 'That is the hit: potent, selective, reproducible, clean.',
               conceptId: 'hit',
               explanation: 'Potent, selective, reproducible and clean. This is what a real hit looks like.',
               consequence: 'Passing over the real hit means chasing a worse molecule for months.',
@@ -266,7 +270,7 @@ export const w1Levels: Level[] = [
     roleId: 'preclinical-toxicologist',
     title: 'Is it safe enough to try?',
     intro:
-      'The 28-day rat study on VX-101 is back. Sort what the pathologist found, then set the first dose a human volunteer will ever receive. In the US the default is a safety factor on the animal [[noael|NOAEL]]; in the EU, higher-risk molecules also use a [[mabel|MABEL]] approach: start from the lowest dose expected to have any effect.',
+      'The 28-day rat study is back. Sort what the pathologist found, then set the first human dose. The US default is a safety factor on the animal [[noael|NOAEL]]; the EU also uses [[mabel|MABEL]] for higher-risk molecules.',
     meterFocus: 'safety',
     stages: [
       {
@@ -295,6 +299,7 @@ export const w1Levels: Level[] = [
           cards: [
             {
               id: 'alt',
+              confirm: 'Adverse: dose-related, and the liver is the target organ.',
               text: '[[alt|ALT]] (a liver enzyme) 3 times the upper limit at 100 mg/kg, rising with dose',
               bucketId: 'adverse',
               conceptId: 'toxicology',
@@ -305,6 +310,7 @@ export const w1Levels: Level[] = [
             },
             {
               id: 'weight-gain',
+              confirm: 'Not adverse: small, and inside the normal range.',
               text: 'Males gained slightly more weight than controls at every dose',
               bucketId: 'not-adverse',
               conceptId: 'noael',
@@ -315,6 +321,7 @@ export const w1Levels: Level[] = [
             },
             {
               id: 'hypertrophy',
+              confirm: 'Review: adaptive or early injury, the slides decide.',
               text: 'Liver cells enlarged at 100 mg/kg; no cell death seen',
               bucketId: 'review',
               conceptId: 'toxicology',
@@ -325,6 +332,7 @@ export const w1Levels: Level[] = [
             },
             {
               id: 'skin',
+              confirm: 'Not adverse: a control rat had it too.',
               text: 'One rat at 10 mg/kg had a skin lesion; so did one control rat',
               bucketId: 'not-adverse',
               conceptId: 'noael',
@@ -333,6 +341,7 @@ export const w1Levels: Level[] = [
             },
             {
               id: 'food',
+              confirm: 'Adverse: 10% weight loss is toxicity.',
               text: '10% weight loss and reduced food intake at 100 mg/kg',
               bucketId: 'adverse',
               conceptId: 'toxicology',
@@ -340,26 +349,27 @@ export const w1Levels: Level[] = [
               consequence:
                 'Ignoring general signs of toxicity leads to a starting dose that makes volunteers ill.',
             },
-            {
-              id: 'liver-weight',
-              text: 'Liver weight up 15% at 30 mg/kg; enzymes and slides normal',
-              bucketId: 'review',
-              conceptId: 'noael',
-              explanation:
-                'An organ-weight change with nothing else is a judgement call. It is often adaptive, but it must be checked.',
-              consequence:
-                'If this is early injury, 30 mg/kg is not the NOAEL and the human dose is set too high.',
-            },
-            {
-              id: 'thyroid',
-              text: 'Thyroid weight up 10% at the top dose; nothing unusual on the slides',
-              bucketId: 'review',
-              conceptId: 'toxicology',
-              explanation:
-                'An organ-weight change with clean slides is a judgement call. In rats it is often a harmless adaptation, but the pathologist must confirm it.',
-              consequence:
-                'Thyroid findings in rats sometimes matter for people and sometimes do not. Skipping the review means nobody finds out which.',
-            },
+            // Spare cards kept as worked examples (docs/CONTENT_GUIDE.md §4). Five cards fit the 75 s budget.
+            // {
+            //   id: 'liver-weight',
+            //   text: 'Liver weight up 15% at 30 mg/kg; enzymes and slides normal',
+            //   bucketId: 'review',
+            //   conceptId: 'noael',
+            //   explanation:
+            //     'An organ-weight change with nothing else is a judgement call. It is often adaptive, but it must be checked.',
+            //   consequence:
+            //     'If this is early injury, 30 mg/kg is not the NOAEL and the human dose is set too high.',
+            // },
+            // {
+            //   id: 'thyroid',
+            //   text: 'Thyroid weight up 10% at the top dose; nothing unusual on the slides',
+            //   bucketId: 'review',
+            //   conceptId: 'toxicology',
+            //   explanation:
+            //     'An organ-weight change with clean slides is a judgement call. In rats it is often a harmless adaptation, but the pathologist must confirm it.',
+            //   consequence:
+            //     'Thyroid findings in rats sometimes matter for people and sometimes do not. Skipping the review means nobody finds out which.',
+            // },
           ],
         },
       },

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { content } from '@/content';
 import { economy } from '@/content/economy';
 import { navigate, href } from '@/app/router';
 import { useProgress } from '@/store/progress';
 import { useSettings, resolveReducedMotion } from '@/store/settings';
+import { endSegment, startSegment } from '@/engine/timing';
 import { Button } from '@/components/Button';
 import { Page, TopBar } from '@/components/Layout';
 import { Chip } from '@/components/Hud';
@@ -48,6 +49,11 @@ function RoleChip({ roleId }: { roleId: string }) {
   );
 }
 
+/**
+ * Front (<= 60 words): title, employer, what I do, receive from -> hand off to.
+ * Back: responsibilities, skills, documents, day in the life as skimmable bullets.
+ * The task unlocks after the front has been read and the card flipped once.
+ */
 export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: string }) {
   const role = content.roleById[roleId];
   const level = levelId ? content.levelById[levelId] : undefined;
@@ -65,6 +71,10 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
   const [flips, setFlips] = useState(0);
   const [xpToast, setXpToast] = useState<number | null>(null);
   const [heartToast, setHeartToast] = useState(false);
+
+  useEffect(() => {
+    if (levelId) startSegment(`card ${roleId}`);
+  }, [levelId, roleId]);
 
   const flip = () => {
     const nextFace = face === 'front' ? 'back' : 'front';
@@ -90,8 +100,6 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
   const canClaimHeart =
     fromCodex && flipped && hearts < economy.hearts.max && cardRecord?.lastHeartClaimDay !== todayKey();
   const tipId = 'rolecard-first';
-
-  // Only animate after a real flip; the first render shows the front face at rest.
   const flipAnim =
     flips === 0 ? { rotateY: 0, opacity: 1 } : reduced ? { opacity: [0.4, 1] } : { rotateY: [90, 0] };
 
@@ -104,7 +112,7 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
 
       {!tipsDismissed[tipId] && level && (
         <Speech mood="think" className="mb-3" onDismiss={() => dismissTip(tipId)}>
-          Read both sides of your ID card first. The task only unlocks after you flip it.
+          Read the front, flip once, then start. The back is there whenever you want it.
         </Speech>
       )}
 
@@ -136,33 +144,6 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
               <RichText as="p" text={role.card.whatIDo} className="mt-1 text-base leading-relaxed" />
             </section>
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-wide text-muted">Key responsibilities</h2>
-              <ul className="mt-1 grid gap-1.5">
-                {role.card.responsibilities.map((r, i) => (
-                  <li key={i} className="flex gap-2 text-sm">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-800">
-                      {i + 1}
-                    </span>
-                    <RichText text={r} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4 p-4">
-            <section>
-              <h2 className="text-xs font-bold uppercase tracking-wide text-muted">Skills & background</h2>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {role.card.skills.map((s) => (
-                  <Chip key={s} color="bg-brand-700">
-                    {s}
-                  </Chip>
-                ))}
-              </div>
-              <RichText as="p" text={role.card.background} className="mt-2 text-sm text-muted" />
-            </section>
-            <section>
               <h2 className="text-xs font-bold uppercase tracking-wide text-muted">
                 I receive from → I hand off to
               </h2>
@@ -186,10 +167,35 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
                 </div>
               </div>
             </section>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 p-4 text-sm">
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-wide text-muted">
-                Documents & systems I touch
-              </h2>
+              <h2 className="text-xs font-bold uppercase tracking-wide text-muted">Key responsibilities</h2>
+              <ul className="mt-1 grid gap-1">
+                {role.card.responsibilities.map((r, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-800">
+                      {i + 1}
+                    </span>
+                    <RichText text={r} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <section>
+              <h2 className="text-xs font-bold uppercase tracking-wide text-muted">Skills & background</h2>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {role.card.skills.map((s) => (
+                  <Chip key={s} color="bg-brand-700">
+                    {s}
+                  </Chip>
+                ))}
+              </div>
+              <RichText as="p" text={role.card.background} className="mt-1 text-muted" />
+            </section>
+            <section>
+              <h2 className="text-xs font-bold uppercase tracking-wide text-muted">Documents & systems</h2>
               <ul className="mt-1 flex flex-wrap gap-1.5">
                 {role.card.documents.map((d) => (
                   <li key={d} className="rounded-lg bg-surface-2 px-2 py-1 text-xs font-medium">
@@ -198,7 +204,7 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
                 ))}
               </ul>
             </section>
-            <section className="rounded-xl bg-star-soft p-3 text-sm text-amber-950">
+            <section className="rounded-xl bg-star-soft p-3 text-amber-950">
               <h2 className="text-xs font-bold uppercase tracking-wide">A day in the life</h2>
               <RichText as="p" text={role.card.funFact} className="mt-1" />
             </section>
@@ -222,17 +228,20 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
 
       <div className="mt-4 flex flex-col gap-2">
         <Button variant="secondary" full onClick={flip} data-testid="flip-card">
-          {face === 'front' ? 'Flip card →' : '← Flip back'}
+          {face === 'front' ? 'Flip: responsibilities, skills, documents →' : '← Flip back'}
         </Button>
         {level && (
           <Button
             size="lg"
             full
             disabled={!canStart}
-            onClick={() => navigate({ name: 'level', levelId: level.id }, true)}
+            onClick={() => {
+              endSegment(`card ${roleId}`);
+              navigate({ name: 'level', levelId: level.id }, true);
+            }}
             data-testid="start-task"
           >
-            {canStart ? `Start task: ${level.title}` : 'Flip the card to unlock the task'}
+            {canStart ? `Start task: ${level.title}` : 'Flip the card once to unlock the task'}
           </Button>
         )}
         {fromCodex &&

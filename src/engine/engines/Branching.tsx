@@ -6,7 +6,7 @@ import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/sco
 import { findNodeOfChoice } from '@/engine/registry';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
-import { Feedback, type FeedbackKind } from './Feedback';
+import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import type { EngineProps } from './types';
 
 const QUALITY: Record<ScenarioChoice['quality'], number> = { best: 1, ok: 0.5, bad: 0 };
@@ -14,6 +14,7 @@ const QUALITY: Record<ScenarioChoice['quality'], number> = { best: 1, ok: 0.5, b
 interface Pending {
   kind: FeedbackKind;
   title: string;
+  confirm?: string;
   explanation: string;
   note?: string;
   next: string;
@@ -114,6 +115,7 @@ export function Branching(p: EngineProps<BranchingConfig>) {
             : c.shortcut
               ? 'Shortcut taken'
               : 'That one costs.',
+      confirm: c.confirm,
       explanation: c.explanation,
       note,
       next: c.next,
@@ -170,6 +172,8 @@ export function Branching(p: EngineProps<BranchingConfig>) {
     );
   }
 
+  const shown = adaptFeedback(p.mode, pending);
+
   return (
     <div className="flex flex-1 flex-col gap-3" data-testid="branching">
       <p className="text-xs font-bold uppercase tracking-wide text-muted" data-testid="engine-progress">
@@ -209,12 +213,15 @@ export function Branching(p: EngineProps<BranchingConfig>) {
           ))}
         </div>
       )}
-      {pending && (
+      {shown && (
         <Feedback
-          kind={pending.kind}
-          title={pending.title}
-          explanation={pending.explanation}
-          note={pending.note}
+          auto={shown.auto}
+          inline={shown.inline}
+          ms={shown.ms}
+          kind={shown.kind}
+          title={shown.title}
+          explanation={shown.explanation}
+          note={shown.note}
           nextLabel="Continue"
           onNext={advance}
         />

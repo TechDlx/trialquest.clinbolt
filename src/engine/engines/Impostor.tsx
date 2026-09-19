@@ -5,12 +5,13 @@ import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/sco
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import { CheckIcon, XIcon } from '@/components/Icons';
-import { Feedback, type FeedbackKind } from './Feedback';
+import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import { seededShuffle, type EngineProps } from './types';
 
 interface Pending {
   kind: FeedbackKind;
   title: string;
+  confirm?: string;
   explanation: string;
   note?: string;
   finish?: boolean;
@@ -79,6 +80,7 @@ export function Impostor(p: EngineProps<ImpostorConfig>) {
       const finished = found >= impostorCount;
       setPending({
         kind: 'correct',
+        confirm: card.confirm,
         title: `Found ${p.config.targetLabel}.`,
         explanation: card.explanation,
         finish: finished,
@@ -131,6 +133,8 @@ export function Impostor(p: EngineProps<ImpostorConfig>) {
 
   const found = accused.filter((x) => cards.find((c) => c.id === x)?.impostor).length;
   const current = inspected ? cards.find((c) => c.id === inspected) : undefined;
+
+  const shown = adaptFeedback(p.mode, pending);
 
   return (
     <div className="flex flex-1 flex-col gap-3" data-testid="impostor">
@@ -201,13 +205,16 @@ export function Impostor(p: EngineProps<ImpostorConfig>) {
           {p.config.signOff.label}
         </button>
       )}
-      {pending && (
+      {shown && (
         <Feedback
-          kind={pending.kind}
-          title={pending.title}
-          explanation={pending.explanation}
-          note={pending.note}
-          nextLabel={pending.finish ? 'Finish' : 'Keep looking'}
+          auto={shown.auto}
+          inline={shown.inline}
+          ms={shown.ms}
+          kind={shown.kind}
+          title={shown.title}
+          explanation={shown.explanation}
+          note={shown.note}
+          nextLabel={shown.finish ? 'Finish' : 'Keep looking'}
           onNext={next}
         />
       )}

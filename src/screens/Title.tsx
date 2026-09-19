@@ -4,6 +4,7 @@ import { Disclaimer } from '@/components/Layout';
 import { navigate } from '@/app/router';
 import { useProgress } from '@/store/progress';
 import { rankForXp } from '@/content/economy';
+import { startSegment } from '@/engine/timing';
 
 export function TitleScreen() {
   const introSeen = useProgress((s) => s.introSeen);
@@ -40,7 +41,15 @@ export function TitleScreen() {
             </Button>
           </>
         ) : (
-          <Button size="lg" full onClick={() => navigate({ name: 'intro' })} data-testid="play">
+          <Button
+            size="lg"
+            full
+            onClick={() => {
+              startSegment('intro');
+              navigate({ name: 'intro' });
+            }}
+            data-testid="play"
+          >
             Play
           </Button>
         )}

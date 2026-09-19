@@ -58,7 +58,7 @@ export const economy = {
     minRounds: 4,
     maxRounds: 7,
     roundSeconds: [15, 40] as const,
-    world1PoolMax: 120,
+    poolMax: 120,
   },
   knowledge: { ribbonFraction: 0.8 },
   quiz: { defaultSecondsPerQuestion: 20, bossSecondsPerQuestion: 15 },

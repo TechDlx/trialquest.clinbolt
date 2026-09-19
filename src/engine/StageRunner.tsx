@@ -11,6 +11,7 @@ import { useCountdown } from './useCountdown';
 import type { BuiltLevel } from './variants';
 import { aggregateStages } from './pipeline';
 import type { EngineResult } from './scoring';
+import { endSegment, startSegment } from './timing';
 
 export interface StageRunnerProps extends Pick<
   EngineProps<MainPathConfig>,
@@ -55,6 +56,7 @@ export function StageRunner({
 
   const onStageComplete = useCallback(
     (r: EngineResult) => {
+      endSegment(`stage ${level.id}/${stage.id}`);
       const next = { ...byStage, [stage.id]: r };
       setByStage(next);
       setHeld(false);
@@ -72,7 +74,7 @@ export function StageRunner({
         );
       }
     },
-    [byStage, stage.id, index, level.stages, onComplete],
+    [byStage, stage.id, index, level.id, level.stages, onComplete],
   );
 
   const showPrompt = index === 0 && level.shortcutPrompt && !promptDone;
@@ -114,7 +116,15 @@ export function StageRunner({
             </div>
           </>
         ) : (
-          <Button size="lg" full onClick={() => setPhase('play')} data-testid={`start-stage-${stage.id}`}>
+          <Button
+            size="lg"
+            full
+            onClick={() => {
+              startSegment(`stage ${level.id}/${stage.id}`);
+              setPhase('play');
+            }}
+            data-testid={`start-stage-${stage.id}`}
+          >
             {index === 0 ? 'Start' : 'Next stage'}
           </Button>
         )}

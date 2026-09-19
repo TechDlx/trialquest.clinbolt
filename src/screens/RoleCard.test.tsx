@@ -29,8 +29,9 @@ describe('RoleCardScreen gating', () => {
   it('shows both faces of the card content', () => {
     render(<RoleCardScreen roleId="cmc-scientist" levelId="w1-l4" />);
     expect(screen.getByText(/What I do/i)).toBeInTheDocument();
+    expect(screen.getByText(/I receive from/i)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('flip-card'));
     expect(screen.getByText(/A day in the life/i)).toBeInTheDocument();
-    expect(screen.getByText(/I receive from/i)).toBeInTheDocument();
+    expect(screen.getByText(/Key responsibilities/i)).toBeInTheDocument();
   });
 });

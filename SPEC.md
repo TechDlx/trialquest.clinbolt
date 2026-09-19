@@ -264,8 +264,11 @@ references, or levels without a debrief.
 
 # ACCEPTANCE CRITERIA
 
-- A new player can go from the title screen to completing World 1 in under 10
-  minutes on a phone without instructions beyond the in-game tutorial.
+- Pace, measured by the reader-paced model (200 words per minute, 2.5 s per
+  decision, one wrong turn per level, sandbox exploration excluded): time to first
+  interaction from the title screen <= 45 s; each level (role card front + task +
+  debrief) <= 210 s; each crisis <= 120 s; World 1 in one sitting <= 12 minutes.
+  No instructions beyond the in-game tutorial.
 - Every role listed above has a Role Card and a playable task; no level can be
   started without viewing its Role Card at least once.
 - All 8 worlds completable; progress survives reload; works offline.

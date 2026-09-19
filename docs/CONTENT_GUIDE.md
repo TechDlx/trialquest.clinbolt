@@ -59,6 +59,12 @@ debrief: { learned, handoffLine }     two sentences of learning + who gets the w
 { id: 'findings', title: 'Classify the findings', brief: 'One line shown before it starts', weight: 1, game: { … } }
 ```
 
+Cards, parts and impostor cards are shuffled at runtime, so their order in the file does
+not matter (scenario nodes and sequence-sort items keep their order). Size the timer with
+the card count: `seconds = 15 + 12 × items` for bucket-sort and impostor, `20 + 15 × slots`
+for builder, `20 + 10 × items` for sequence and match. The world's timer scale is applied
+on top, so World 1 players get 40 % more.
+
 Most levels have one stage. `weight` says how much the stage counts toward the score
 (default 1). Each timed stage has its own `seconds` inside `game`; the world's timer scale
 is applied automatically. Scenarios have no timer.
@@ -77,9 +83,12 @@ is applied automatically. Scenarios have no timer.
 | `dash-manager`       | serves a queue at stations before patience runs out           | `stations`, `items` with `steps`          |
 | `quiz-blitz`         | answers 4-option questions                                    | **Test Yourself only.** Never in a level. |
 
-Every scorable item needs three text fields shown when the player gets it wrong:
-`explanation` (why the right answer is right), `consequence` (what goes wrong in the real
-world), `conceptId` (the glossary term this teaches).
+Every scorable item needs three text fields: `explanation` (why the right answer is right,
+shown inline when the player gets it wrong), `consequence` (what goes wrong in the real
+world, shown in the debrief), `conceptId` (the glossary term this teaches). An optional
+`confirm` (up to 12 words) is the one-line confirmation shown when they get it right;
+correct answers never block, they auto-advance. Card text, choice text and node text may
+all carry `[[glossary links]]`.
 
 ## 5. Shortcuts (the tempting wrong turn)
 
@@ -194,6 +203,11 @@ variants: [{
 }],
 ```
 
+- The keys under `stages` are **stage ids** from this level (`scenario` above is the id
+  of the hold level's only stage).
+- Several keys in one `when` must **all** match (`{ 'dose.starting': 'cautious',
+'phase1.escalation': 'slow' }` fires only for that combination).
+- `meterOpening` uses the three meter names: `safety`, `integrity`, `timeline`.
 - Write the level so the **base version works on its own**; variants only patch it.
 - Patch items by id with `add`, `remove`, `replace`. `replace` merges the fields you give.
   For scenarios, `nodes.replace` may change `text`, `speaker` or `end` only; to change a
@@ -251,23 +265,45 @@ A shortcut the player took comes back with the same temptation available.
 npm run validate:content
 ```
 
+The validator also prints each level's **estimated play time** (200 words per minute, 2.5 s
+per decision, one wrong turn, the card front in full and a third of the back) and warns
+above 210 s. World 1 in one sitting must fit 12 minutes and each crisis pool 120 s.
+
+**Word budgets** (warnings, not failures):
+
+| Field                   | Budget                                    |
+| ----------------------- | ----------------------------------------- |
+| Level `intro`           | 40 words                                  |
+| Card / part / item text | 18                                        |
+| `explanation`           | 25                                        |
+| `consequence`           | 20                                        |
+| `confirm`               | 12                                        |
+| Scenario node `text`    | 45                                        |
+| Choice `text`           | 16                                        |
+| Debrief `learned`       | 40                                        |
+| Role card front         | 60 (title + "What I do" + hand-off chips) |
+
+Trim by tightening sentences, not by dropping a fact an SME flagged.
+
 Every message names the file, the id, what is wrong and a fix. Common ones:
 
-| Message                                                    | What it means                                                          |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `Glossary link [[x]] points to a term that does not exist` | Add the term to `glossary.ts` or fix the spelling.                     |
-| `{{key.field}}: artifact "key" has no field "field"`       | Declare the field with a fallback under `fields` in `artifacts.ts`.    |
-| `Item ids repeat within the stage`                         | Two items in one stage share an id; rename one.                        |
-| `Band starts at X but the previous band ends at Y`         | Bands must touch: each `to` is the next band's `from`.                 |
-| `Last band ends at X, not at the input maximum Y`          | Extend the last band to the slider's max.                              |
-| `targetBand "x" is not a band tag`                         | `targetBand` must equal one band's `tag`.                              |
-| `cannot replace unknown id "x"`                            | A variant names an id that is not in the base level.                   |
-| `nodes.replace may change copy only`                       | You put `choices` in a node replace; use `items.choices` instead.      |
-| `meterOpening on safety sums to -35 …`                     | Opening hits are too big for the worst combination; reduce one.        |
-| `Consumes "key" but no level emits it`                     | Write the emitting level first (a warning while the world is planned). |
-| `Level offers no tempting shortcut` (warning)              | Add a shortcut carrier or a `shortcutPrompt`.                          |
-| `Every decision leads to the same next node` (warning)     | Make at least one choice go somewhere different.                       |
-| `Engine "quiz-blitz" is not allowed on the main path`      | Quizzes belong in `knowledge/`.                                        |
+| Message                                                    | What it means                                                                                                                                                   |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Glossary link [[x]] points to a term that does not exist` | Add the term to `glossary.ts` or fix the spelling.                                                                                                              |
+| `{{key.field}}: artifact "key" has no field "field"`       | Declare the field with a fallback under `fields` in `artifacts.ts`.                                                                                             |
+| `Item ids repeat within the stage`                         | Two items in one stage share an id; rename one.                                                                                                                 |
+| `Band starts at X but the previous band ends at Y`         | Bands must touch: each `to` is the next band's `from`.                                                                                                          |
+| `Last band ends at X, not at the input maximum Y`          | Extend the last band to the slider's max.                                                                                                                       |
+| `targetBand "x" is not a band tag`                         | `targetBand` must equal one band's `tag`.                                                                                                                       |
+| `cannot replace unknown id "x"`                            | A variant names an id that is not in the base level.                                                                                                            |
+| `nodes.replace may change copy only`                       | You put `choices` in a node replace; use `items.choices` instead.                                                                                               |
+| `meterOpening on safety sums to -35 …`                     | Opening hits are too big for the worst combination; reduce one.                                                                                                 |
+| `Consumes "key" but no level emits it`                     | Write the emitting level, or mark the key (in `artifacts.ts`) or the level `planned: true`. Planned references are listed, and fail once the world is released. |
+| `intro is 57 words; budget is 40` (warning)                | Tighten the sentence; keep the fact.                                                                                                                            |
+| `Estimated 240 s at 200 wpm … budget is 210 s` (warning)   | Fewer items, shorter copy, or split the level.                                                                                                                  |
+| `Level offers no tempting shortcut` (warning)              | Add a shortcut carrier or a `shortcutPrompt`.                                                                                                                   |
+| `Every decision leads to the same next node` (warning)     | Make at least one choice go somewhere different.                                                                                                                |
+| `Engine "quiz-blitz" is not allowed on the main path`      | Quizzes belong in `knowledge/`.                                                                                                                                 |
 
 Then `npm test`, and play the level on a phone-sized window (`npm run dev`).
 

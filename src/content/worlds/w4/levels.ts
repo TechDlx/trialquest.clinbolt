@@ -10,10 +10,11 @@ export const w4Levels: Level[] = [
     worldId: 'w4',
     roleId: 'safety-review-committee',
     title: 'Clinical hold',
+    planned: true,
     meterFocus: 'safety',
     // Base = 'standard' starting dose and 'standard' escalation. The cause is independent of the player's dose.
     intro:
-      'Cohort 3 of the Phase I study was dosed this morning. One volunteer\'s labs show [[alt|ALT]] (a liver enzyme) four times the upper limit. He feels fine. The [[fda|FDA]] has been told, and this afternoon they placed the study on [[clinical-hold|clinical hold]]. You chair the Safety Review Committee. ("Clinical hold" is the FDA\'s term; in the EU a national authority or ethics committee can pause a trial in a similar way.)',
+      "Cohort 3 was dosed this morning. One volunteer's [[alt|ALT]] (a liver enzyme) is four times the upper limit. He feels fine. The [[fda|FDA]] has placed the study on [[clinical-hold|clinical hold]]. You chair the Safety Review Committee.",
     stages: [
       {
         id: 'scenario',
@@ -315,7 +316,7 @@ export const w4Levels: Level[] = [
         when: { 'dose.starting': 'cautious' },
         patch: {
           intro:
-            'Cohort 5 of the Phase I study was dosed this morning, after four uneventful cohorts and six weeks behind plan. One volunteer\'s labs show [[alt|ALT]] (a liver enzyme) four times the upper limit. He feels fine. The [[fda|FDA]] has been told, and this afternoon they placed the study on [[clinical-hold|clinical hold]]. You chair the Safety Review Committee. ("Clinical hold" is the FDA\'s term; in the EU a national authority or ethics committee can pause a trial in a similar way.)',
+            "Cohort 5 was dosed this morning, after four quiet cohorts and six weeks behind plan. One volunteer's [[alt|ALT]] (a liver enzyme) is four times the upper limit. He feels fine. The [[fda|FDA]] has placed the study on [[clinical-hold|clinical hold]]. You chair the committee.",
           meterOpening: { timeline: -10 },
           stages: {
             scenario: {
@@ -337,7 +338,7 @@ export const w4Levels: Level[] = [
         when: { 'dose.starting': 'aggressive' },
         patch: {
           intro:
-            'Cohort 2 of the Phase I study was dosed this morning. Your starting dose of {{dose.starting.mgPerKg}} mg/kg left little room, and one volunteer\'s labs now show [[alt|ALT]] (a liver enzyme) six times the upper limit. He is nauseous. The [[fda|FDA]] has been told, and this afternoon they placed the study on [[clinical-hold|clinical hold]]. You chair the Safety Review Committee. ("Clinical hold" is the FDA\'s term; in the EU a national authority or ethics committee can pause a trial in a similar way.)',
+            "Cohort 2 was dosed this morning. Your starting dose of {{dose.starting.mgPerKg}} mg/kg left little room: one volunteer's [[alt|ALT]] (a liver enzyme) is six times the upper limit and he is nauseous. The [[fda|FDA]] has placed the study on [[clinical-hold|clinical hold]]. You chair the committee.",
           meterOpening: { safety: -15 },
         },
       },
@@ -345,7 +346,7 @@ export const w4Levels: Level[] = [
         when: { 'dose.starting': 'reckless' },
         patch: {
           intro:
-            'The very first cohort was dosed at {{dose.starting.mgPerKg}} mg/kg. One volunteer is in hospital with [[alt|ALT]] (a liver enzyme) eight times the upper limit and a rising bilirubin, a sign the liver is struggling. The [[fda|FDA]] placed the study on [[clinical-hold|clinical hold]] within the hour, and their letter cites your starting dose. You chair the Safety Review Committee. ("Clinical hold" is the FDA\'s term; in the EU a national authority or ethics committee can pause a trial in a similar way.)',
+            "The first cohort was dosed at {{dose.starting.mgPerKg}} mg/kg. One volunteer is in hospital: [[alt|ALT]] (a liver enzyme) eight times the limit and rising bilirubin, a sign the liver is struggling. The [[fda|FDA]]'s [[clinical-hold|clinical hold]] letter cites your starting dose. You chair the committee.",
           meterOpening: { safety: -20 },
           stages: {
             scenario: {
@@ -465,7 +466,7 @@ export const w4Levels: Level[] = [
     ],
     debrief: {
       learned:
-        "A clinical hold is a pause while the sponsor answers the regulator's questions. The way out is always the same: stop, investigate, amend, and respond completely.",
+        'A clinical hold is a pause while the sponsor answers the regulator\'s questions: stop, investigate, amend, respond completely. "Clinical hold" is the FDA\'s term; EU authorities can pause a trial in a similar way.',
       handoffLine:
         'You hand the lifted hold and the amended protocol back to the Investigator. Dosing resumes.',
     },

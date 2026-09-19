@@ -13,7 +13,7 @@ import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
-import { Feedback, type FeedbackKind } from './Feedback';
+import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import type { EngineProps } from './types';
 
 export function interpolateCurve(curve: PreviewCurve, x: number): number {
@@ -67,6 +67,7 @@ const fmt = (v: number, f?: PreviewCurve['format']) =>
 interface Pending {
   kind: FeedbackKind;
   title: string;
+  confirm?: string;
   explanation: string;
   note?: string;
   finish?: boolean;
@@ -274,6 +275,7 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
   const revealBand = committed && sim ? sim.bands[committed.bandIndex]! : undefined;
   const sandboxBand = sim && phase === 'sandbox' ? bandFor(sim, simValue).band : undefined;
 
+  const shown = adaptFeedback(p.mode, pending);
   return (
     <div className="flex flex-1 flex-col gap-3" data-testid="allocator" data-phase={phase}>
       <p className="text-sm font-semibold">
@@ -402,13 +404,16 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
           </Button>
         </>
       )}
-      {pending && (
+      {shown && (
         <Feedback
-          kind={pending.kind}
-          title={pending.title}
-          explanation={pending.explanation}
-          note={pending.note}
-          nextLabel={pending.finish ? 'Finish' : 'Adjust'}
+          auto={shown.auto}
+          inline={shown.inline}
+          ms={shown.ms}
+          kind={shown.kind}
+          title={shown.title}
+          explanation={shown.explanation}
+          note={shown.note}
+          nextLabel={shown.finish ? 'Finish' : 'Adjust'}
           onNext={next}
         />
       )}
@@ -517,6 +522,7 @@ function CohortVisual({
   ].slice(0, cohort) as ('fine' | 'mild' | 'serious')[];
   const color = { fine: 'bg-ok text-white', mild: 'bg-star text-white', serious: 'bg-bad text-white' };
   const label = { fine: 'fine', mild: 'mild AE', serious: 'serious AE' };
+
   return (
     <div className="mt-2">
       <div

@@ -12,6 +12,9 @@ export interface SettingsState {
   theme: ThemeSetting;
   motion: MotionSetting;
   textSize: TextSize;
+  /** Dev-only: timing log on the Settings screen and in the console. Local only. */
+  debug: boolean;
+  setDebug: (v: boolean) => void;
   setSound: (v: boolean) => void;
   setRelaxed: (v: boolean) => void;
   setTheme: (v: ThemeSetting) => void;
@@ -28,6 +31,7 @@ const defaults = {
   theme: 'system' as ThemeSetting,
   motion: 'system' as MotionSetting,
   textSize: 'normal' as TextSize,
+  debug: false,
 };
 
 export const useSettings = create<SettingsState>()(
@@ -39,6 +43,7 @@ export const useSettings = create<SettingsState>()(
       setTheme: (theme) => set({ theme }),
       setMotion: (motion) => set({ motion }),
       setTextSize: (textSize) => set({ textSize }),
+      setDebug: (debug) => set({ debug }),
       resetSettings: () => set({ ...defaults }),
     }),
     {

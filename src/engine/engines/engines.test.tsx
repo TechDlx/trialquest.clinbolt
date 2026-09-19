@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { content } from '@/content';
 import type {
   AllocatorConfig,
@@ -36,10 +36,13 @@ function host() {
   };
 }
 const next = () => fireEvent.click(screen.getByTestId('engine-next'));
+/** Correct answers show an inline confirmation and auto-advance; wrong ones wait for Next. */
+const advance = () =>
+  waitFor(() => expect(screen.queryByTestId('engine-feedback')).toBeNull(), { timeout: 3000 });
 const w1 = (id: string, stage: number) => content.levelById[id]!.stages[stage]!.game;
 
 describe('BucketSort', () => {
-  it('scores correct, wrong and shortcut placements; shortcut fires once per carrier', () => {
+  it('scores correct, wrong and shortcut placements; shortcut fires once per carrier', async () => {
     const h = host();
     const cfg = w1('w1-l3', 0) as BucketSortConfig;
     render(<BucketSort {...h} config={cfg} onlyItems={['alt', 'skin', 'hypertrophy']} />);
@@ -56,7 +59,10 @@ describe('BucketSort', () => {
         fireEvent.click(
           screen.getByTestId(`bucket-${card.bucketId === 'adverse' ? 'not-adverse' : 'adverse'}`),
         );
-      next();
+      if (i === 0) {
+        expect(screen.getByTestId('engine-feedback')).toHaveAttribute('data-inline', 'true');
+        await advance();
+      } else next();
     }
     expect(h.onShortcut).toHaveBeenCalledTimes(1);
     expect(h.onShortcut.mock.calls[0]![0]).toMatchObject({
@@ -87,7 +93,7 @@ describe('BucketSort', () => {
       />,
     );
     const r = h.onComplete.mock.calls[0]![0];
-    expect(r.total).toBe(7);
+    expect(r.total).toBe(5);
     expect(Object.values(r.itemResults).every((v) => v === 'skipped')).toBe(true);
   });
 });
@@ -113,19 +119,19 @@ describe('Branching', () => {
     expect(r.itemResults['c-hype']).toBe('shortcut');
   });
 
-  it('onlyItems replays a single decision and finishes after it', () => {
+  it('onlyItems replays a single decision and finishes after it', async () => {
     const h = host();
     render(<Branching {...h} config={w1('w1-l1', 0) as BranchingConfig} onlyItems={['c-marker']} />);
     expect(screen.getByTestId('choice-c-fatigue')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('choice-c-fatigue'));
-    next();
+    await advance();
     expect(h.onComplete).toHaveBeenCalledTimes(1);
     expect(h.onComplete.mock.calls[0]![0].accuracy).toBe(1);
   });
 });
 
 describe('Builder', () => {
-  it('checks slots, costs a heart per wrong submit, locks correct slots, and finishes when built', () => {
+  it('checks slots, costs a heart per wrong submit, locks correct slots, and finishes when built', async () => {
     const h = host();
     const cfg = w1('w1-l4', 0) as BuilderConfig;
     render(<Builder {...h} config={cfg} />);
@@ -147,7 +153,7 @@ describe('Builder', () => {
     fireEvent.click(screen.getByTestId('slot-storage'));
     place('below-25', 'storage');
     fireEvent.click(screen.getByTestId('builder-check'));
-    next();
+    await advance();
     const r = h.onComplete.mock.calls[0]![0];
     expect(r.correct).toBe(4);
     expect(r.outcomes.parts).toMatchObject({ form: 'capsule', storage: 'below-25' });
@@ -156,7 +162,7 @@ describe('Builder', () => {
 });
 
 describe('Impostor', () => {
-  it('inspect, accuse wrong (heart), accuse right (finish); sign-off is a shortcut', () => {
+  it('inspect, accuse wrong (heart), accuse right (finish); sign-off is a shortcut', async () => {
     const h = host();
     render(<Impostor {...h} config={w1('w1-l2', 0) as ImpostorConfig} />);
     fireEvent.click(screen.getByTestId('card-vx-088'));
@@ -165,7 +171,7 @@ describe('Impostor', () => {
     next();
     fireEvent.click(screen.getByTestId('card-vx-101'));
     fireEvent.click(screen.getByTestId('impostor-accuse'));
-    next();
+    await advance();
     const r = h.onComplete.mock.calls[0]![0];
     expect(r.outcomes.accused).toEqual(['vx-088', 'vx-101']);
     expect(r.accuracy).toBe(0.5);
@@ -255,7 +261,7 @@ describe('SequenceSort / MatchPairs / DashManager', () => {
       conceptId: 'gcp',
     })),
   };
-  it('sequence: swapping by tap and checking reports position accuracy', () => {
+  it('sequence: swapping by tap and checking reports position accuracy', async () => {
     const h = host();
     render(<SequenceSort {...h} config={seq} />);
     // Put into correct order using the buttons: read current order from the list.
@@ -271,11 +277,11 @@ describe('SequenceSort / MatchPairs / DashManager', () => {
       fireEvent.click(screen.getByTestId(`seq-${cur[j]!.toLowerCase()}`));
     }
     fireEvent.click(screen.getByTestId('sequence-check'));
-    next();
+    await advance();
     expect(h.onComplete.mock.calls[0]![0].accuracy).toBe(1);
   });
 
-  it('match: a wrong pair costs a heart, all matched finishes', () => {
+  it('match: a wrong pair costs a heart, all matched finishes', async () => {
     const h = host();
     const cfg: MatchPairsConfig = {
       engine: 'match-pairs',
@@ -298,7 +304,7 @@ describe('SequenceSort / MatchPairs / DashManager', () => {
     for (const id of ['x', 'y', 'z']) {
       fireEvent.click(screen.getByTestId(`left-${id}`));
       fireEvent.click(screen.getByTestId(`right-${id}`));
-      next();
+      await advance();
     }
     const r = h.onComplete.mock.calls[0]![0];
     expect(r.correct).toBe(3);
@@ -356,5 +362,18 @@ describe('SequenceSort / MatchPairs / DashManager', () => {
     expect(r.itemResults).toEqual({ p1: 'correct', p2: 'shortcut' });
     expect(h.onShortcut).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
+  });
+});
+
+describe('crisis mode defers explanations', () => {
+  it('flashes and auto-advances on wrong answers too; no Next button while the pool runs', async () => {
+    const h = { ...host(), mode: 'crisis' as const };
+    render(<BucketSort {...h} config={w1('w1-l3', 0) as BucketSortConfig} onlyItems={['alt']} />);
+    fireEvent.click(screen.getByTestId('bucket-not-adverse'));
+    expect(screen.getByTestId('engine-feedback')).toHaveAttribute('data-inline', 'true');
+    expect(screen.queryByTestId('engine-next')).toBeNull();
+    expect(h.onMistake).toHaveBeenCalledTimes(1);
+    await advance();
+    expect(h.onComplete).toHaveBeenCalledTimes(1);
   });
 });

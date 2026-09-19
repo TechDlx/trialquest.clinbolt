@@ -29,7 +29,7 @@ import { SirenIcon } from '@/components/Icons';
 import { RichText } from '@/components/RichText';
 import { Speech } from '@/components/Mascot';
 import { Debrief } from './Debrief';
-import { StoryBeatView } from './StoryBeat';
+import { endSegment, startSegment } from '@/engine/timing';
 
 type Phase =
   | { name: 'intro' }
@@ -56,6 +56,7 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
   const [attempt, setAttempt] = useState(0);
   const [outcomes, setOutcomes] = useState<CrisisRoundOutcome[]>([]);
   const [locals, setLocals] = useState<Record<string, string>>({});
+  const [allMistakes, setAllMistakes] = useState<Mistake[]>([]);
   const heartLostThisAttempt = useRef(false);
   const roundStartRef = useRef(0);
   const usedCarriers = useRef(new Set<string>());
@@ -134,6 +135,7 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
           score.xp.total = score.xp.lines.reduce((sum, l) => sum + l.xp, 0);
         }
       }
+      endSegment('crisis');
       setPhase({ name: 'done', score });
     },
     [crisis, world, rounds.length, passFraction],
@@ -143,6 +145,8 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
   }, [finishCrisis]);
 
   const start = () => {
+    startSegment('crisis');
+    setAllMistakes([]);
     setOutcomes([]);
     setLocals({});
     setRound(0);
@@ -173,7 +177,11 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
     return false;
   }, []);
 
-  const onMistake = useCallback((_m: Mistake) => ({ heartLost: false }), []); // rounds punish via meterHit, not per mistake
+  // Rounds punish via meterHit, not per mistake; explanations are deferred to the resolution screen.
+  const onMistake = useCallback((m: Mistake) => {
+    setAllMistakes((ms) => [...ms, m]);
+    return { heartLost: false };
+  }, []);
   const onShortcut = useCallback(
     (ev: ShortcutEvent) => {
       if (usedCarriers.current.has(ev.itemId)) return;
@@ -387,28 +395,35 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
     const { score } = phase;
     const beat = crisis.resolution[score.outcome];
     return (
-      <StoryBeatView
-        beat={beat}
-        kicker={
-          score.outcome === 'success'
-            ? `Crisis resolved · ${score.clearedCount}/${rounds.length} rounds · ${score.points} pts · +${score.xp.total} XP`
-            : score.outcome === 'partial'
-              ? `Partly resolved · ${score.clearedCount}/${rounds.length} rounds`
-              : 'Crisis failed'
-        }
-        cta={score.outcome === 'success' ? "See Maya's story" : 'Try again'}
-        testId={`crisis-${score.outcome}`}
-        onContinue={() =>
-          score.outcome === 'success'
-            ? navigate({ name: 'story', worldId: world.id, beat: 'outro' })
-            : start()
-        }
-        doseLine={
-          score.outcome === 'success'
-            ? `${score.stars} star${score.stars === 1 ? '' : 's'}. ${score.stars === 3 ? 'Flawless.' : 'Replay for more.'}`
-            : 'No hearts lost beyond the first miss. Meters tell the story.'
-        }
-      />
+      <div data-testid={`crisis-${score.outcome}`}>
+        <Debrief
+          kind="boss"
+          title={crisis.title}
+          story={beat}
+          stars={score.stars}
+          score={score.score}
+          xp={score.xp}
+          mistakes={allMistakes}
+          correct={score.clearedCount}
+          total={rounds.length}
+          failed={score.outcome !== 'success'}
+          failReason={
+            score.outcome === 'partial'
+              ? 'Partly resolved. Clear more rounds before the clock runs out to unlock the next world.'
+              : score.outcome === 'fail'
+                ? 'Nothing cleared, or a meter hit zero. The explanations below are for next time.'
+                : undefined
+          }
+          canRetry={progress.hearts > 0}
+          onContinue={() =>
+            score.outcome === 'success'
+              ? navigate({ name: 'story', worldId: world.id, beat: 'outro' })
+              : goMap()
+          }
+          onRetry={start}
+          continueLabel={score.outcome === 'success' ? "See Maya's story" : 'Back to the map'}
+        />
+      </div>
     );
   }
   return null;

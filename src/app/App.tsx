@@ -16,6 +16,7 @@ import { CodexScreen } from '@/screens/Codex';
 import { GlossaryScreen } from '@/screens/Glossary';
 import { HandoffScreen } from '@/screens/Handoff';
 import { SettingsScreen } from '@/screens/Settings';
+import { LabScreen } from '@/screens/Lab';
 import { Page, TopBar } from '@/components/Layout';
 
 function useDocumentSettings() {
@@ -109,6 +110,9 @@ export function App() {
       break;
     case 'settings':
       screen = <SettingsScreen />;
+      break;
+    case 'lab':
+      screen = <LabScreen />;
       break;
     default:
       screen = (

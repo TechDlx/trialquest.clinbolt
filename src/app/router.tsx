@@ -19,6 +19,7 @@ export type Route =
   | { name: 'glossary'; termId?: string }
   | { name: 'handoff' }
   | { name: 'settings' }
+  | { name: 'lab' }
   | { name: 'notfound'; path: string };
 
 export function parseHash(hash: string): Route {
@@ -59,6 +60,8 @@ export function parseHash(hash: string): Route {
       return { name: 'handoff' };
     case 'settings':
       return { name: 'settings' };
+    case 'lab':
+      return { name: 'lab' };
     default:
       return { name: 'notfound', path };
   }
@@ -94,6 +97,8 @@ export function href(route: Route): string {
       return '#/handoff';
     case 'settings':
       return '#/settings';
+    case 'lab':
+      return '#/lab';
     case 'notfound':
       return `#/${route.path}`;
   }

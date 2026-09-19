@@ -95,6 +95,8 @@ export interface Explained {
   explanation: string;
   consequence: string;
   conceptId: string;
+  /** Optional one-line inline confirmation when the player gets it right (<= 12 words). */
+  confirm?: string;
 }
 
 /** A tempting shortcut: helps timeline/budget, hurts safety or integrity. Not a mistake. */
@@ -512,6 +514,8 @@ export interface Level {
   variants?: LevelVariant[];
   shortcutPrompt?: ShortcutPrompt;
   mayaCameo?: MayaCameo;
+  /** Authored ahead of its world; the validator lists it and skips its missing emitters until the world is released. */
+  planned?: boolean;
 }
 
 // ---------------------------------------------------------------- crisis boss

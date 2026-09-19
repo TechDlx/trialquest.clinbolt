@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { content } from '@/content';
+import { labLevelById } from '@/content/lab';
 import { economy } from '@/content/economy';
 import type { MeterDelta } from '@/content/types';
 import type { StoredArtifact } from '@/content/artifacts';
@@ -27,6 +28,7 @@ import { Speech } from '@/components/Mascot';
 import { Chip, Hearts } from '@/components/Hud';
 import { Debrief } from './Debrief';
 import { employerLabel } from './BadgeSwap';
+import { endSegment, startSegment } from '@/engine/timing';
 
 type Phase =
   | { name: 'intro' }
@@ -41,7 +43,8 @@ const snap = () => {
 
 /** Thin host for a level. All rule logic lives in engine/pipeline.ts; variants in engine/variants.ts. */
 export function LevelScreen({ levelId }: { levelId: string }) {
-  const raw = content.levelById[levelId];
+  const raw = content.levelById[levelId] ?? labLevelById[levelId];
+  const isLab = !content.levelById[levelId] && !!labLevelById[levelId];
   const role = raw ? (content.roleById[raw.roleId] ?? content.roleRefById[raw.roleId]) : undefined;
   const world = raw ? content.worldById[raw.worldId] : undefined;
   const progress = useProgress();
@@ -51,9 +54,11 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   const [seed, setSeed] = useState(1);
   const freeUsed = useRef(false);
   const usedCarriers = useRef(new Set<string>());
-  const hasCardFlipped = raw ? !!progress.cardsViewed[raw.roleId]?.flipped : false;
+  const hasCardFlipped = isLab || (raw ? !!progress.cardsViewed[raw.roleId]?.flipped : false);
   // Built once per attempt so the artifact assignment is fixed for the run.
-  const [level, setLevel] = useState(() => (raw ? buildLevel(raw, useProgress.getState().artifacts) : undefined));
+  const [level, setLevel] = useState(() =>
+    raw ? buildLevel(raw, useProgress.getState().artifacts) : undefined,
+  );
 
   useEffect(() => {
     if (!raw) return;
@@ -150,6 +155,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
           else if (outcome === 'correct') s.recordSituation(raw.id, stage.id, itemId, true);
         }
       }
+      startSegment(`debrief ${raw.id}`);
       setPhase({ name: 'debrief', result, score, artifacts });
     },
     [raw, level],
@@ -164,7 +170,10 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   }
   if (!hasCardFlipped) return null;
 
-  const goMap = () => navigate({ name: 'map', worldId: world.id });
+  const goMap = () => {
+    endSegment(`debrief ${raw.id}`);
+    navigate({ name: 'map', worldId: world.id });
+  };
   const readCard = () => navigate({ name: 'role', roleId: role.id, levelId: raw.id });
 
   if (phase.name === 'intro') {

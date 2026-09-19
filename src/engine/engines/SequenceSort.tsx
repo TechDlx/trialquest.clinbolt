@@ -4,12 +4,13 @@ import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
-import { Feedback, type FeedbackKind } from './Feedback';
+import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import { seededShuffle, type EngineProps } from './types';
 
 interface Pending {
   kind: FeedbackKind;
   title: string;
+  confirm?: string;
   explanation: string;
   note?: string;
   finish?: boolean;
@@ -138,6 +139,8 @@ export function SequenceSort(p: EngineProps<SequenceSortConfig>) {
     if (wasFinish) finish(order);
   };
 
+  const shown = adaptFeedback(p.mode, pending);
+
   return (
     <div className="flex flex-1 flex-col gap-3" data-testid="sequence-sort">
       <p className="text-sm font-semibold">
@@ -194,13 +197,16 @@ export function SequenceSort(p: EngineProps<SequenceSortConfig>) {
           Check the order
         </Button>
       )}
-      {pending && (
+      {shown && (
         <Feedback
-          kind={pending.kind}
-          title={pending.title}
-          explanation={pending.explanation}
-          note={pending.note}
-          nextLabel={pending.finish ? 'Finish' : 'Fix it'}
+          auto={shown.auto}
+          inline={shown.inline}
+          ms={shown.ms}
+          kind={shown.kind}
+          title={shown.title}
+          explanation={shown.explanation}
+          note={shown.note}
+          nextLabel={shown.finish ? 'Finish' : 'Fix it'}
           onNext={next}
         />
       )}

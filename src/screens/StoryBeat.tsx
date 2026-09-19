@@ -7,6 +7,7 @@ import { Speech } from '@/components/Mascot';
 import { content } from '@/content';
 import { navigate } from '@/app/router';
 import { useProgress } from '@/store/progress';
+import { endSegment } from '@/engine/timing';
 
 export function StoryBeatView({
   beat,
@@ -15,6 +16,7 @@ export function StoryBeatView({
   onContinue,
   doseLine,
   testId,
+  skippable,
 }: {
   beat: StoryBeat;
   kicker: string;
@@ -22,6 +24,7 @@ export function StoryBeatView({
   onContinue: () => void;
   doseLine?: string;
   testId?: string;
+  skippable?: boolean;
 }) {
   return (
     <div
@@ -58,6 +61,11 @@ export function StoryBeatView({
       <Button size="lg" full onClick={onContinue} className="mt-6" data-testid="story-continue">
         {cta}
       </Button>
+      {skippable && (
+        <Button variant="ghost" onClick={onContinue} className="mt-1" data-testid="story-skip">
+          Skip
+        </Button>
+      )}
     </div>
   );
 }
@@ -71,9 +79,11 @@ export function IntroScreen() {
       kicker="Prologue"
       cta="Start World 1"
       testId="intro"
+      skippable
       doseLine="Hi, I'm Dose. I'll be with you on every job. Tap any underlined word for a quick definition."
       onContinue={() => {
         setIntroSeen();
+        endSegment('intro');
         navigate({ name: 'map', worldId: 'w1' });
       }}
     />

@@ -200,3 +200,16 @@ preset meters allowed; `meterOpening` sums; `context` on allocator; float tolera
 
 **Revision 2:** stages, discriminated simulation, id-based patches, artifact registry,
 per-engine shortcut table, crisis economy, review padding, migration.
+
+**Revision 4.1 (2c trims, 2026-09-19):** `Explained.confirm?` (one-line inline
+confirmation, ≤ 12 words); correct answers auto-advance and only wrong turns show the
+explanation panel; `consequence` is shown in the debrief only (top 2, "See all");
+crisis rounds defer all feedback to the resolution screen (`adaptFeedback` in
+`engines/Feedback.tsx`); role card front is title, employer, "What I do" and the
+hand-off chips (≤ 60 words), back holds the bullets; `Level.planned?` and
+`ArtifactSpecBody.planned?` replace the planned-world exemption (missing emitters FAIL
+unless planned, are listed as `info`, and FAIL when the world is released); word
+budgets and the reader-paced time model live in `src/content/estimate.ts` and are
+enforced as WARN by the validator; the stage and review clocks hold while feedback,
+reveal or sandbox is open; a dev-only timing log (`engine/timing.ts`) sits behind the
+Settings debug flag; `economy.crisis.poolMax` applies to every world.

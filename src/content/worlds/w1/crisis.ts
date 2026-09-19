@@ -188,7 +188,7 @@ export const w1Crisis: CrisisBoss = {
             choices: [
               {
                 id: 'c-plain',
-                text: 'Tell it straight: a safety finding in animals, a fix in progress, a three-month delay, and no promises.',
+                text: 'Tell it straight: an animal safety finding, a fix in progress, three months lost, no promises.',
                 quality: 'best',
                 next: 'end-trust',
                 conceptId: 'attrition',

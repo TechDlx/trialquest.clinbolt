@@ -1,11 +1,17 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Mistake, ShortcutEvent, Stars as StarCount, XpBreakdown } from '@/engine/scoring';
 import type { StoredArtifact } from '@/content/artifacts';
 import { artifactRegistry } from '@/content/artifacts';
+import type { StoryBeat } from '@/content/types';
 import { Stars } from '@/components/Hud';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import { Speech } from '@/components/Mascot';
+import { Maya } from '@/components/Maya';
+
+/** Mistakes shown before "See all". */
+export const TOP_MISTAKES = 2;
 
 export interface DebriefProps {
   kind: 'level' | 'boss' | 'review';
@@ -18,6 +24,8 @@ export interface DebriefProps {
   mistakes: Mistake[];
   shortcuts?: ShortcutEvent[];
   artifacts?: StoredArtifact[];
+  /** Crisis resolution: a story beat rendered above the results. */
+  story?: StoryBeat;
   correct: number;
   total: number;
   failed: boolean;
@@ -30,6 +38,7 @@ export interface DebriefProps {
 }
 
 export function Debrief(p: DebriefProps) {
+  const [showAll, setShowAll] = useState(false);
   const doseLine = p.failed
     ? (p.failReason ?? 'Out of hearts. Read the consequences below, then try again when a heart is back.')
     : p.stars === 3
@@ -37,6 +46,7 @@ export function Debrief(p: DebriefProps) {
       : p.stars === 2
         ? 'Solid work. One more pass would make it perfect.'
         : 'You got through. Check the consequences below so next time is cleaner.';
+  const visibleMistakes = showAll ? p.mistakes : p.mistakes.slice(0, TOP_MISTAKES);
 
   return (
     <div
@@ -44,9 +54,24 @@ export function Debrief(p: DebriefProps) {
       data-testid="debrief"
     >
       <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">
-        {p.failed ? 'Setback' : 'Debrief'}
+        {p.story ? 'Resolution' : p.failed ? 'Setback' : 'Debrief'}
       </p>
-      <h1 className="mt-1 text-2xl font-black">{p.title}</h1>
+      <h1 className="mt-1 text-2xl font-black">{p.story ? p.story.title : p.title}</h1>
+
+      {p.story && (
+        <div className="mt-3 rounded-card bg-surface p-3 shadow-card">
+          <div className="flex items-center gap-3">
+            <Maya size={56} />
+            <div>
+              <p className="text-sm font-bold">Maya</p>
+              <p className="text-sm text-muted">{p.story.mayaStatus}</p>
+            </div>
+          </div>
+          {p.story.paragraphs.map((t, i) => (
+            <RichText key={i} as="p" text={t} className="mt-2 text-sm leading-relaxed" />
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 rounded-card bg-surface p-4 text-center shadow-card">
         <motion.div
@@ -90,23 +115,36 @@ export function Debrief(p: DebriefProps) {
       )}
 
       {p.mistakes.length > 0 && (
-        <section className="mt-4">
+        <section className="mt-4" data-testid="debrief-mistakes">
           <h2 className="text-xs font-bold uppercase tracking-wide text-muted">
-            Consequences of your mistakes
+            {p.mistakes.length > TOP_MISTAKES && !showAll
+              ? `Consequences (top ${TOP_MISTAKES} of ${p.mistakes.length})`
+              : 'Consequences of your mistakes'}
           </h2>
           <ul className="mt-1 grid gap-2">
-            {p.mistakes.map((m, i) => (
+            {visibleMistakes.map((m, i) => (
               <li key={i} className="rounded-xl border border-bad/40 bg-bad-soft p-3 text-sm text-red-950">
                 <p className="font-semibold">{m.prompt}</p>
                 <p className="mt-1">
                   You chose <em>{m.chosen}</em>. Correct: <strong>{m.correctAnswer}</strong>.
                 </p>
+                <RichText as="p" text={m.explanation} className="mt-1" />
                 <p className="mt-1">
                   <span className="font-bold">Real-world consequence:</span> {m.consequence}
                 </p>
               </li>
             ))}
           </ul>
+          {p.mistakes.length > TOP_MISTAKES && !showAll && (
+            <Button
+              variant="ghost"
+              className="mt-2"
+              onClick={() => setShowAll(true)}
+              data-testid="debrief-see-all"
+            >
+              See all {p.mistakes.length}
+            </Button>
+          )}
         </section>
       )}
 
