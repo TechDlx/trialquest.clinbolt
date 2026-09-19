@@ -140,9 +140,14 @@ Test Yourself XP is bonus on top; every rank is reachable without it.
 
 ### 4.3 Hearts
 
-Max 5. A **mistake event** (per engine, §6) costs 1 heart. 0 hearts ends the level;
-debrief still shows consequences. Refill +1 per 30 min, +1 per Codex card review per
-day, full refill on a review node. World 1: first mistake per level is free.
+Max 5. A **mistake event** (per engine, §6) costs 1 heart. At 0 hearts the level
+pauses in place (clock held, engine mounted) and a hearts sheet opens: re-read any
+collected Role Card for +1 heart, or wait for the refill, then continue exactly where
+you stopped. Quitting keeps a **stage checkpoint** (`attempts` in the progress store):
+completed stages and their results are saved, and the level intro offers "Continue
+from stage N" or "Start over". Only a meter setback ends the level. Refill +1 per
+30 min, +1 per Codex card review per day, full refill on a review node. World 1:
+first mistake per level is free.
 **[A1]** Test Yourself never touches hearts. Crisis boss: a failed round costs 1 heart.
 
 ### 4.4 Meters (Patient Safety, Data Integrity, Timeline/Budget)

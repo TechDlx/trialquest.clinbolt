@@ -23,6 +23,11 @@ export interface StageRunnerProps extends Pick<
   relaxed: boolean;
   paused: boolean;
   onComplete: (aggregate: EngineResult, byStage: Record<string, EngineResult>) => void;
+  /** Resume from a saved checkpoint: completed stage results and the stage to start at. */
+  initialByStage?: Record<string, EngineResult>;
+  initialIndex?: number;
+  /** Called after every completed stage so the host can persist a checkpoint. */
+  onStageDone?: (byStage: Record<string, EngineResult>, nextIndex: number) => void;
 }
 
 /** Runs a level's stages in order: stage card → engine → next. Aggregates results by weight. */
@@ -36,10 +41,13 @@ export function StageRunner({
   onShortcut,
   onMeters,
   onComplete,
+  initialByStage = {},
+  initialIndex = 0,
+  onStageDone,
 }: StageRunnerProps) {
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(initialIndex);
   const [phase, setPhase] = useState<'card' | 'play'>('card');
-  const [byStage, setByStage] = useState<Record<string, EngineResult>>({});
+  const [byStage, setByStage] = useState<Record<string, EngineResult>>(initialByStage);
   const [promptDone, setPromptDone] = useState(false);
   const [held, setHeld] = useState(false);
   const stage = level.stages[index]!;
@@ -60,6 +68,7 @@ export function StageRunner({
       const next = { ...byStage, [stage.id]: r };
       setByStage(next);
       setHeld(false);
+      onStageDone?.(next, index + 1);
       if (index + 1 < level.stages.length) {
         setIndex(index + 1);
         setPhase('card');
@@ -74,7 +83,7 @@ export function StageRunner({
         );
       }
     },
-    [byStage, stage.id, index, level.id, level.stages, onComplete],
+    [byStage, stage.id, index, level.id, level.stages, onComplete, onStageDone],
   );
 
   const showPrompt = index === 0 && level.shortcutPrompt && !promptDone;

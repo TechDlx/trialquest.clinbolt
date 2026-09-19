@@ -5,7 +5,7 @@ import { economy } from '@/content/economy';
 import type { MeterDelta } from '@/content/types';
 import type { StoredArtifact } from '@/content/artifacts';
 import { navigate } from '@/app/router';
-import { useProgress } from '@/store/progress';
+import { useProgress, type LevelAttempt } from '@/store/progress';
 import { useSettings } from '@/store/settings';
 import type { EngineResult, Mistake, ShortcutEvent } from '@/engine/scoring';
 import {
@@ -26,6 +26,7 @@ import { Page, TopBar } from '@/components/Layout';
 import { RichText } from '@/components/RichText';
 import { Speech } from '@/components/Mascot';
 import { Chip, Hearts } from '@/components/Hud';
+import { HeartsSheet } from '@/components/HeartsSheet';
 import { Debrief } from './Debrief';
 import { employerLabel } from './BadgeSwap';
 import { endSegment, startSegment } from '@/engine/timing';
@@ -52,6 +53,11 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   const [phase, setPhase] = useState<Phase>({ name: 'intro' });
   const [paused, setPaused] = useState(false);
   const [seed, setSeed] = useState(1);
+  // Out of hearts mid-level: the engine stays mounted (clock held) while the player recovers a heart.
+  const [heartsGate, setHeartsGate] = useState(false);
+  // Checkpoint of the attempt in progress: completed stages and where to resume.
+  const [resumeFrom, setResumeFrom] = useState<Pick<LevelAttempt, 'nextIndex' | 'byStage'>>();
+  const savedAttempt = isLab ? undefined : progress.attempts[levelId];
   const freeUsed = useRef(false);
   const usedCarriers = useRef(new Set<string>());
   const hasCardFlipped = isLab || (raw ? !!progress.cardsViewed[raw.roleId]?.flipped : false);
@@ -76,19 +82,38 @@ export function LevelScreen({ levelId }: { levelId: string }) {
     [],
   );
 
-  const start = useCallback(() => {
-    freeUsed.current = false;
-    usedCarriers.current.clear();
-    setPaused(false);
-    setSeed((Date.now() % 1_000_000) + 1);
-    const built = raw ? buildLevel(raw, useProgress.getState().artifacts) : undefined;
-    setLevel(built);
-    if (built && Object.keys(built.meterOpening).length) {
-      const out = applyMeterDelta(snap(), built.meterOpening);
-      useProgress.getState().commitSnapshot(out.snapshot);
-    }
-    setPhase({ name: 'playing' });
-  }, [raw]);
+  const start = useCallback(
+    (attempt?: LevelAttempt) => {
+      freeUsed.current = attempt?.freeUsed ?? false;
+      usedCarriers.current.clear();
+      setPaused(false);
+      setHeartsGate(false);
+      setSeed(attempt?.seed ?? (Date.now() % 1_000_000) + 1);
+      setResumeFrom(attempt ? { nextIndex: attempt.nextIndex, byStage: attempt.byStage } : undefined);
+      const built = raw ? buildLevel(raw, useProgress.getState().artifacts) : undefined;
+      setLevel(built);
+      if (raw && !attempt) {
+        // A fresh run: drop any checkpoint and pay the level's opening meter cost (a resumed run already did).
+        useProgress.getState().clearAttempt(raw.id);
+        if (built && Object.keys(built.meterOpening).length) {
+          const out = applyMeterDelta(snap(), built.meterOpening);
+          useProgress.getState().commitSnapshot(out.snapshot);
+        }
+      }
+      setPhase({ name: 'playing' });
+    },
+    [raw],
+  );
+  const startFresh = useCallback(() => start(), [start]);
+  const resume = useCallback(() => start(savedAttempt), [start, savedAttempt]);
+
+  const onStageDone = useCallback(
+    (byStage: Record<string, EngineResult>, nextIndex: number) => {
+      if (!raw || isLab) return;
+      useProgress.getState().saveAttempt(raw.id, { seed, nextIndex, byStage, freeUsed: freeUsed.current });
+    },
+    [raw, isLab, seed],
+  );
 
   const onMistake = useCallback(
     (m: Mistake) => {
@@ -100,11 +125,17 @@ export function LevelScreen({ levelId }: { levelId: string }) {
       });
       freeUsed.current = out.freeUsed;
       if (out.heartLost) useProgress.getState().commitSnapshot(out.snapshot);
-      const reason = failureReason(out);
-      if (reason) fail(reason, [m]);
+      if (out.setback) {
+        fail(failureReason(out)!, [m]);
+      } else if (out.outOfHearts) {
+        // Keep the level exactly where it is; the sheet lets the player win a heart back and continue.
+        const saved = isLab ? undefined : useProgress.getState().attempts[raw.id];
+        if (saved) useProgress.getState().saveAttempt(raw.id, { ...saved, freeUsed: out.freeUsed });
+        setHeartsGate(true);
+      }
       return { heartLost: out.heartLost, note: out.note };
     },
-    [raw, world, fail],
+    [raw, world, fail, isLab],
   );
 
   const applyDelta = useCallback(
@@ -139,6 +170,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
     (result: EngineResult, byStage: Record<string, EngineResult>) => {
       if (!raw || !level) return;
       const s = useProgress.getState();
+      s.clearAttempt(raw.id);
       const score = scoreLevel(result, { firstTime: !s.levels[raw.id]?.completedAt });
       s.recordLevelResult(raw.id, { stars: score.stars, score: score.score, xp: score.xp });
       if (score.stars > 0) s.touchStreak();
@@ -221,8 +253,18 @@ export function LevelScreen({ levelId }: { levelId: string }) {
               Open the Codex
             </Button>
           </div>
+        ) : savedAttempt && savedAttempt.nextIndex > 0 ? (
+          <div className="mt-4 flex flex-col gap-2">
+            <Button size="lg" full onClick={resume} data-testid="resume-level">
+              Continue from stage {Math.min(savedAttempt.nextIndex, level.stages.length - 1) + 1} of{' '}
+              {level.stages.length}
+            </Button>
+            <Button variant="ghost" full onClick={startFresh} data-testid="start-level">
+              Start over
+            </Button>
+          </div>
         ) : (
-          <Button size="lg" full className="mt-4" onClick={start} data-testid="start-level">
+          <Button size="lg" full className="mt-4" onClick={startFresh} data-testid="start-level">
             Start
           </Button>
         )}
@@ -247,11 +289,19 @@ export function LevelScreen({ levelId }: { levelId: string }) {
           world={world}
           seed={seed}
           relaxed={relaxed}
-          paused={paused}
+          paused={paused || heartsGate}
           onMistake={onMistake}
           onShortcut={onShortcut}
           onMeters={applyDelta}
           onComplete={onComplete}
+          onStageDone={onStageDone}
+          initialIndex={resumeFrom?.nextIndex}
+          initialByStage={resumeFrom?.byStage}
+        />
+        <HeartsSheet
+          open={heartsGate}
+          onContinue={() => setHeartsGate(false)}
+          onQuit={() => navigate({ name: 'map', worldId: world.id })}
         />
       </TaskShell>
     );
@@ -273,7 +323,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
         failReason={phase.reason}
         canRetry={progress.hearts > 0}
         onContinue={goMap}
-        onRetry={start}
+        onRetry={startFresh}
         onReadCard={readCard}
       />
     );

@@ -88,4 +88,79 @@ describe('Level screen: w1-l3 end to end', () => {
     expect(s.hearts).toBe(5); // World 1: first mistake free
     expect(screen.getByTestId('reveal')).toHaveAttribute('data-band', 'reckless');
   });
+
+  it('running out of hearts mid-stage keeps the level where it stopped; a Codex card wins a heart back', async () => {
+    const p = useProgress.getState();
+    for (let i = 0; i < 4; i++) p.loseHeart();
+    expect(useProgress.getState().hearts).toBe(1);
+    render(<LevelScreen levelId="w1-l3" />);
+    fireEvent.click(screen.getByTestId('start-level'));
+    fireEvent.click(screen.getByTestId('start-stage-findings'));
+    const cfg = content.levelById['w1-l3']!.stages[0]!.game as BucketSortConfig;
+    const wrongFor = (text: string) => {
+      const card = cfg.cards.find((c) => strip(c.text) === text)!;
+      return cfg.buckets.find((b) => b.id !== card.bucketId && b.id !== 'noise')!.id;
+    };
+    // Card 1 wrong: World 1's free mistake. Card 2 wrong: the last heart.
+    fireEvent.click(
+      screen.getByTestId(`bucket-${wrongFor(screen.getByTestId('bucket-card').textContent!.trim())}`),
+    );
+    fireEvent.click(screen.getByTestId('engine-next'));
+    const stuckOn = screen.getByTestId('bucket-card').textContent!.trim();
+    fireEvent.click(screen.getByTestId(`bucket-${wrongFor(stuckOn)}`));
+    expect(useProgress.getState().hearts).toBe(0);
+    expect(screen.getByTestId('hearts-sheet')).toBeInTheDocument();
+    expect(screen.queryByTestId('debrief')).toBeNull(); // not failed out
+
+    // Re-read the Toxicologist card inside the sheet and claim a heart.
+    fireEvent.click(screen.getByTestId('hearts-card-preclinical-toxicologist'));
+    fireEvent.click(screen.getByTestId('hearts-claim'));
+    expect(useProgress.getState().hearts).toBe(1);
+    fireEvent.click(screen.getByTestId('hearts-continue'));
+    expect(screen.queryByTestId('hearts-sheet')).toBeNull();
+
+    // Still on the same card, with its explanation waiting.
+    fireEvent.click(screen.getByTestId('engine-next'));
+    expect(screen.getByTestId('bucket-card').textContent!.trim()).not.toBe(stuckOn);
+    for (let i = 2; i < cfg.cards.length; i++) {
+      const card = cfg.cards.find(
+        (c) => strip(c.text) === screen.getByTestId('bucket-card').textContent!.trim(),
+      )!;
+      fireEvent.click(screen.getByTestId(`bucket-${card.bucketId}`));
+      await gone();
+    }
+    expect(screen.getByTestId('start-stage-dose')).toBeInTheDocument();
+    expect(useProgress.getState().attempts['w1-l3']).toMatchObject({ nextIndex: 1, freeUsed: true });
+  });
+
+  it('leaving after a completed stage resumes at the next stage instead of starting over', async () => {
+    const { unmount } = render(<LevelScreen levelId="w1-l3" />);
+    fireEvent.click(screen.getByTestId('start-level'));
+    fireEvent.click(screen.getByTestId('start-stage-findings'));
+    const cfg = content.levelById['w1-l3']!.stages[0]!.game as BucketSortConfig;
+    for (let i = 0; i < cfg.cards.length; i++) {
+      const card = cfg.cards.find(
+        (c) => strip(c.text) === screen.getByTestId('bucket-card').textContent!.trim(),
+      )!;
+      fireEvent.click(screen.getByTestId(`bucket-${card.bucketId}`));
+      await gone();
+    }
+    expect(useProgress.getState().attempts['w1-l3']!.nextIndex).toBe(1);
+    unmount(); // e.g. quit to the map to collect hearts
+
+    render(<LevelScreen levelId="w1-l3" />);
+    expect(screen.getByTestId('resume-level')).toHaveTextContent('Continue from stage 2 of 2');
+    fireEvent.click(screen.getByTestId('resume-level'));
+    expect(screen.getByTestId('start-stage-dose')).toBeInTheDocument(); // straight to stage 2
+    fireEvent.click(screen.getByTestId('start-stage-dose'));
+    fireEvent.change(screen.getByTestId('slider-dose'), { target: { value: '0.5' } });
+    fireEvent.click(screen.getByTestId('allocator-commit'));
+    fireEvent.click(screen.getByTestId('reveal-done'));
+    fireEvent.click(screen.getByTestId('sandbox-done'));
+    expect(await screen.findByTestId('debrief')).toBeInTheDocument();
+    const s = useProgress.getState();
+    expect(s.attempts['w1-l3']).toBeUndefined();
+    expect(s.levels['w1-l3']!.stars).toBe(3); // stage 1 results carried over
+    expect(s.artifacts['dose.starting']).toMatchObject({ tag: 'standard' });
+  });
 });

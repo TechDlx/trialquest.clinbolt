@@ -5,7 +5,7 @@ import type { MeterId } from '@/content/types';
 import type { ArtifactStore, StoredArtifact } from '@/content/artifacts';
 import { gainHearts, loseHeart as loseHeartPure, refillHearts } from '@/engine/hearts';
 import { dayKey, daysBetween } from '@/engine/dates';
-import type { Stars, XpBreakdown } from '@/engine/scoring';
+import type { EngineResult, Stars, XpBreakdown } from '@/engine/scoring';
 import { safeStorage, STORAGE_KEYS } from './storage';
 
 export const PROGRESS_VERSION = 2;
@@ -88,6 +88,16 @@ export interface ProgressData {
   finaleSeen: boolean;
   tipsDismissed: Record<string, boolean>;
   createdAt: string;
+  /** In-progress level attempts: completed stage results, so leaving to collect hearts does not restart the level. */
+  attempts: Record<string, LevelAttempt>;
+}
+
+export interface LevelAttempt {
+  seed: number;
+  nextIndex: number;
+  byStage: Record<string, EngineResult>;
+  freeUsed: boolean;
+  savedAt: string;
 }
 
 export const situationKey = (levelId: string, stageId: string, itemId: string) =>
@@ -124,6 +134,8 @@ export interface ProgressActions {
   setIntroSeen: () => void;
   setFinaleSeen: () => void;
   dismissTip: (id: string) => void;
+  saveAttempt: (levelId: string, attempt: Omit<LevelAttempt, 'savedAt'>, now?: Date) => void;
+  clearAttempt: (levelId: string) => void;
   resetProgress: () => void;
 }
 
@@ -150,6 +162,7 @@ export function initialProgress(now: Date = new Date()): ProgressData {
     finaleSeen: false,
     tipsDismissed: {},
     createdAt: now.toISOString(),
+    attempts: {},
   };
 }
 
@@ -441,6 +454,12 @@ export const useProgress = create<ProgressState>()(
       setIntroSeen: () => set({ introSeen: true }),
       setFinaleSeen: () => set({ finaleSeen: true }),
       dismissTip: (id) => set({ tipsDismissed: { ...get().tipsDismissed, [id]: true } }),
+      saveAttempt: (levelId, attempt, now = new Date()) =>
+        set({ attempts: { ...get().attempts, [levelId]: { ...attempt, savedAt: now.toISOString() } } }),
+      clearAttempt: (levelId) => {
+        const { [levelId]: _drop, ...rest } = get().attempts;
+        set({ attempts: rest });
+      },
       resetProgress: () => set({ ...initialProgress() }),
     }),
     {
@@ -470,6 +489,7 @@ export const useProgress = create<ProgressState>()(
           finaleSeen,
           tipsDismissed,
           createdAt,
+          attempts,
         } = s;
         return {
           xp,
@@ -491,6 +511,7 @@ export const useProgress = create<ProgressState>()(
           finaleSeen,
           tipsDismissed,
           createdAt,
+          attempts,
         };
       },
     },
