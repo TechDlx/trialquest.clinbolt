@@ -6,17 +6,17 @@ No logic. If the validator is happy, the game will run.
 
 ## 1. Where things live
 
-| What you want to change                       | File                                   |
-| --------------------------------------------- | -------------------------------------- |
-| A role's name, employer, badge icon           | `src/content/roleIndex.ts`             |
-| A Role Card (job description)                 | `src/content/worlds/<world>/roles.ts`  |
-| A level (the task the player plays)           | `src/content/worlds/<world>/levels.ts` |
-| The end-of-world crisis                       | `src/content/worlds/<world>/crisis.ts` |
-| Test Yourself questions                       | `src/content/knowledge/<world>.ts`     |
-| Story beats and the order of nodes on the map | `src/content/worlds.ts`                |
-| Glossary terms                                | `src/content/glossary.ts`              |
-| Artifacts (things one level hands to another) | `src/content/artifacts.ts`             |
-| Numbers: XP, hearts, timers, star thresholds  | `src/content/economy.ts`               |
+| What you want to change                       | File                                                                   |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| A role's name, employer, badge icon           | `src/content/roleIndex.ts`                                             |
+| A Role Card (job description)                 | `src/content/worlds/<world>/roles.ts`                                  |
+| A level (the task the player plays)           | `src/content/worlds/<world>/levels.ts`                                 |
+| The end-of-world crisis                       | `src/content/worlds/<world>/crisis.ts`                                 |
+| Test Yourself questions                       | `src/content/knowledge/<world>.ts`                                     |
+| Story beats and the order of nodes on the map | `src/content/worlds.ts`                                                |
+| Glossary terms                                | `src/content/glossary/<world>.ts` (World 1 terms sit in `glossary.ts`) |
+| Artifacts (things one level hands to another) | `src/content/artifacts.ts`                                             |
+| Numbers: XP, hearts, timers, star thresholds  | `src/content/economy.ts`                                               |
 
 Every file is a list of objects. Copy an existing one, change the words, keep the shape.
 The complete worked examples are `w1-l3` in `worlds/w1/levels.ts` (two stages, both kinds
@@ -37,7 +37,7 @@ that consumes that artifact through five variants).
 ## 3. Links and live values in copy
 
 - `[[noael]]` shows the glossary term's name; `[[noael|the NOAEL]]` shows your own words.
-  The term must exist in `glossary.ts`. Link the first mention in each level.
+  The term must exist in `glossary.ts` or a `glossary/<world>.ts` file. Link the first mention in each level.
 - `{{dose.starting.mgPerKg}}` inserts a value a player produced earlier (see §7). If the
   player never produced it, the fallback from `artifacts.ts` is used. Never type a
   player-dependent number into copy by hand; use this instead.

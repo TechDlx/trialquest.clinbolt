@@ -176,8 +176,8 @@ test('new player completes World 1 end to end on the intended engines', async ({
   });
   timings.total = (Date.now() - t0) / 1000;
 
-  // World 2 unlocked (planned content shows as coming soon).
-  await expect(page.getByTestId('node-w2-l1')).toHaveAttribute('data-status', 'planned');
+  // World 2 unlocked: its first level is now the current node.
+  await expect(page.getByTestId('node-w2-l1')).toHaveAttribute('data-status', 'current');
 
   // ---- Optional Test Yourself from a done node; never required, never costs hearts.
   await page.getByTestId('node-w1-l1').click();

@@ -7,6 +7,7 @@ import { w4Intro, w4Outro } from './worlds/w4';
 import { w5Intro, w5Outro } from './worlds/w5';
 import { w6Intro, w6Outro } from './worlds/w6';
 import { w7Intro, w7Outro } from './worlds/w7';
+import { w8Intro, w8Outro } from './worlds/w8';
 
 function levelNodes(worldId: WorldId): MapNode[] {
   return roleIndex
@@ -23,13 +24,6 @@ function withReviews(worldId: WorldId, levels: MapNode[], after: number[]): MapN
   });
   return out;
 }
-
-const planned = (id: string, title: string, mayaStatus: string): StoryBeat => ({
-  id,
-  title,
-  paragraphs: ['This chapter is coming soon.'],
-  mayaStatus,
-});
 
 const world = (
   id: WorldId,
@@ -110,10 +104,16 @@ export const worlds: World[] = [
     { intro: w7Intro, outro: w7Outro },
     'ready',
   ),
-  world('w8', 8, 'Launch & Beyond', 'Market, safety, real-world evidence', [7], 0.85, {
-    intro: planned('w8-intro', 'Launch day', 'Waiting for a prescription.'),
-    outro: planned('w8-outro', "Maya's medicine", 'Treated.'),
-  }),
+  world(
+    'w8',
+    8,
+    'Launch & Beyond',
+    'Market, safety, real-world evidence',
+    [7],
+    0.85,
+    { intro: w8Intro, outro: w8Outro },
+    'ready',
+  ),
 ];
 
 export const worldById: Record<string, World> = Object.fromEntries(worlds.map((w) => [w.id, w]));

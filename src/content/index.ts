@@ -9,6 +9,7 @@ import { w4Crisis, w4Levels, w4Review, w4Roles } from './worlds/w4';
 import { w5Crisis, w5Levels, w5Review, w5Roles } from './worlds/w5';
 import { w6Crisis, w6Levels, w6Reviews, w6Roles } from './worlds/w6';
 import { w7Crisis, w7Levels, w7Review, w7Roles } from './worlds/w7';
+import { w8Crisis, w8Levels, w8Review, w8Roles } from './worlds/w8';
 import { w1Knowledge } from './knowledge/w1';
 import { w2Knowledge } from './knowledge/w2';
 import { w3Knowledge } from './knowledge/w3';
@@ -16,12 +17,22 @@ import { w4Knowledge } from './knowledge/w4';
 import { w5Knowledge } from './knowledge/w5';
 import { w6Knowledge } from './knowledge/w6';
 import { w7Knowledge } from './knowledge/w7';
+import { w8Knowledge } from './knowledge/w8';
 export { artifactRegistry } from './artifacts';
 
 /**
  * Content registry: every world's roles, levels, crises, review nodes and Test Yourself sets.
  */
-const roles: Role[] = [...w1Roles, ...w2Roles, ...w3Roles, ...w4Roles, ...w5Roles, ...w6Roles, ...w7Roles];
+const roles: Role[] = [
+  ...w1Roles,
+  ...w2Roles,
+  ...w3Roles,
+  ...w4Roles,
+  ...w5Roles,
+  ...w6Roles,
+  ...w7Roles,
+  ...w8Roles,
+];
 const levels: Level[] = [
   ...w1Levels,
   ...w2Levels,
@@ -30,8 +41,9 @@ const levels: Level[] = [
   ...w5Levels,
   ...w6Levels,
   ...w7Levels,
+  ...w8Levels,
 ];
-const crises: CrisisBoss[] = [w1Crisis, w2Crisis, w3Crisis, w4Crisis, w5Crisis, w6Crisis, w7Crisis];
+const crises: CrisisBoss[] = [w1Crisis, w2Crisis, w3Crisis, w4Crisis, w5Crisis, w6Crisis, w7Crisis, w8Crisis];
 const reviewNodes: ReviewNode[] = [
   w1Review,
   w2Review,
@@ -40,6 +52,7 @@ const reviewNodes: ReviewNode[] = [
   w5Review,
   ...w6Reviews,
   w7Review,
+  w8Review,
 ];
 const knowledge: KnowledgeCheck[] = [
   ...w1Knowledge,
@@ -49,6 +62,7 @@ const knowledge: KnowledgeCheck[] = [
   ...w5Knowledge,
   ...w6Knowledge,
   ...w7Knowledge,
+  ...w8Knowledge,
 ];
 
 export const content = {

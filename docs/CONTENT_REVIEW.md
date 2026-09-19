@@ -47,3 +47,48 @@ audience. Resolve a row by editing the content file and striking it here.
 
 Release gate: Group A rows marked **yes** (13, 16, 17, 25) block release of World 1 to
 learners. Everything else can ship with the current wording.
+
+## Milestone 3 additions (Worlds 2–8), 2026-09-19
+
+Same three groups. Rows marked **yes** block release of that world to learners.
+
+### Group A — a practitioner would call this wrong
+
+| #   | Blocks release | File                                | Claim                                                                                                   | Why                                                                                                                                                     |
+| --- | -------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 27  | yes            | `w2/levels.ts` w2-l2 simulation     | Power curve: n=100 → 46 %, n=200 → 80 %, n=260 → 89 % for "20 more fatigue-free days".                  | Illustrative two-arm numbers with an unstated SD. Either state the assumptions in `context` or have a statistician set the curve.                       |
+| 28  | yes            | `w4/levels.ts` w4-l1 `v-vitamin`    | A daily multivitamin is a "query the sponsor" case under "no daily medicines".                          | Many protocols allow supplements explicitly; confirm the grey area is realistic or swap for a borderline prescription medicine.                         |
+| 29  | yes            | `w5/levels.ts` w5-l5 `liver` card   | Jaundice + ALT 10× ULN, "possibly related", is a SUSAR on a 7-day clock.                                | 7 days applies to fatal or life-threatening; hospitalised jaundice may be 15-day unless judged life-threatening. Explanation says 7; confirm or say 15. |
+| 30  | yes            | `w7/levels.ts` w7-l5, w7 crisis     | Two serious dose-related, reversible liver cases in ~1,400 patients justify a boxed warning.            | Boxed warnings are a judgement on severity and manageability; an SME should confirm the game's "boxed is best" answer or make "standard" acceptable.    |
+| 31  | no             | `w6/levels.ts` w6-l4 futility node  | Conditional power 55 % vs a 20 % futility boundary; "sample size re-estimation only if planned".        | Correct in principle; confirm the numbers read sensibly to a statistician.                                                                              |
+| 32  | no             | `w8/levels.ts` w8-l2 simulation     | Coverage / patients-reached curves by monthly price; "$800–1,600 value-based" for 21 fatigue-free days. | Entirely illustrative; no real HTA threshold is implied. Confirm the reveal is labelled clearly enough as a projection.                                 |
+| 33  | no             | `w8/levels.ts` w8-l6 `sig-pancreas` | 9 reports vs 1 expected with 2 positive rechallenges is a validated signal.                             | Reasonable teaching example; confirm the disproportionality framing.                                                                                    |
+
+### Group B — acceptable simplification that needs a nod
+
+| #   | File                              | Claim                                                                                                       | Why                                                                                                         |
+| --- | --------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 34  | `w2/levels.ts` w2-l3              | "In the US the study may start after 30 days unless the FDA objects; in the EU you wait for authorisation." | CTR 536/2014 timelines are simplified to "a fixed assessment timetable".                                    |
+| 35  | `w2/roles.ts` irb-member          | "At least one non-scientist and one member with no ties to the institution."                                | Matches 21 CFR 56.107; EU committee composition varies by member state.                                     |
+| 36  | `w3/levels.ts` w3-l3, w3-l5       | QP release framed as EU-only; "IVRS" as the older name for IRT.                                             | Both fine as simplifications.                                                                               |
+| 37  | `w3/levels.ts` w3-l6              | Shared site login as a "critical" Part 11 finding.                                                          | Severity is inspector judgement; the game treats it as critical for teaching.                               |
+| 38  | `w4/levels.ts` w4-l3 simulation   | Peak exposure 50 % → 80 % on a doubling; 130 % on a 3.3× step; ceiling = 100.                               | Toy linear PK; labelled "Dose's projection".                                                                |
+| 39  | `w5/levels.ts` w5-l1              | Referral bonuses to specialists framed as a conflict of interest / undue influence.                         | Finder's fees are widely prohibited by ethics committees and codes; regional rules differ.                  |
+| 40  | `w5/levels.ts` w5-l4              | Coded terms shown as plain words ("Alanine aminotransferase increased") rather than exact dictionary text.  | Deliberate: no licensed dictionary text is reproduced.                                                      |
+| 41  | `w6/levels.ts` w6-l3              | Critical / major / minor grading criteria.                                                                  | Follows common sponsor practice and EMA inspection classification; wording is the game's.                   |
+| 42  | `w6/levels.ts` w6-l5, w6-l6       | Lock → codes → analysis order; SDTM → ADaM → TLF; Define-XML; double programming.                           | Standard practice, simplified.                                                                              |
+| 43  | `w7/levels.ts` w7-l3, w7/roles.ts | "Day 60 filing review", "about ten months" FDA review, "210-day" EU clock.                                  | Day-74 letter / 60-day filing and standard 10-month review are FDA practice; EU clock stops are simplified. |
+| 44  | `w7/levels.ts` w7-l2              | 900 MB file over the gateway limit; scans fail validation.                                                  | Limits and error categories vary by agency and year; kept generic.                                          |
+| 45  | `w8/levels.ts` w8-l4, w8-l5       | MSL/rep boundaries: unsolicited off-label questions, one-business-day AE reporting, travel as inducement.   | Reflects common codes (e.g., industry codes, anti-kickback rules); country detail omitted.                  |
+| 46  | `w8/levels.ts` w8-l7, w8 crisis   | "Dear prescriber" letter before the label text changes; post-approval study as the confirming step.         | Order of DHCP letter and label variation differs by region; kept as a teaching sequence.                    |
+
+### Group C — wording only
+
+| #   | File                       | Claim                                                          | Why                                                             |
+| --- | -------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------- |
+| 47  | `w5/index.ts`, w6 outro    | Maya is "Participant 0417"; she was on placebo the whole time. | Story device; confirm the tone of the unblinding reveal.        |
+| 48  | `w6/levels.ts` w6-l4 cameo | "The point on the fatigue chart you looked at was Maya."       | Confirm a single-patient point on a DSMB chart reads plausibly. |
+| 49  | `w8/index.ts` outro        | "Forty-four jobs. Ten years."                                  | Matches the game's timeline; not a claim about real averages.   |
+
+Release gate for Worlds 2–8: rows 27–30 marked **yes**. Everything else can ship with the
+current wording.

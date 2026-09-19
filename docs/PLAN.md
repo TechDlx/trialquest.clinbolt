@@ -65,7 +65,7 @@ Exit: World 1 completable with zero quiz questions on the main path; all 9 engin
 playable at 360 px with touch and keyboard; validator passes; e2e smoke updated
 (includes crisis boss and one Test Yourself run); commit.
 
-## Milestone 3 — Content for Worlds 2–8
+## Milestone 3 — Content for Worlds 2–8 — DONE 2026-09-19
 
 - 40 role cards, 40 levels on intended engines, each with ≥ 1 shortcut; the 4 hybrid
   simulation levels (Biostatistician, Clinical Pharmacologist, Market Access, plus
@@ -75,6 +75,17 @@ playable at 360 px with touch and keyboard; validator passes; e2e smoke updated
   `KnowledgeCheck` for all 44 roles, `mayaCameo` in W5–W8 levels.
 - Codex, Glossary, Handoff Map lane diagram with artifact edges, lazy loading per
   world, bundle check, `docs/CONTENT_REVIEW.md` flags.
+
+Delivered: 40 role cards, 40 levels (all 44 on their intended engines, every level with
+a shortcut, 7 crisis bosses, 9 new review nodes, 14 story beats, 160 Test Yourself
+questions, 130 new glossary terms), chains a/b/c wired end to end (`w2-l1 → w3-l4 →
+w4-l1 → w5-l2 → w6-l2`, `w4-l2 → w5-l4 → w5-l5 → w7-l5 → w8-l3/w8-l6`, `w1-l3 →
+w4-l3 → w4-l4 → w5-l1`), Maya cameos in w5-l2, w5-l3, w6-l4, w7-l3, w8-l4 rendered
+by a MayaTag in the engines and revealed in the debrief. Content stays in the core
+bundle: 248 KB core + 43 KB motion gzipped, 9 KB under the 300 KB budget, so per-world
+lazy loading is deferred; it is the first Milestone 4 task if the finale pushes it over.
+The finale screen and certificate remain Milestone 4 (the map's finale node routes to
+the map until then).
 
 Exit: all 8 worlds completable without Test Yourself; validator green; commit.
 
