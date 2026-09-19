@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { MainPathConfig, Stage, World } from '@/content/types';
+import type { MainPathConfig, MayaCameo, Stage, World } from '@/content/types';
 import { economy } from '@/content/economy';
 import { Button } from '@/components/Button';
 import { TimerBar } from '@/components/Hud';
@@ -28,6 +28,8 @@ export interface StageRunnerProps extends Pick<
   initialIndex?: number;
   initialEngine?: EngineSnapshot;
   initialRemaining?: number;
+  /** Maya's anonymous appearance in one stage of this level (World 5 on). */
+  cameo?: MayaCameo;
   /** Called after every completed stage and after every engine state change, so the host can persist a checkpoint. */
   onCheckpoint?: (c: StageCheckpoint) => void;
 }
@@ -58,6 +60,7 @@ export function StageRunner({
   initialEngine,
   initialRemaining,
   onCheckpoint,
+  cameo,
 }: StageRunnerProps) {
   const [index, setIndex] = useState(initialIndex);
   // A saved engine state means the player was mid-stage: skip the stage card and drop back in.
@@ -190,6 +193,11 @@ export function StageRunner({
         remainingFraction={timed ? countdown.fraction : 1}
         timeUp={timed && countdown.expired}
         mode="level"
+        cameo={
+          cameo && cameo.stageId === stage.id
+            ? { itemId: cameo.itemId, label: cameo.label, presentation: cameo.presentation }
+            : undefined
+        }
         onMistake={onMistake}
         onShortcut={onShortcut}
         onMeters={onMeters}

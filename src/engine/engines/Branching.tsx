@@ -6,6 +6,7 @@ import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/sco
 import { findNodeOfChoice } from '@/engine/registry';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
+import { MayaTag } from '@/components/MayaTag';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import type { EngineProps, ScoredSnapshot } from './types';
 
@@ -206,10 +207,14 @@ export function Branching(p: EngineProps<BranchingConfig>) {
         animate={{ opacity: 1, x: 0 }}
         className="rounded-card bg-surface p-4 shadow-card"
       >
-        {node.speaker && (
-          <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">
-            {node.speaker}
-          </p>
+        {p.cameo?.itemId === node.id ? (
+          <MayaTag label={p.cameo.label} />
+        ) : (
+          node.speaker && (
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">
+              {node.speaker}
+            </p>
+          )
         )}
         <RichText as="p" text={node.text} className="mt-1 text-base leading-relaxed" />
       </motion.div>

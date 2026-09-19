@@ -4,6 +4,7 @@ import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
+import { MayaTag } from '@/components/MayaTag';
 import { CheckIcon, XIcon } from '@/components/Icons';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import { seededShuffle, type EngineProps, type ScoredSnapshot } from './types';
@@ -199,7 +200,10 @@ export function Impostor(p: EngineProps<ImpostorConfig>) {
                         : 'border-dashed border-border bg-surface-2'
               }`}
             >
-              <span>{c.title}</span>
+              <span className="flex flex-col items-start gap-1">
+                {c.title}
+                {p.cameo?.itemId === c.id && <MayaTag label={p.cameo.label} />}
+              </span>
               {state === 'correct' && <CheckIcon size={18} />}
               {state === 'wrong' && <XIcon size={18} />}
             </button>

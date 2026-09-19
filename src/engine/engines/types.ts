@@ -1,4 +1,4 @@
-import type { MeterDelta } from '@/content/types';
+import type { MayaPresentation, MeterDelta } from '@/content/types';
 import type { EngineResult, Mistake, ShortcutEvent } from '@/engine/scoring';
 import type { MistakeFeedback } from '@/engine/quiz-blitz/QuizBlitz';
 
@@ -36,6 +36,8 @@ export interface EngineProps<C> {
   onComplete: (r: EngineResult) => void;
   /** The engine is showing feedback, a reveal or a sandbox: the host may hold its clock. */
   onHold?: (held: boolean) => void;
+  /** One item in this stage is Maya (anonymous until the debrief). Engines mark it with a MayaTag. */
+  cameo?: { itemId: string; label: string; presentation: MayaPresentation };
   /** Restore in-progress state saved by `onSnapshot` (same config and seed). */
   snapshot?: EngineSnapshot;
   /** Fires after every state change with the engine's serializable state, so the host can checkpoint per item. */

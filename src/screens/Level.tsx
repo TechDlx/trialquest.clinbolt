@@ -309,6 +309,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
           initialByStage={resumeFrom?.byStage}
           initialEngine={resumeFrom?.engine}
           initialRemaining={resumeFrom?.remaining}
+          cameo={level.mayaCameo}
         />
         <HeartsSheet
           open={heartsGate}
@@ -352,6 +353,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
       xp={score.xp}
       learned={level.debrief.learned}
       handoffLine={level.debrief.handoffLine}
+      mayaLine={level.mayaCameo?.debriefLine}
       mistakes={result.mistakes}
       shortcuts={result.shortcuts}
       artifacts={phase.artifacts}

@@ -2,6 +2,7 @@ import type { GlossaryTerm } from './types';
 import { w2Terms } from './glossary/w2';
 import { w3Terms } from './glossary/w3';
 import { w4Terms } from './glossary/w4';
+import { w5Terms } from './glossary/w5';
 
 /**
  * Glossary. Link to a term in any copy with [[id]] or [[id|Shown text]].
@@ -410,6 +411,7 @@ export const glossary: GlossaryTerm[] = [
   ...w2Terms,
   ...w3Terms,
   ...w4Terms,
+  ...w5Terms,
 ];
 
 export const glossaryById: Record<string, GlossaryTerm> = Object.fromEntries(glossary.map((t) => [t.id, t]));

@@ -3,6 +3,7 @@ import type { DashConfig } from '@/content/types';
 import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { RichText } from '@/components/RichText';
+import { MayaTag } from '@/components/MayaTag';
 import { Feedback, adaptFeedback } from './Feedback';
 import type { EngineProps, ScoredSnapshot } from './types';
 
@@ -239,7 +240,10 @@ export function DashManager(p: EngineProps<DashConfig>) {
               className={`tap rounded-2xl border-2 p-2 text-left ${selected === it.id ? 'border-brand-600 bg-brand-50' : 'border-border bg-surface'}`}
             >
               <div className="flex items-center justify-between text-sm font-bold">
-                <span>{it.label}</span>
+                <span className="flex items-center gap-2">
+                  {it.label}
+                  {p.cameo?.itemId === it.id && <MayaTag label={p.cameo.label} />}
+                </span>
                 <span className="text-xs text-muted">
                   next: {p.config.stations.find((s) => s.id === it.steps[l.step])?.label}
                 </span>

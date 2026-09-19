@@ -3,6 +3,7 @@ import type { BucketSortConfig } from '@/content/types';
 import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { RichText } from '@/components/RichText';
+import { MayaTag } from '@/components/MayaTag';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import { seededShuffle, type EngineProps, type ScoredSnapshot } from './types';
 
@@ -183,6 +184,7 @@ export function BucketSort(p: EngineProps<BucketSortConfig>) {
         <RichText text={p.config.prompt} />
       </p>
       <div className="rounded-card bg-surface p-4 shadow-card" data-testid="bucket-card">
+        {p.cameo?.itemId === card.id && <MayaTag label={p.cameo.label} className="mb-2" />}
         <RichText as="p" text={card.text} className="text-base font-semibold leading-snug sm:text-lg" />
       </div>
       <div className="grid grid-cols-2 gap-2" role="group" aria-label="Buckets">

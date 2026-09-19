@@ -4,6 +4,7 @@ import { w1Intro, w1Outro } from './worlds/w1';
 import { w2Intro, w2Outro } from './worlds/w2';
 import { w3Intro, w3Outro } from './worlds/w3';
 import { w4Intro, w4Outro } from './worlds/w4';
+import { w5Intro, w5Outro } from './worlds/w5';
 
 function levelNodes(worldId: WorldId): MapNode[] {
   return roleIndex
@@ -86,10 +87,16 @@ export const worlds: World[] = [
     'ready',
   ),
   world('w4', 4, 'Phase I', 'Is it safe?', [4], 1.0, { intro: w4Intro, outro: w4Outro }, 'ready'),
-  world('w5', 5, 'Phase II', 'Does it work? What dose?', [5], 0.9, {
-    intro: planned('w5-intro', 'Maya enrols', 'Enrolled. Blinded.'),
-    outro: planned('w5-outro', 'A signal', 'Enrolled. Blinded.'),
-  }),
+  world(
+    'w5',
+    5,
+    'Phase II',
+    'Does it work? What dose?',
+    [5],
+    0.9,
+    { intro: w5Intro, outro: w5Outro },
+    'ready',
+  ),
   world('w6', 6, 'Phase III', 'Prove it at scale', [4, 7], 0.9, {
     intro: planned('w6-intro', 'Thousands of Mayas', 'Completed her study visits.'),
     outro: planned('w6-outro', 'The reveal', 'Completed her study visits.'),

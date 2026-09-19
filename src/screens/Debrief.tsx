@@ -21,6 +21,8 @@ export interface DebriefProps {
   xp: XpBreakdown;
   learned?: string;
   handoffLine?: string;
+  /** The cameo reveal: which item in the task was Maya. */
+  mayaLine?: string;
   mistakes: Mistake[];
   shortcuts?: ShortcutEvent[];
   artifacts?: StoredArtifact[];
@@ -111,6 +113,16 @@ export function Debrief(p: DebriefProps) {
         <section className="mt-4">
           <h2 className="text-xs font-bold uppercase tracking-wide text-muted">What you just learned</h2>
           <RichText as="p" text={p.learned} className="mt-1 text-base leading-relaxed" />
+        </section>
+      )}
+
+      {p.mayaLine && !p.failed && (
+        <section
+          className="mt-4 flex items-start gap-3 rounded-2xl bg-surface-2 p-3"
+          data-testid="debrief-maya"
+        >
+          <Maya size={40} />
+          <RichText as="p" text={p.mayaLine} className="text-sm leading-relaxed" />
         </section>
       )}
 
