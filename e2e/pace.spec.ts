@@ -155,9 +155,7 @@ test('paced World 1 run', async ({ page }) => {
   await page.waitForTimeout(4000); // reveal
   await readPause(page);
   await page.getByTestId('reveal-done').click();
-  await page.getByTestId('slider-dose').fill('2.5');
-  await page.waitForTimeout(4000);
-  await readPause(page);
+  // Sandbox exploration is optional and excluded from the pace model: leave it straight away.
   await page.getByTestId('sandbox-done').click();
   await debrief(page);
   t.l3 = (Date.now() - t1) / 1000;
