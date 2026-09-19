@@ -66,16 +66,16 @@ World Map ──tap node──▶ Badge Swap (1.5 s) ──▶ Role Card (≥ 30
 
 44 role levels + 8 boss quizzes + 10 review nodes + 1 finale = 63 nodes.
 
-| World | Title | Role levels | Review nodes | Story beat at end |
-|---|---|---|---|---|
-| 1 | Diagnosis & Discovery | 4 | 1 | Maya gets a name for her illness; a lab finds VX-101. "Most molecules never leave this room." |
-| 2 | Designing the Trial | 5 | 1 | The protocol exists on paper. Regulators allow the trial to begin. |
-| 3 | Study Start-Up | 7 | 2 | Sites are open, drug is on shelves, systems are live. Nobody has been dosed yet. |
-| 4 | Phase I: Is it safe? | 4 | 1 | **Scripted setback:** a clinical hold after a liver enzyme signal. Player must resolve it (see 3.1). Then: safe dose range found. |
-| 5 | Phase II: Does it work? | 5 | 1 | Maya enrols. She doesn't know if she is on VX-101 or placebo. The right dose is found. |
-| 6 | Phase III: Prove it | 7 | 2 | Database lock, unblinding: VX-101 worked. Maya was on placebo the whole time. |
-| 7 | Submission & Approval | 5 | 1 | The regulator approves VX-101 with a label. |
-| 8 | Launch & Beyond | 7 | 1 | Maya receives the approved medicine. Finale: relay chain, years/cost vs. real averages, certificate. |
+| World | Title                   | Role levels | Review nodes | Story beat at end                                                                                                                 |
+| ----- | ----------------------- | ----------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Diagnosis & Discovery   | 4           | 1            | Maya gets a name for her illness; a lab finds VX-101. "Most molecules never leave this room."                                     |
+| 2     | Designing the Trial     | 5           | 1            | The protocol exists on paper. Regulators allow the trial to begin.                                                                |
+| 3     | Study Start-Up          | 7           | 2            | Sites are open, drug is on shelves, systems are live. Nobody has been dosed yet.                                                  |
+| 4     | Phase I: Is it safe?    | 4           | 1            | **Scripted setback:** a clinical hold after a liver enzyme signal. Player must resolve it (see 3.1). Then: safe dose range found. |
+| 5     | Phase II: Does it work? | 5           | 1            | Maya enrols. She doesn't know if she is on VX-101 or placebo. The right dose is found.                                            |
+| 6     | Phase III: Prove it     | 7           | 2            | Database lock, unblinding: VX-101 worked. Maya was on placebo the whole time.                                                     |
+| 7     | Submission & Approval   | 5           | 1            | The regulator approves VX-101 with a label.                                                                                       |
+| 8     | Launch & Beyond         | 7           | 1            | Maya receives the approved medicine. Finale: relay chain, years/cost vs. real averages, certificate.                              |
 
 Review nodes are placed after roughly every 3–4 role levels and before each boss.
 They are optional; they never block the path.
@@ -118,16 +118,16 @@ Best stars per level are kept; the map shows the best.
 
 ### 4.2 XP
 
-| Source | XP |
-|---|---|
-| Level completed | 15 × stars (15 / 30 / 45) |
-| Perfect run (no hearts lost) | +10 |
-| First-time completion bonus | +10 |
-| Role Card first viewed | +5 |
-| Boss quiz | 0–100 (points ÷ max points × 100, rounded), +20 if passed first try |
-| Review node completed | +15, +5 if all correct |
-| World completed with each meter ≥ 70 | +15 per meter (max +45) |
-| Streak milestones 3 / 7 / 14 / 30 days | +25 / +50 / +100 / +200 |
+| Source                                 | XP                                                                  |
+| -------------------------------------- | ------------------------------------------------------------------- |
+| Level completed                        | 15 × stars (15 / 30 / 45)                                           |
+| Perfect run (no hearts lost)           | +10                                                                 |
+| First-time completion bonus            | +10                                                                 |
+| Role Card first viewed                 | +5                                                                  |
+| Boss quiz                              | 0–100 (points ÷ max points × 100, rounded), +20 if passed first try |
+| Review node completed                  | +15, +5 if all correct                                              |
+| World completed with each meter ≥ 70   | +15 per meter (max +45)                                             |
+| Streak milestones 3 / 7 / 14 / 30 days | +25 / +50 / +100 / +200                                             |
 
 Max reachable in one clean run ≈ 44×65 + 44×5 + 8×120 + 10×20 + 8×45 ≈ 4,600.
 
@@ -194,13 +194,13 @@ Director 3,000 · VP Development 3,800 · Chief Development Officer 4,400.
 
 ## 5. Difficulty curve
 
-| World | Timer scale | Items per task | Distractors | Hearts rule |
-|---|---|---|---|---|
-| 1 | ×1.4 | 4–6 | obvious | first mistake free |
-| 2 | ×1.2 | 5–7 | plausible | normal |
-| 3–4 | ×1.0 | 6–8 | plausible | normal |
-| 5–6 | ×0.9 | 8–10 | subtle, two-step | normal |
-| 7–8 | ×0.85 | 8–12 | subtle, cross-world | normal |
+| World | Timer scale | Items per task | Distractors         | Hearts rule        |
+| ----- | ----------- | -------------- | ------------------- | ------------------ |
+| 1     | ×1.4        | 4–6            | obvious             | first mistake free |
+| 2     | ×1.2        | 5–7            | plausible           | normal             |
+| 3–4   | ×1.0        | 6–8            | plausible           | normal             |
+| 5–6   | ×0.9        | 8–10           | subtle, two-step    | normal             |
+| 7–8   | ×0.85       | 8–12           | subtle, cross-world | normal             |
 
 Engines are introduced one at a time in the first 12 levels so each has a tutorial
 moment (Dose speech bubble, "tap here" pointer, dismissable). Dash-manager and
@@ -214,17 +214,17 @@ All engines share: `TaskShell` (HUD, pause, timer, relaxed mode), `useTaskRun`
 `hearts.ts`, `meters.ts`. Each engine is a React component taking its typed
 config and calling `onComplete({ accuracy, speed, mistakes[] })`.
 
-| Engine | Input model (touch + keyboard) | Mistake event | accuracy / speed |
-|---|---|---|---|
-| quiz-blitz | Tap one of 4 big buttons; keys 1–4 | wrong answer | correct ÷ N; avg time left |
-| sequence-sort | Tap item then tap slot (or drag); arrow keys + Enter | submit with ≥1 wrong position | correct positions ÷ N on final submit; time left |
-| match-pairs | Tap left, tap right; Tab/Enter | wrong pair | correct ÷ (correct + wrong); time left |
-| bucket-sort | Swipe (2 buckets) or drag/tap bucket button (2–4); keys 1–4 | wrong bucket | correct ÷ N; avg time left per card (optional per-card deadline) |
-| dash-manager | Tap a queued item, then tap stations in order; Tab cycles items, keys 1–5 stations | item's patience expires, or wrong station | served ÷ total; avg patience remaining |
-| spot-the-impostor | Tap card to inspect (flip), tap Accuse; Enter/Space | wrong accusation | correct accusations ÷ total accusations; time left |
-| builder | Tap part in tray, tap slot; Enter | submit with ≥1 wrong/empty slot | correct slots ÷ slots on final submit; time left |
-| branching-scenario | Tap a choice (2–3 per node) | choosing a `bad` option | sum of choice quality ÷ max (best=1, ok=0.5, bad=0); speed = 0.5 (untimed) |
-| allocator | Steppers (−/+, 44 px) or slider per category; arrow keys | submit outside constraints | categories within target ÷ categories; time left |
+| Engine             | Input model (touch + keyboard)                                                     | Mistake event                             | accuracy / speed                                                           |
+| ------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------- |
+| quiz-blitz         | Tap one of 4 big buttons; keys 1–4                                                 | wrong answer                              | correct ÷ N; avg time left                                                 |
+| sequence-sort      | Tap item then tap slot (or drag); arrow keys + Enter                               | submit with ≥1 wrong position             | correct positions ÷ N on final submit; time left                           |
+| match-pairs        | Tap left, tap right; Tab/Enter                                                     | wrong pair                                | correct ÷ (correct + wrong); time left                                     |
+| bucket-sort        | Swipe (2 buckets) or drag/tap bucket button (2–4); keys 1–4                        | wrong bucket                              | correct ÷ N; avg time left per card (optional per-card deadline)           |
+| dash-manager       | Tap a queued item, then tap stations in order; Tab cycles items, keys 1–5 stations | item's patience expires, or wrong station | served ÷ total; avg patience remaining                                     |
+| spot-the-impostor  | Tap card to inspect (flip), tap Accuse; Enter/Space                                | wrong accusation                          | correct accusations ÷ total accusations; time left                         |
+| builder            | Tap part in tray, tap slot; Enter                                                  | submit with ≥1 wrong/empty slot           | correct slots ÷ slots on final submit; time left                           |
+| branching-scenario | Tap a choice (2–3 per node)                                                        | choosing a `bad` option                   | sum of choice quality ÷ max (best=1, ok=0.5, bad=0); speed = 0.5 (untimed) |
+| allocator          | Steppers (−/+, 44 px) or slider per category; arrow keys                           | submit outside constraints                | categories within target ÷ categories; time left                           |
 
 Drag-and-drop is an enhancement layered over tap-to-select / tap-to-place; the
 tap path is the one tested.
@@ -262,9 +262,9 @@ one idea per sentence, no jargon without a glossary link.
 - `World { id, number, title, subtitle, storyIntro, storyOutro, nodeIds[] }`
 - `Role { id, title, employer, worldId, card: RoleCard }`
 - `RoleCard { whatIDo, responsibilities[3–5], skills[], receivesFrom: RoleId[],
-  handsOffTo: RoleId[], documents[], funFact }`
+handsOffTo: RoleId[], documents[], funFact }`
 - `Level { id, worldId, roleId, title, intro, game: MiniGameConfig, debrief:
-  { learned, handoffLine }, meterFocus?: MeterId }`
+{ learned, handoffLine }, meterFocus?: MeterId }`
 - `MiniGameConfig` = discriminated union on `engine`, one interface per engine,
   each item carrying `conceptId` and `explanation` + `consequence` text.
 - `BossQuiz { id, worldId, questions[] }`, `ReviewNode { id, worldId, afterLevelId }`

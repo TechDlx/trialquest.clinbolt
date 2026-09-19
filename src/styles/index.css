@@ -1,0 +1,150 @@
+@import 'tailwindcss';
+
+/* Manual dark theme via data-theme; system preference resolved in the settings store. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme {
+  --font-sans: 'Segoe UI', ui-rounded, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Brand (teal) */
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-300: #5eead4;
+  --color-brand-500: #14b8a6;
+  --color-brand-600: #0f766e;
+  --color-brand-700: #115e59;
+  --color-brand-800: #134e4a;
+
+  /* Employers (all pass 4.5:1 with white text) */
+  --color-emp-sponsor: #4f46e5;
+  --color-emp-cro: #7c3aed;
+  --color-emp-site: #047857;
+  --color-emp-regulator: #be123c;
+  --color-emp-vendor: #b45309;
+  --color-emp-patient: #0f766e;
+
+  /* Kahoot-style answers (white text passes AA on each) */
+  --color-ans-red: #c81e1e;
+  --color-ans-blue: #1d4ed8;
+  --color-ans-yellow: #a16207;
+  --color-ans-green: #15803d;
+
+  /* Feedback */
+  --color-ok: #15803d;
+  --color-ok-soft: #dcfce7;
+  --color-bad: #b91c1c;
+  --color-bad-soft: #fee2e2;
+  --color-heart: #dc2626;
+  --color-star: #d97706;
+  --color-star-soft: #fef3c7;
+
+  /* Meters */
+  --color-meter-safety: #be123c;
+  --color-meter-integrity: #1d4ed8;
+  --color-meter-timeline: #b45309;
+
+  --radius-card: 1.25rem;
+  --shadow-card: 0 6px 20px -8px rgb(15 23 42 / 0.25);
+}
+
+:root {
+  --tq-bg: #f1f5f9;
+  --tq-fg: #0f172a;
+  --tq-surface: #ffffff;
+  --tq-surface-2: #f8fafc;
+  --tq-muted: #475569;
+  --tq-border: #cbd5e1;
+  --tq-locked: #94a3b8;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --tq-bg: #0b1220;
+  --tq-fg: #e2e8f0;
+  --tq-surface: #131c2e;
+  --tq-surface-2: #1a2438;
+  --tq-muted: #a3b1c6;
+  --tq-border: #334155;
+  --tq-locked: #64748b;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--tq-bg);
+  --color-fg: var(--tq-fg);
+  --color-surface: var(--tq-surface);
+  --color-surface-2: var(--tq-surface-2);
+  --color-muted: var(--tq-muted);
+  --color-border: var(--tq-border);
+  --color-locked: var(--tq-locked);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    font-family: var(--font-sans);
+  }
+  [data-text='large'] {
+    font-size: 112.5%;
+  }
+  body {
+    @apply bg-bg text-fg antialiased;
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+  #root {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+  button,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  [data-motion='reduce'] *,
+  [data-motion='reduce'] *::before,
+  [data-motion='reduce'] *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer utilities {
+  .tap {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  .safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+}
+
+@keyframes tq-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(20 184 166 / 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgb(20 184 166 / 0);
+  }
+}
+.pulse-ring {
+  animation: tq-pulse-ring 1.6s ease-out infinite;
+}

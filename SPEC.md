@@ -1,10 +1,12 @@
 # ROLE
+
 You are a senior game designer and full-stack engineer. You design learning games
 with the retention mechanics of Duolingo, the pace of Kahoot!, the time-pressure
 fun of Diner Dash, and the deduction tension of Among Us. You also have working
 knowledge of clinical research (ICH-GCP, FDA/EMA pathways, CDISC, pharmacovigilance).
 
 # MISSION
+
 Build "Trial Quest" (working title): a lightweight, browser-based game that teaches
 the END-TO-END clinical trial process. The player guides an avatar, a patient named
 Maya who is diagnosed with a fictional disease ("Veridian Syndrome"), and the
@@ -20,6 +22,7 @@ Target audience: students, new hires at pharma/CRO/tech vendors, and curious
 non-experts. Assume zero prior knowledge. Session length: 3-7 minutes per level.
 
 # HARD CONSTRAINTS
+
 - Lightweight static web app. No backend, no login, no paid services.
 - Stack: Vite + React + TypeScript + Tailwind CSS + Zustand (state) +
   Framer Motion (animation). Progress persisted in localStorage (wrapped in
@@ -39,6 +42,7 @@ non-experts. Assume zero prior knowledge. Session length: 3-7 minutes per level.
   The game engine must be data-driven; no content hard-coded in components.
 
 # CORE GAME LOOP
+
 1. WORLD MAP: a winding path (Duolingo-style) showing Maya's journey through 8
    worlds. Locked nodes are greyed out; the current node pulses.
 2. ROLE SWITCH: tapping a node plays a short "badge swap" animation: the player
@@ -51,8 +55,8 @@ non-experts. Assume zero prior knowledge. Session length: 3-7 minutes per level.
    - "I receive from -> I hand off to" (shows upstream/downstream roles)
    - Key documents/systems touched (e.g., protocol, eCRF, TMF, eCTD)
    - One "day in the life" fun fact
-   Player must scroll/flip the card before "Start task" activates. Cards are
-   saved to a collectible "Career Codex" the player can revisit anytime.
+     Player must scroll/flip the card before "Start task" activates. Cards are
+     saved to a collectible "Career Codex" the player can revisit anytime.
 4. TASK: one mini-game (60-180 seconds) that simulates the role's real work.
 5. DEBRIEF: 1-3 stars, XP, "what you just learned" in 2 sentences, the real-world
    consequence of mistakes made, and the handoff line ("You pass the locked
@@ -61,6 +65,7 @@ non-experts. Assume zero prior knowledge. Session length: 3-7 minutes per level.
    mixing all roles from that world, plus a story beat showing Maya's progress.
 
 # META MECHANICS (borrow deliberately)
+
 - Duolingo: XP, daily streak, hearts/lives (mistakes cost a heart; hearts refill
   over time or by reviewing a Role Card), skill path, spaced-repetition "review"
   nodes that resurface previously missed concepts, mascot nudges.
@@ -79,21 +84,24 @@ non-experts. Assume zero prior knowledge. Session length: 3-7 minutes per level.
   This teaches the real trade-offs of the industry.
 
 # REUSABLE MINI-GAME ENGINES (build these once, configure via content data)
-1. quiz-blitz         - timed multiple choice (Kahoot style)
-2. sequence-sort      - put steps/documents in correct order
-3. match-pairs        - match term <-> definition / role <-> responsibility
-4. bucket-sort        - swipe/drag items into categories (e.g., AE vs SAE)
-5. dash-manager       - Diner Dash-style queue/time management
-6. spot-the-impostor  - find the anomaly among cards, data rows, or documents
-7. builder            - assemble something from parts (protocol, eCRF, eCTD, label)
+
+1. quiz-blitz - timed multiple choice (Kahoot style)
+2. sequence-sort - put steps/documents in correct order
+3. match-pairs - match term <-> definition / role <-> responsibility
+4. bucket-sort - swipe/drag items into categories (e.g., AE vs SAE)
+5. dash-manager - Diner Dash-style queue/time management
+6. spot-the-impostor - find the anomaly among cards, data rows, or documents
+7. builder - assemble something from parts (protocol, eCRF, eCTD, label)
 8. branching-scenario - dialogue/decision tree with consequences on the 3 meters
-9. allocator          - distribute limited budget/resources with sliders
+9. allocator - distribute limited budget/resources with sliders
 
 # WORLDS, ROLES, AND TASKS
+
 Implement every role below. Each gets a Role Card + one task. Suggested engine in
 brackets. Write accurate, plain-language content for each.
 
 ## WORLD 1 - DIAGNOSIS & DISCOVERY
+
 - Patient & Patient Advocate: Maya's diagnosis, unmet need [branching-scenario]
 - Research Scientist (Discovery): pick a biological target, screen compounds
   [spot-the-impostor: find the "hit" among candidates]
@@ -103,16 +111,18 @@ brackets. Write accurate, plain-language content for each.
   product [builder]
 
 ## WORLD 2 - DESIGNING THE TRIAL
+
 - Clinical Scientist / Medical Director: build the protocol: objectives, endpoints,
   inclusion/exclusion criteria [builder]
 - Biostatistician: sample size, randomization, blinding, write the SAP [allocator
-  + quiz: power vs. cost trade-off]
+  - quiz: power vs. cost trade-off]
 - Regulatory Affairs Specialist: assemble and submit the IND/CTA [sequence-sort]
 - IRB / Ethics Committee Member: review the informed consent form for problems
   [spot-the-impostor]
 - Portfolio / Finance Lead: go/no-go and budget decision [allocator]
 
 ## WORLD 3 - STUDY START-UP
+
 - Clinical Project Manager (Sponsor/CRO): timeline, vendors, risk plan
   [sequence-sort + allocator]
 - Site Feasibility & Start-up Specialist: select sites/countries, contracts
@@ -127,6 +137,7 @@ brackets. Write accurate, plain-language content for each.
 - TMF Specialist: file essential documents in the right TMF zones [bucket-sort]
 
 ## WORLD 4 - PHASE I (Is it safe?)
+
 - Principal Investigator: screen healthy volunteers against eligibility criteria
   [bucket-sort, timed]
 - Clinical Research Coordinator / Study Nurse: informed consent conversation,
@@ -136,6 +147,7 @@ brackets. Write accurate, plain-language content for each.
 - Safety Review Committee: dose-escalation decision [branching-scenario]
 
 ## WORLD 5 - PHASE II (Does it work? What dose?) - Maya enrolls here
+
 - Patient Recruitment Specialist: compliant, diverse recruitment campaign
   [allocator + spot-the-impostor for non-compliant ad]
 - Clinical Research Associate (Monitor): source data verification; find protocol
@@ -148,6 +160,7 @@ brackets. Write accurate, plain-language content for each.
   within deadlines [bucket-sort with countdown clocks]
 
 ## WORLD 6 - PHASE III (Prove it at scale)
+
 - Global Study Manager: run many sites/countries at once; enrollment lagging
   [dash-manager, hardest version]
 - Central Monitor / Risk-Based Monitoring Analyst: spot the fraudulent or outlier
@@ -164,6 +177,7 @@ brackets. Write accurate, plain-language content for each.
   [builder]
 
 ## WORLD 7 - REGULATORY SUBMISSION & APPROVAL
+
 - Regulatory Affairs Lead: assemble the NDA/MAA dossier in eCTD modules 1-5
   [bucket-sort / builder]
 - Regulatory Publishing / Submission Tech Specialist: hyperlinks, validation
@@ -176,6 +190,7 @@ brackets. Write accurate, plain-language content for each.
   [builder]
 
 ## WORLD 8 - LAUNCH, MARKET & BEYOND
+
 - Manufacturing & Supply Chain Lead: scale up under GMP, launch stock [allocator]
 - Market Access / HEOR Specialist: pricing, reimbursement, HTA value dossier
   [allocator + quiz]
@@ -192,6 +207,7 @@ brackets. Write accurate, plain-language content for each.
   the certificate.
 
 # CROSS-CUTTING LEARNING FEATURES
+
 - Glossary: tap any underlined term (GCP, IND, SAE, eCRF, SDTM, DSMB, eCTD...) for
   a one-sentence tooltip; all terms collected in a searchable glossary.
 - "Handoff map": a living diagram that fills in as roles are unlocked, showing who
@@ -205,6 +221,7 @@ brackets. Write accurate, plain-language content for each.
   process, not medical or regulatory advice.
 
 # CONTENT ACCURACY RULES
+
 - Align with ICH-GCP E6, general FDA (IND/NDA) and EMA (CTA/MAA) pathways; when
   regions differ, say so briefly rather than picking one silently.
 - Keep language at a 9th-grade reading level. Define every acronym on first use.
@@ -212,6 +229,7 @@ brackets. Write accurate, plain-language content for each.
 - Flag any content you're unsure about in /docs/CONTENT_REVIEW.md for SME review.
 
 # ARCHITECTURE
+
 ```
 /src
   /engine        - the 9 mini-game engines, scoring, meters, hearts, XP, streak
@@ -222,12 +240,14 @@ brackets. Write accurate, plain-language content for each.
   /store         - Zustand stores + localStorage persistence with migrations
   /styles        - Tailwind config, design tokens (light + dark theme)
 ```
+
 Define TypeScript types first: World, Role, RoleCard, Level, MiniGameConfig (a
 discriminated union per engine), GlossaryTerm, PlayerProgress. Validate content at
 build time with a script that fails on missing role cards, broken handoff
 references, or levels without a debrief.
 
 # HOW I WANT YOU TO WORK
+
 1. FIRST, do not write code. Produce /docs/GDD.md (game design document: loop,
    economy numbers for XP/hearts/stars, difficulty curve, screen flow) and
    /docs/PLAN.md (milestones). Show me both and wait for approval.
@@ -243,6 +263,7 @@ references, or levels without a debrief.
 7. Ask me before adding any dependency not listed here.
 
 # ACCEPTANCE CRITERIA
+
 - A new player can go from the title screen to completing World 1 in under 10
   minutes on a phone without instructions beyond the in-game tutorial.
 - Every role listed above has a Role Card and a playable task; no level can be

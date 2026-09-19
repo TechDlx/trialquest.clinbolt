@@ -1,10 +1,13 @@
 # Trial Quest — Delivery Plan
 
 ## Milestone 0 — Design docs
+
 - `docs/GDD.md`, `docs/PLAN.md`. Approved 2026-09-18.
 
 ## Milestone 1 — "Make it fun before wide"
+
 Scope:
+
 - Vite + React + TS scaffold, Tailwind v4 tokens (light/dark, WCAG AA palette,
   employer colours, star/heart/meter colours), ESLint + Prettier, Vitest + RTL,
   Playwright config with 360×740 and 1440×900 projects.
@@ -28,6 +31,7 @@ Exit: title → World 1 complete in < 10 min on a phone; lint, tsc, unit tests,
 Playwright smoke green; progress survives reload; commit.
 
 ## Milestone 2 — Remaining engines
+
 - sequence-sort, match-pairs, bucket-sort, dash-manager, spot-the-impostor,
   builder, branching-scenario, allocator. Each: component, config type, unit
   tests (state machine + scoring), one demo level in a hidden "Engine lab" route,
@@ -37,6 +41,7 @@ Playwright smoke green; progress survives reload; commit.
 Exit: all 9 engines playable on 360 px with touch and keyboard; tests green; commit.
 
 ## Milestone 3 — Content
+
 - Worlds 2–8: 40 roles' cards, 40 levels, 8 boss quizzes, review nodes, story
   beats, full glossary (~120 terms), `docs/CONTENT_REVIEW.md` for SME flags.
 - Career Codex (all cards, badges), Glossary screen with search and inline
@@ -46,6 +51,7 @@ Exit: all 9 engines playable on 360 px with touch and keyboard; tests green; com
 Exit: all 8 worlds completable; content validation green; commit.
 
 ## Milestone 4 — Meta and polish
+
 - Meters + setbacks (clinical hold in W4, inspection finding, portfolio review),
   hearts refill, daily streak + freezes, spaced-repetition review nodes,
   finale + certificate (canvas), PWA + offline, sound toggle, accessibility pass
