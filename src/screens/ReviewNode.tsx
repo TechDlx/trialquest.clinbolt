@@ -29,13 +29,16 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
   const [held, setHeld] = useState(false);
   const [clean, setClean] = useState(0);
   const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
-  const rounds = useMemo<ReviewRound[]>(
+  // What is due now (for the intro). The playlist is frozen when the review starts, because
+  // completing a round reschedules its situation and would otherwise shrink the list mid-play.
+  const dueRounds = useMemo<ReviewRound[]>(
     () =>
       dueSituations(progress.situations)
         .map((s) => buildReviewRound(content, s, review?.roundSeconds ?? economy.review.roundSeconds))
         .filter((r): r is ReviewRound => !!r),
     [progress.situations, review?.roundSeconds],
   );
+  const [rounds, setRounds] = useState<ReviewRound[]>([]);
   const round = rounds[index];
   const seconds =
     round && 'seconds' in round.stage.game ? (round.stage.game as { seconds: number }).seconds : 0;
@@ -91,7 +94,7 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
             spaced out over days. Finishing one refills your hearts.
           </p>
         </div>
-        {rounds.length === 0 ? (
+        {dueRounds.length === 0 ? (
           <>
             <Speech mood="cheer" className="mt-3">
               All caught up. Nothing is due for review right now. Have your hearts back anyway.
@@ -112,14 +115,17 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
         ) : (
           <>
             <Speech mood="think" className="mt-3">
-              {rounds.length} situation{rounds.length === 1 ? '' : 's'} to revisit,{' '}
+              {dueRounds.length} situation{dueRounds.length === 1 ? '' : 's'} to revisit,{' '}
               {review.roundSeconds ?? economy.review.roundSeconds} seconds each. No hearts at stake.
             </Speech>
             <Button
               size="lg"
               full
               className="mt-4"
-              onClick={() => setPhase('playing')}
+              onClick={() => {
+                setRounds(dueRounds);
+                setPhase('playing');
+              }}
               data-testid="start-review"
             >
               Start review

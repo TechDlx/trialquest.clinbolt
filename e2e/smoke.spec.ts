@@ -69,8 +69,7 @@ test('new player completes World 1 end to end on the intended engines', async ({
       const node = cfg.nodes.find((n) => n.id === nodeId)!;
       if (node.end) break;
       const best = node.choices!.find((c) => c.quality === 'best')!;
-      await page.getByTestId(`choice-${best.id}`).click();
-      await page.getByTestId('engine-next').click();
+      await page.getByTestId(`choice-${best.id}`).click(); // best choices auto-advance
       nodeId = best.next;
     }
     await page.getByTestId('branching-finish').click();
@@ -85,7 +84,6 @@ test('new player completes World 1 end to end on the intended engines', async ({
     const hit = cfg.cards.find((c) => c.impostor)!;
     await page.getByTestId(`card-${hit.id}`).click();
     await page.getByTestId('impostor-accuse').click();
-    await page.getByTestId('engine-next').click();
     await finishLevel(page, 'w1-l2');
   });
 
@@ -98,7 +96,8 @@ test('new player completes World 1 end to end on the intended engines', async ({
       const text = (await page.getByTestId('bucket-card').innerText()).trim();
       const card = bucket.cards.find((c) => strip(c.text) === text)!;
       await page.getByTestId(`bucket-${card.bucketId}`).click();
-      await page.getByTestId('engine-next').click();
+      await expect(page.getByTestId('engine-feedback')).toHaveAttribute('data-inline', 'true');
+      await expect(page.getByTestId('engine-feedback')).toBeHidden({ timeout: 5000 });
     }
     await page.getByTestId('start-stage-dose').click();
     const alloc = level('w1-l3').stages[1].game as AllocatorConfig;
@@ -126,7 +125,6 @@ test('new player completes World 1 end to end on the intended engines', async ({
       await page.getByTestId(`slot-${slot.id}`).click();
     }
     await page.getByTestId('builder-check').click();
-    await page.getByTestId('engine-next').click();
     await finishLevel(page, 'w1-l4', 'Continue to the crisis');
   });
 
@@ -149,7 +147,7 @@ test('new player completes World 1 end to end on the intended engines', async ({
           const text = (await page.getByTestId('bucket-card').innerText()).trim();
           const card = g.cards.find((c) => strip(c.text) === text)!;
           await page.getByTestId(`bucket-${card.bucketId}`).click();
-          await page.getByTestId('engine-next').click();
+          await expect(page.getByTestId('engine-feedback')).toBeHidden({ timeout: 5000 });
         }
       } else if (g.engine === 'builder') {
         for (const slot of g.slots) {
@@ -158,23 +156,21 @@ test('new player completes World 1 end to end on the intended engines', async ({
           await page.getByTestId(`slot-${slot.id}`).click();
         }
         await page.getByTestId('builder-check').click();
-        await page.getByTestId('engine-next').click();
       } else if (g.engine === 'spot-the-impostor') {
         const hit = g.cards.find((c) => c.impostor)!;
         await page.getByTestId(`card-${hit.id}`).click();
         await page.getByTestId('impostor-accuse').click();
-        await page.getByTestId('engine-next').click();
       } else if (g.engine === 'branching-scenario') {
         const node = g.nodes.find((n) => n.id === g.start)!;
         const best = node.choices!.find((c) => c.quality === 'best')!;
         await page.getByTestId(`choice-${best.id}`).click();
-        await page.getByTestId('engine-next').click();
         await page.getByTestId('branching-finish').click();
       }
+      await expect(page.getByTestId('engine-next')).toHaveCount(0);
       if (i + 1 < w1Crisis.rounds.length) await page.getByTestId('crisis-next-round').click();
     }
     await expect(page.getByTestId('crisis-success')).toBeVisible();
-    await page.getByTestId('story-continue').click();
+    await page.getByTestId('debrief-continue').click();
     await expect(page.getByTestId('story-outro')).toBeVisible();
     await page.getByTestId('story-continue').click();
   });
@@ -208,7 +204,6 @@ test('a wrong turn explains itself, the shortcut costs meters not hearts, and th
   await expect(page.getByTestId('engine-feedback')).toContainText('First slip in World 1 is free');
   await page.getByTestId('engine-next').click();
   await page.getByTestId('choice-c-fatigue').click();
-  await page.getByTestId('engine-next').click();
   await page.getByTestId('choice-c-hype').click();
   await expect(page.getByTestId('engine-feedback')).toHaveAttribute('data-kind', 'shortcut');
   const hearts = await page.evaluate(

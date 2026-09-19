@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { w1Levels } from '../src/content/worlds/w1/levels';
 import type { BucketSortConfig } from '../src/content/types';
 
@@ -46,7 +46,8 @@ test('capture key screens', async ({ page }, info) => {
     const card = bucket.cards.find((c) => strip(c.text) === text)!;
     await page.getByTestId(`bucket-${i === 1 ? 'noise' : card.bucketId}`).click();
     if (i === 1) await shot('07-shortcut-feedback');
-    await page.getByTestId('engine-next').click();
+    if (i === 1) await page.getByTestId('engine-next').click();
+    else await expect(page.getByTestId('engine-feedback')).toBeHidden({ timeout: 5000 });
   }
   await page.getByTestId('start-stage-dose').click();
   await shot('08-allocator');

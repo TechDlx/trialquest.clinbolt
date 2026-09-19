@@ -65,7 +65,7 @@ describe('Level screen: w1-l3 end to end', () => {
     });
     expect(s.levels['w1-l3']!.stars).toBeGreaterThan(0);
     expect(s.meters.safety).toBe(85); // the sandbox never touched the meters
-  });
+  }, 30_000);
 
   it('a hard-wrong dose commit costs a heart and the reckless band meters, once', async () => {
     render(<LevelScreen levelId="w1-l3" />);

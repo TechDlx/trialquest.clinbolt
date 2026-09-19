@@ -59,5 +59,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    // Screen tests play whole flows with real auto-advance delays.
+    testTimeout: 30_000,
   },
 });

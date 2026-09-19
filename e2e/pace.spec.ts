@@ -14,7 +14,7 @@ const WPM = 200;
 const DECISION_MS = 2500;
 const seen = new Set<string>();
 /** Reads only lines not seen before at 200 wpm (a player does not re-read a screen after acting on it). */
-const readPause = async (page: Page) => {
+const readPause = async (page: Page, fraction = 1) => {
   const text = await page.locator('main, body').first().innerText();
   let words = 0;
   for (const line of text
@@ -25,7 +25,7 @@ const readPause = async (page: Page) => {
     seen.add(line);
     words += line.split(/\s+/).length;
   }
-  await page.waitForTimeout(Math.min(25_000, Math.round((words / WPM) * 60_000)));
+  await page.waitForTimeout(Math.min(25_000, Math.round(((words * fraction) / WPM) * 60_000)));
 };
 const decide = async (page: Page) => page.waitForTimeout(DECISION_MS);
 /** Read only one element's text (e.g. the next card) once the rest of the screen is familiar. */
@@ -42,7 +42,7 @@ async function openLevel(page: Page, id: string) {
   await page.waitForTimeout(1600); // badge swap
   await readPause(page); // card front
   await page.getByTestId('flip-card').click();
-  await readPause(page); // card back
+  await readPause(page, 1 / 3); // card back: skimmed, one third
   await page.getByTestId('start-task').click();
   await readPause(page); // level intro
   await page.getByTestId('start-level').click();
@@ -85,8 +85,10 @@ test('paced World 1 run', async ({ page }) => {
       : node.choices!.find((c) => c.quality === 'best')!;
     wrongUsed = true;
     await page.getByTestId(`choice-${pick.id}`).click();
-    await readPause(page);
-    await page.getByTestId('engine-next').click();
+    if (pick.quality !== 'best') {
+      await readPause(page);
+      await page.getByTestId('engine-next').click();
+    } else await expect(page.getByTestId('engine-feedback')).toBeHidden({ timeout: 5000 });
     nodeId = pick.next;
   }
   await readPause(page);
@@ -114,8 +116,6 @@ test('paced World 1 run', async ({ page }) => {
   await page.getByTestId(`card-${hit.id}`).click();
   await decide(page);
   await page.getByTestId('impostor-accuse').click();
-  await readPause(page);
-  await page.getByTestId('engine-next').click();
   await debrief(page);
   t.l2 = (Date.now() - t1) / 1000;
   console.log('PACED_PARTIAL ' + JSON.stringify(t));
@@ -141,8 +141,10 @@ test('paced World 1 run', async ({ page }) => {
     await page
       .getByTestId(`bucket-${i === 2 ? (card.bucketId === 'adverse' ? 'review' : 'adverse') : card.bucketId}`)
       .click();
-    await readPause(page);
-    await page.getByTestId('engine-next').click();
+    if (i === 2) {
+      await readPause(page);
+      await page.getByTestId('engine-next').click();
+    } else await expect(page.getByTestId('engine-feedback')).toBeHidden({ timeout: 5000 });
   }
   await readPause(page);
   await page.getByTestId('start-stage-dose').click();
@@ -174,8 +176,6 @@ test('paced World 1 run', async ({ page }) => {
     await page.getByTestId(`slot-${slot.id}`).click();
   }
   await page.getByTestId('builder-check').click();
-  await readPause(page);
-  await page.getByTestId('engine-next').click();
   await debrief(page);
   t.l4 = (Date.now() - t1) / 1000;
   console.log('PACED_PARTIAL ' + JSON.stringify(t));
@@ -193,7 +193,7 @@ test('paced World 1 run', async ({ page }) => {
         const card = g.cards.find((c) => strip(c.text) === text)!;
         await decide(page);
         await page.getByTestId(`bucket-${card.bucketId}`).click();
-        await page.getByTestId('engine-next').click();
+        await expect(page.getByTestId('engine-feedback')).toBeHidden({ timeout: 5000 });
       }
     } else if (g.engine === 'builder') {
       for (const slot of g.slots) {
@@ -203,27 +203,24 @@ test('paced World 1 run', async ({ page }) => {
         await page.getByTestId(`slot-${slot.id}`).click();
       }
       await page.getByTestId('builder-check').click();
-      await page.getByTestId('engine-next').click();
     } else if (g.engine === 'spot-the-impostor') {
       const target = g.cards.find((c) => c.impostor)!;
       await decide(page);
       await page.getByTestId(`card-${target.id}`).click();
       await decide(page);
       await page.getByTestId('impostor-accuse').click();
-      await page.getByTestId('engine-next').click();
     } else if (g.engine === 'branching-scenario') {
       const node = g.nodes.find((n) => n.id === g.start)!;
       const best = node.choices!.find((c) => c.quality === 'best')!;
       await decide(page);
       await page.getByTestId(`choice-${best.id}`).click();
-      await page.getByTestId('engine-next').click();
       await page.getByTestId('branching-finish').click();
     }
     if (i + 1 < w1Crisis.rounds.length) await page.getByTestId('crisis-next-round').click();
   }
   await expect(page.getByTestId('crisis-success')).toBeVisible();
   await readPause(page);
-  await page.getByTestId('story-continue').click();
+  await page.getByTestId('debrief-continue').click();
   await readPause(page);
   await page.getByTestId('story-continue').click();
   t.crisis = (Date.now() - t1) / 1000;
