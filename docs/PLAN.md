@@ -13,14 +13,14 @@ persistence, 51 unit tests, Playwright smoke at 360×740 and 1440×900. Commit `
 
 ### World 1 audit against Amendment 1
 
-| Node      | Role                 | Built as                                         | Pass condition today                             | Amendment 1 status                                           |
-| --------- | -------------------- | ------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------ |
-| w1-l1     | Patient Advocate     | quiz-blitz, 6 questions, `meterFocus: safety`    | score ≥ 45 from recall                           | **Rebuild** on branching-scenario                            |
-| w1-l2     | Discovery Scientist  | quiz-blitz, 6 questions                          | score ≥ 45 from recall                           | **Rebuild** on spot-the-impostor (find the hit)              |
-| w1-l3     | Toxicologist         | quiz-blitz, 6 questions, `meterFocus: safety`    | score ≥ 45 from recall                           | **Rebuild** on bucket-sort + allocator `dose-response` sim; emits `dose.starting` |
-| w1-l4     | CMC Scientist        | quiz-blitz, 6 questions                          | score ≥ 45 from recall                           | **Rebuild** on builder                                       |
-| w1-r1     | Review               | quiz-blitz over missed `conceptId`s              | n/a (optional)                                   | **Rebuild** as micro-round playlist over missed situations   |
-| w1-boss   | Boss quiz            | quiz-blitz, 8 questions, 15 s, ≥ 60 % to pass    | recall, gates World 2                            | **Replace** with World 1 Crisis Boss                         |
+| Node    | Role                | Built as                                      | Pass condition today   | Amendment 1 status                                                                |
+| ------- | ------------------- | --------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------- |
+| w1-l1   | Patient Advocate    | quiz-blitz, 6 questions, `meterFocus: safety` | score ≥ 45 from recall | **Rebuild** on branching-scenario                                                 |
+| w1-l2   | Discovery Scientist | quiz-blitz, 6 questions                       | score ≥ 45 from recall | **Rebuild** on spot-the-impostor (find the hit)                                   |
+| w1-l3   | Toxicologist        | quiz-blitz, 6 questions, `meterFocus: safety` | score ≥ 45 from recall | **Rebuild** on bucket-sort + allocator `dose-response` sim; emits `dose.starting` |
+| w1-l4   | CMC Scientist       | quiz-blitz, 6 questions                       | score ≥ 45 from recall | **Rebuild** on builder                                                            |
+| w1-r1   | Review              | quiz-blitz over missed `conceptId`s           | n/a (optional)         | **Rebuild** as micro-round playlist over missed situations                        |
+| w1-boss | Boss quiz           | quiz-blitz, 8 questions, 15 s, ≥ 60 % to pass | recall, gates World 2  | **Replace** with World 1 Crisis Boss                                              |
 
 Other findings:
 

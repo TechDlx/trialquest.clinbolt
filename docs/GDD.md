@@ -70,18 +70,18 @@ It never gates progress.
 
 44 role levels + 8 crisis bosses + 10 review nodes + 1 finale = 63 nodes.
 
-| World | Title                   | Levels | Reviews | Crisis (end of world)                                                                            | Story beat                                                                        |
-| ----- | ----------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| 1     | Diagnosis & Discovery   | 4      | 1       | Unexpected toxicity signal in an animal study: classify findings, reformulate, check the backup, tell the community | Maya has a name for it; VX-101 exists. "Most molecules never leave this room." |
-| 2     | Designing the Trial     | 5      | 1       | Regulator returns the IND/CTA with questions: fix the endpoint, re-power, answer the IRB, re-budget | The protocol exists. The trial may begin.                                       |
-| 3     | Study Start-Up          | 7      | 2       | A site's freezer fails the night before first dose: reship, re-file, re-validate, re-consent plan | Sites open, drug on shelves, systems live.                                     |
-| 4     | Phase I                 | 4      | 1       | Liver enzyme spike in cohort 3: screen, manage the visit, read PK, decide on the hold (**scripted setback**, shaped by chain c) | Safe dose range found.                                        |
-| 5     | Phase II                | 5      | 1       | A site's data looks too clean: monitor, query, code, triage the SAE that surfaces                | Maya enrols, blinded. The right dose is found.                                  |
-| 6     | Phase III               | 7      | 2       | Interim analysis week: DSMB, lock, program, write, all before the deadline                       | Unblinding: it worked. Maya was on placebo.                                     |
-| 7     | Submission & Approval   | 5      | 1       | Day-74 filing review letter: publish fix, answer questions, host the inspector, negotiate the label | Approved, with a label.                                                       |
-| 8     | Launch & Beyond         | 7      | 1       | Post-market signal: pull the off-label claim, brief MSLs, confirm the signal, update the label   | Maya receives the medicine. Finale.                                             |
+| World | Title                 | Levels | Reviews | Crisis (end of world)                                                                                                           | Story beat                                                                     |
+| ----- | --------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 1     | Diagnosis & Discovery | 4      | 1       | Unexpected toxicity signal in an animal study: classify findings, reformulate, check the backup, tell the community             | Maya has a name for it; VX-101 exists. "Most molecules never leave this room." |
+| 2     | Designing the Trial   | 5      | 1       | Regulator returns the IND/CTA with questions: fix the endpoint, re-power, answer the IRB, re-budget                             | The protocol exists. The trial may begin.                                      |
+| 3     | Study Start-Up        | 7      | 2       | A site's freezer fails the night before first dose: reship, re-file, re-validate, re-consent plan                               | Sites open, drug on shelves, systems live.                                     |
+| 4     | Phase I               | 4      | 1       | Liver enzyme spike in cohort 3: screen, manage the visit, read PK, decide on the hold (**scripted setback**, shaped by chain c) | Safe dose range found.                                                         |
+| 5     | Phase II              | 5      | 1       | A site's data looks too clean: monitor, query, code, triage the SAE that surfaces                                               | Maya enrols, blinded. The right dose is found.                                 |
+| 6     | Phase III             | 7      | 2       | Interim analysis week: DSMB, lock, program, write, all before the deadline                                                      | Unblinding: it worked. Maya was on placebo.                                    |
+| 7     | Submission & Approval | 5      | 1       | Day-74 filing review letter: publish fix, answer questions, host the inspector, negotiate the label                             | Approved, with a label.                                                        |
+| 8     | Launch & Beyond       | 7      | 1       | Post-market signal: pull the off-label claim, brief MSLs, confirm the signal, update the label                                  | Maya receives the medicine. Finale.                                            |
 
-Review nodes are optional and never block. **[A1]** They replay missed *situations*
+Review nodes are optional and never block. **[A1]** They replay missed _situations_
 as 20-second micro-rounds (§4.6), not quiz questions.
 
 ### 3.1 The World 4 clinical hold (scripted setback) **[A1]**
@@ -115,23 +115,23 @@ score = round(80 × accuracy + 20 × speed)
 stars: ≥ 85 → 3, ≥ 65 → 2, ≥ 45 → 1, < 45 → fail (retry, no XP)
 ```
 
-**[A1]** "Accuracy" is always a measure of *doing the job well*: correct buckets,
+**[A1]** "Accuracy" is always a measure of _doing the job well_: correct buckets,
 correct order, correct parts, defensible value in the simulation band, best/ok/bad
 choices in a scenario. It is never a count of recalled facts.
 
 ### 4.2 XP
 
-| Source                                          | XP                                   |
-| ----------------------------------------------- | ------------------------------------ |
-| Level completed                                 | 15 × stars                           |
-| Perfect run (no hearts lost)                    | +10                                  |
-| First-time completion                           | +10                                  |
-| Role Card first viewed                          | +5                                   |
-| **[A1]** Crisis boss                            | 0–100 by points ÷ max, +20 first try |
-| Review node completed                           | +15, +5 if all clean                 |
-| World completed with each meter ≥ 70            | +15 per meter                        |
-| Streak milestones 3 / 7 / 14 / 30 days          | +25 / +50 / +100 / +200              |
-| **[A1]** Test Yourself (per role, first ≥ 80 %) | +10 and the Knowledge Check ribbon   |
+| Source                                          | XP                                             |
+| ----------------------------------------------- | ---------------------------------------------- |
+| Level completed                                 | 15 × stars                                     |
+| Perfect run (no hearts lost)                    | +10                                            |
+| First-time completion                           | +10                                            |
+| Role Card first viewed                          | +5                                             |
+| **[A1]** Crisis boss                            | 0–100 by points ÷ max, +20 first try           |
+| Review node completed                           | +15, +5 if all clean                           |
+| World completed with each meter ≥ 70            | +15 per meter                                  |
+| Streak milestones 3 / 7 / 14 / 30 days          | +25 / +50 / +100 / +200                        |
+| **[A1]** Test Yourself (per role, first ≥ 80 %) | +10 and the Knowledge Check ribbon             |
 | **[A1]** Test Yourself (replays)                | +2 per correct, once per role per day, max +10 |
 
 Ranks unchanged: Intern 0 · Trainee 250 · Associate 700 · Specialist 1,400 ·
@@ -207,13 +207,13 @@ earned per world, max 2, auto-applied.
 
 ## 5. Difficulty curve
 
-| World | Timer scale | Items per task | Distractors           | Hearts rule        |
-| ----- | ----------- | -------------- | --------------------- | ------------------ |
-| 1     | ×1.4        | 4–6            | obvious               | first mistake free |
-| 2     | ×1.2        | 5–7            | plausible             | normal             |
-| 3–4   | ×1.0        | 6–8            | plausible             | normal             |
-| 5–6   | ×0.9        | 8–10           | subtle, two-step      | normal             |
-| 7–8   | ×0.85       | 8–12           | subtle, cross-world   | normal             |
+| World | Timer scale | Items per task | Distractors         | Hearts rule        |
+| ----- | ----------- | -------------- | ------------------- | ------------------ |
+| 1     | ×1.4        | 4–6            | obvious             | first mistake free |
+| 2     | ×1.2        | 5–7            | plausible           | normal             |
+| 3–4   | ×1.0        | 6–8            | plausible           | normal             |
+| 5–6   | ×0.9        | 8–10           | subtle, two-step    | normal             |
+| 7–8   | ×0.85       | 8–12           | subtle, cross-world | normal             |
 
 Engines are introduced one at a time across the first 12 levels with a Dose tutorial
 bubble. **[A1]** Crisis bosses use engines the player has already met in that world.
@@ -224,17 +224,17 @@ All engines share `TaskShell`, `useTaskRun`, `scoring.ts`, `hearts.ts`, `meters.
 Each engine takes its typed config and calls
 `onComplete({ accuracy, speed, mistakes[], outcomes })`.
 
-| Engine             | Input model (touch + keyboard)                          | Mistake event                     | accuracy / speed                                         |
-| ------------------ | ------------------------------------------------------- | --------------------------------- | -------------------------------------------------------- |
-| quiz-blitz **[A1]** *Test Yourself only* | Tap one of 4 buttons; keys 1–4     | wrong answer (no heart)           | correct ÷ N; avg time left                               |
-| sequence-sort      | Tap item then slot (or drag); arrows + Enter            | submit with ≥ 1 wrong position    | correct positions ÷ N on final submit; time left         |
-| match-pairs        | Tap left, tap right; Tab/Enter                          | wrong pair                        | correct ÷ (correct + wrong); time left                   |
-| bucket-sort        | Swipe (2 buckets) or tap bucket button (2–4); keys 1–4  | wrong bucket                      | correct ÷ N; avg time left per card                      |
-| dash-manager       | Tap queued item, tap stations in order; Tab, keys 1–5   | patience expires or wrong station | served ÷ total; avg patience remaining                   |
-| spot-the-impostor  | Tap card to inspect, tap Accuse; Enter/Space            | wrong accusation                  | correct accusations ÷ accusations; time left             |
-| builder            | Tap part in tray, tap slot; Enter                       | submit with ≥ 1 wrong/empty slot  | correct slots ÷ slots; time left                         |
-| branching-scenario | Tap a choice (2–3 per node)                             | choosing a `bad` option           | Σ choice quality ÷ max (best 1, ok 0.5, bad 0); speed 0.5 |
-| allocator          | Steppers (−/+) or slider per category; arrow keys       | submit outside constraints        | categories within target ÷ categories; time left         |
+| Engine                                   | Input model (touch + keyboard)                         | Mistake event                     | accuracy / speed                                          |
+| ---------------------------------------- | ------------------------------------------------------ | --------------------------------- | --------------------------------------------------------- |
+| quiz-blitz **[A1]** _Test Yourself only_ | Tap one of 4 buttons; keys 1–4                         | wrong answer (no heart)           | correct ÷ N; avg time left                                |
+| sequence-sort                            | Tap item then slot (or drag); arrows + Enter           | submit with ≥ 1 wrong position    | correct positions ÷ N on final submit; time left          |
+| match-pairs                              | Tap left, tap right; Tab/Enter                         | wrong pair                        | correct ÷ (correct + wrong); time left                    |
+| bucket-sort                              | Swipe (2 buckets) or tap bucket button (2–4); keys 1–4 | wrong bucket                      | correct ÷ N; avg time left per card                       |
+| dash-manager                             | Tap queued item, tap stations in order; Tab, keys 1–5  | patience expires or wrong station | served ÷ total; avg patience remaining                    |
+| spot-the-impostor                        | Tap card to inspect, tap Accuse; Enter/Space           | wrong accusation                  | correct accusations ÷ accusations; time left              |
+| builder                                  | Tap part in tray, tap slot; Enter                      | submit with ≥ 1 wrong/empty slot  | correct slots ÷ slots; time left                          |
+| branching-scenario                       | Tap a choice (2–3 per node)                            | choosing a `bad` option           | Σ choice quality ÷ max (best 1, ok 0.5, bad 0); speed 0.5 |
+| allocator                                | Steppers (−/+) or slider per category; arrow keys      | submit outside constraints        | categories within target ÷ categories; time left          |
 
 All engines support `onlyItems?: string[]` (for review micro-rounds and crisis
 rounds) and every scorable item has a stable `id`.
@@ -251,12 +251,12 @@ An optional `simulation` block on **allocator** (numeric inputs) and **builder**
 (discrete choice) configs. The engine's normal interaction ends with "Commit", then
 the simulation plays a 3–6 second reveal and shows the outcome band:
 
-| Kind            | Player commits              | Reveal                                                        | Used by                          |
-| --------------- | --------------------------- | ------------------------------------------------------------- | -------------------------------- |
-| `dose-response` | starting dose (slider)      | first cohort of 6 avatars: responders / adverse events / fine | Toxicologist (W1), SRC (W4)      |
-| `trial-power`   | sample size (slider)        | power, cost, months update live; then "run it 100 times" bar  | Biostatistician (W2)             |
-| `pk-next-dose`  | next dose on a PK chart     | exposure curve vs. safety ceiling                             | Clinical Pharmacologist (W4)     |
-| `price-access`  | price (slider)              | payer coverage %, patients reached, revenue index             | Market Access (W8)               |
+| Kind            | Player commits          | Reveal                                                        | Used by                      |
+| --------------- | ----------------------- | ------------------------------------------------------------- | ---------------------------- |
+| `dose-response` | starting dose (slider)  | first cohort of 6 avatars: responders / adverse events / fine | Toxicologist (W1), SRC (W4)  |
+| `trial-power`   | sample size (slider)    | power, cost, months update live; then "run it 100 times" bar  | Biostatistician (W2)         |
+| `pk-next-dose`  | next dose on a PK chart | exposure curve vs. safety ceiling                             | Clinical Pharmacologist (W4) |
+| `price-access`  | price (slider)          | payer coverage %, patients reached, revenue index             | Market Access (W8)           |
 
 Bands are ordered ranges over the committed value. Each band has a `tag` (this is
 what becomes the artifact), narration, meter deltas, and kind-specific visual
@@ -289,8 +289,8 @@ Setback, Codex, Glossary, HandoffMap, Settings, Finale, Certificate.
 - Round order tells the story of the hand-off: the output tag of a round can select
   the variant of a later round in the same crisis (same `variants` mechanism as
   levels, scoped to the crisis).
-- World 1 crisis (proposed content): *"Day 212: the 28-day rat study shows liver
-  changes at the mid dose."*
+- World 1 crisis (proposed content): _"Day 212: the 28-day rat study shows liver
+  changes at the mid dose."_
   1. Toxicologist, bucket-sort, 30 s: sort 4 findings into Adverse / Not adverse /
      Needs pathology review.
   2. CMC Scientist, builder, 35 s: rebuild the capsule with a slower-release
@@ -337,11 +337,11 @@ without breaking standalone play or replay.
   link, and on replay. Replaying an emitter overwrites its artifact.
 - **Chains in scope now:**
   a) `protocol.criteria` (W2 Clinical Scientist) → `ecrf.fields` (W3 EDC) →
-     `screening.eligibility` (W4 PI) → `monitoring.deviations` (W5 CRA)
+  `screening.eligibility` (W4 PI) → `monitoring.deviations` (W5 CRA)
   b) `ae.report` (W4 CRC) → `ae.coded` (W5 Coder) → `safety.report` (W5 PV) →
-     `label.warnings` (W7 Labeling)
+  `label.warnings` (W7 Labeling)
   c) `dose.starting` (W1 Toxicologist) → `phase1.escalation` (W4 Pharmacologist) →
-     `phase1.hold` (W4 SRC, the scripted setback)
+  `phase1.hold` (W4 SRC, the scripted setback)
 - **Persistence:** `PlayerProgress` schema v2 adds `artifacts` and `knowledge`;
   migration v1→v2 fills both with `{}`.
 - **Visibility:** the debrief shows the artifact produced; the Handoff Map shows

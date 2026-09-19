@@ -4,14 +4,8 @@ import { economy } from '@/content/economy';
 import { navigate } from '@/app/router';
 import { useProgress } from '@/store/progress';
 import { useSettings } from '@/store/settings';
-import {
-  computeScore,
-  xpForBoss,
-  type Mistake,
-  type Stars,
-  type TaskResult,
-  type XpBreakdown,
-} from '@/engine/scoring';
+import type { EngineResult, Mistake } from '@/engine/scoring';
+import { applyMistake, conceptOutcomes, failureReason, scoreBoss, type BossScore } from '@/engine/pipeline';
 import { TaskShell } from '@/engine/TaskShell';
 import { QuizBlitz, type MistakeFeedback } from '@/engine/quiz-blitz/QuizBlitz';
 import { Button } from '@/components/Button';
@@ -24,9 +18,13 @@ import { Debrief } from './Debrief';
 type Phase =
   | { name: 'intro' }
   | { name: 'playing' }
-  | { name: 'done'; result: TaskResult; stars: Stars; score: number; xp: XpBreakdown; passed: boolean }
-  | { name: 'failed'; mistakes: Mistake[] };
+  | { name: 'done'; result: EngineResult; score: BossScore }
+  | { name: 'failed'; mistakes: Mistake[]; reason: string };
 
+/**
+ * Thin host for the end-of-world boss (becomes the Crisis Boss in Milestone 2b).
+ * Rule logic lives in engine/pipeline.ts; this screen only renders and commits.
+ */
 export function BossQuizScreen({ bossId }: { bossId: string }) {
   const boss = content.bossById[bossId];
   const world = boss ? content.worldById[boss.worldId] : undefined;
@@ -49,38 +47,41 @@ export function BossQuizScreen({ bossId }: { bossId: string }) {
     setPhase({ name: 'playing' });
   }, []);
 
-  const onMistake = useCallback(
-    (m: Mistake): MistakeFeedback => {
-      const hearts = progress.loseHeart();
-      progress.applyMeter('integrity', economy.meters.defaultMistakeIntegrity);
-      if (hearts <= 0) setPhase({ name: 'failed', mistakes: [m] });
-      return { heartLost: true };
-    },
-    [progress],
-  );
+  const onMistake = useCallback((m: Mistake): MistakeFeedback => {
+    const s = useProgress.getState();
+    const out = applyMistake(
+      { hearts: s.hearts, heartsUpdatedAt: s.heartsUpdatedAt, meters: s.meters },
+      { firstMistakeFree: false, freeUsed: false, meterFocus: 'integrity' },
+    );
+    s.commitSnapshot(out.snapshot);
+    const reason = failureReason(out);
+    if (reason) setPhase({ name: 'failed', mistakes: [m], reason });
+    return { heartLost: out.heartLost };
+  }, []);
 
   const onComplete = useCallback(
-    (result: TaskResult) => {
+    (result: EngineResult) => {
       if (!boss || !world) return;
-      const passed = result.accuracy >= economy.boss.passFraction;
-      const { score, stars: rawStars } = computeScore(result.accuracy, result.speed);
-      const stars: Stars = passed ? (rawStars === 0 ? 1 : rawStars) : 0;
-      const firstTry = (progress.bosses[boss.id]?.attempts ?? 0) === 0;
-      const xp = passed
-        ? xpForBoss(result.points ?? 0, result.maxPoints ?? 1, firstTry)
-        : { total: 0, lines: [] };
-      progress.recordBossResult(boss.id, { stars, points: result.points ?? 0, xp });
-      if (passed) {
-        progress.touchStreak();
-        const bonus = progress.completeWorld(world.id);
-        if (bonus.xpGained > 0) xp.lines.push({ label: 'Meters kept high', xp: bonus.xpGained });
-        xp.total = xp.lines.reduce((s, l) => s + l.xp, 0);
+      const s = useProgress.getState();
+      const score = scoreBoss(result, { firstTry: (s.bosses[boss.id]?.attempts ?? 0) === 0 });
+      s.recordBossResult(boss.id, { stars: score.stars, points: result.points ?? 0, xp: score.xp });
+      if (score.passed) {
+        s.touchStreak();
+        const bonus = s.completeWorld(world.id);
+        if (bonus.xpGained > 0) {
+          score.xp.lines.push({ label: 'Meters kept high', xp: bonus.xpGained });
+          score.xp.total = score.xp.lines.reduce((sum, l) => sum + l.xp, 0);
+        }
       }
-      const missed = new Set(result.mistakes.map((m) => m.conceptId));
-      for (const q of boss.questions) progress.recordConcept(q.conceptId, !missed.has(q.conceptId));
-      setPhase({ name: 'done', result, stars, score, xp, passed });
+      for (const c of conceptOutcomes(
+        boss.questions.map((q) => q.conceptId),
+        result.mistakes,
+      )) {
+        s.recordConcept(c.conceptId, c.correct);
+      }
+      setPhase({ name: 'done', result, score });
     },
-    [boss, world, progress],
+    [boss, world],
   );
 
   if (!boss || !world) {
@@ -93,6 +94,7 @@ export function BossQuizScreen({ bossId }: { bossId: string }) {
 
   const goMap = () => navigate({ name: 'map', worldId: world.id });
   const secs = Math.round(boss.secondsPerQuestion * world.timerScale);
+  const passPct = Math.round(economy.boss.passFraction * 100);
 
   if (phase.name === 'intro') {
     return (
@@ -114,9 +116,7 @@ export function BossQuizScreen({ bossId }: { bossId: string }) {
           <ul className="mt-3 grid gap-1 text-sm">
             <li>⚡ Faster correct answers score more points.</li>
             <li>🔥 3 in a row: ×1.25 points. 5 in a row: ×1.5.</li>
-            <li>
-              ✅ Get {Math.round(economy.boss.passFraction * 100)}% right to pass and unlock the next world.
-            </li>
+            <li>✅ Get {passPct}% right to pass and unlock the next world.</li>
           </ul>
           <div className="mt-3 flex gap-2" aria-hidden="true">
             <span className="rounded-lg bg-ans-red p-1.5">
@@ -193,7 +193,7 @@ export function BossQuizScreen({ bossId }: { bossId: string }) {
         correct={0}
         total={boss.questions.length}
         failed
-        failReason="Out of hearts. The boss quiz mixes every role, so revisit the Role Cards in the Codex, then come back."
+        failReason={phase.reason}
         canRetry={progress.hearts > 0}
         onContinue={goMap}
         onRetry={start}
@@ -201,29 +201,28 @@ export function BossQuizScreen({ bossId }: { bossId: string }) {
     );
   }
 
+  const { result, score } = phase;
   return (
     <Debrief
       kind="boss"
       title={boss.title}
-      stars={phase.stars}
-      score={phase.score}
-      xp={phase.xp}
-      learned={phase.passed ? world.outro.paragraphs[0] : undefined}
-      mistakes={phase.result.mistakes}
-      correct={phase.result.correct}
-      total={phase.result.total}
-      failed={!phase.passed}
+      stars={score.stars}
+      score={score.score}
+      xp={score.xp}
+      learned={score.passed ? world.outro.paragraphs[0] : undefined}
+      mistakes={result.mistakes}
+      correct={result.correct}
+      total={result.total}
+      failed={!score.passed}
       failReason={
-        !phase.passed
-          ? `You need ${Math.round(economy.boss.passFraction * 100)}% to pass. Read the consequences below and try again.`
-          : undefined
+        !score.passed ? `You need ${passPct}% to pass. Read the consequences below and try again.` : undefined
       }
       canRetry={progress.hearts > 0}
       onContinue={() =>
-        phase.passed ? navigate({ name: 'story', worldId: world.id, beat: 'outro' }) : goMap()
+        score.passed ? navigate({ name: 'story', worldId: world.id, beat: 'outro' }) : goMap()
       }
       onRetry={start}
-      continueLabel={phase.passed ? "See Maya's story" : 'Continue'}
+      continueLabel={score.passed ? "See Maya's story" : 'Continue'}
     />
   );
 }

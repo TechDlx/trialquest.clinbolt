@@ -81,6 +81,8 @@ export interface ProgressActions {
   ) => void;
   recordReview: (reviewId: string, xp: XpBreakdown, now?: Date) => void;
   addXp: (amount: number) => void;
+  /** Commits a pipeline snapshot (hearts + meters) in one update. */
+  commitSnapshot: (s: { hearts: number; heartsUpdatedAt: string | null; meters: Meters }) => void;
   loseHeart: (now?: Date) => number;
   syncHearts: (now?: Date) => void;
   applyMeter: (meter: MeterId, delta: number) => number;
@@ -213,6 +215,9 @@ export const useProgress = create<ProgressState>()(
       },
 
       addXp: (amount) => set({ xp: get().xp + amount }),
+
+      commitSnapshot: (s) =>
+        set({ hearts: s.hearts, heartsUpdatedAt: s.heartsUpdatedAt, meters: { ...s.meters } }),
 
       loseHeart: (now = new Date()) => {
         const s = get();

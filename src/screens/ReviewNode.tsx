@@ -5,7 +5,8 @@ import { economy } from '@/content/economy';
 import { navigate } from '@/app/router';
 import { useProgress } from '@/store/progress';
 import { useSettings } from '@/store/settings';
-import { computeScore, xpForReview, type TaskResult } from '@/engine/scoring';
+import { computeScore, xpForReview, type EngineResult } from '@/engine/scoring';
+import { conceptOutcomes } from '@/engine/pipeline';
 import { TaskShell } from '@/engine/TaskShell';
 import { QuizBlitz } from '@/engine/quiz-blitz/QuizBlitz';
 import { Button } from '@/components/Button';
@@ -39,19 +40,23 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
   const progress = useProgress();
   const relaxed = useSettings((s) => s.relaxed);
   const [phase, setPhase] = useState<'intro' | 'playing' | 'done'>('intro');
-  const [result, setResult] = useState<TaskResult | null>(null);
+  const [result, setResult] = useState<EngineResult | null>(null);
   const [paused, setPaused] = useState(false);
   const [seed, setSeed] = useState(1);
   const questions = useMemo(() => pickReviewQuestions(progress.concepts), [progress.concepts]);
 
   const onComplete = useCallback(
-    (r: TaskResult) => {
+    (r: EngineResult) => {
       if (!review) return;
       const perfect = r.mistakes.length === 0;
       progress.recordReview(review.id, xpForReview(perfect));
       progress.touchStreak();
-      const missed = new Set(r.mistakes.map((m) => m.conceptId));
-      for (const q of questions) progress.recordConcept(q.conceptId, !missed.has(q.conceptId));
+      for (const c of conceptOutcomes(
+        questions.map((q) => q.conceptId),
+        r.mistakes,
+      )) {
+        progress.recordConcept(c.conceptId, c.correct);
+      }
       setResult(r);
       setPhase('done');
     },

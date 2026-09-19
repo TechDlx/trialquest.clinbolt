@@ -1,6 +1,10 @@
 import { economy } from '@/content/economy';
+import type { MeterId } from '@/content/types';
 
+/** A heart-costing mistake, as reported by any engine. */
 export interface Mistake {
+  /** ScoredItem id within the stage (question id, card id, choice id…). */
+  itemId: string;
   conceptId: string;
   prompt: string;
   chosen: string;
@@ -9,16 +13,41 @@ export interface Mistake {
   consequence: string;
 }
 
-/** What every engine reports when a task ends. */
-export interface TaskResult {
+/** A tempting shortcut the player took. Not a mistake; meters are its cost. */
+export interface ShortcutEvent {
+  itemId: string;
+  meters: Partial<Record<MeterId, number>>;
+  why: string;
+}
+
+export type ItemOutcome = 'correct' | 'wrong' | 'shortcut' | 'skipped';
+
+/** Facts an OutcomeRule can test. Engines fill only the fields they produce. */
+export interface EngineOutcomes {
+  band?: string;
+  endNode?: string;
+  parts?: Record<string, string>;
+  buckets?: Record<string, string>;
+  accused?: string[];
+  inputValue?: number;
+  shortcutsTaken: string[];
+}
+
+export const emptyOutcomes = (): EngineOutcomes => ({ shortcutsTaken: [] });
+
+/** What every engine reports when a stage ends. Engines never touch the store. */
+export interface EngineResult {
   /** 0..1 */
   accuracy: number;
   /** 0..1; engines pass economy.score.relaxedSpeed when untimed. */
   speed: number;
   mistakes: Mistake[];
+  shortcuts: ShortcutEvent[];
+  itemResults: Record<string, ItemOutcome>;
+  outcomes: EngineOutcomes;
   correct: number;
   total: number;
-  /** Boss-style points, when the engine tracks them. */
+  /** Kahoot-style points, when the engine tracks them. */
   points?: number;
   maxPoints?: number;
   /** Hearts lost during the run (excluding free mistakes). */

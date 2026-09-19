@@ -7,7 +7,9 @@ import {
   bossPointsForAnswer,
   streakMultiplier,
   type Mistake,
-  type TaskResult,
+  type EngineResult,
+  type ItemOutcome,
+  emptyOutcomes,
 } from '@/engine/scoring';
 import { useCountdown } from '@/engine/useCountdown';
 import { CheckIcon, ShapeIcon, XIcon } from '@/components/Icons';
@@ -35,7 +37,7 @@ export interface QuizBlitzProps {
   seed?: number;
   /** Called on every wrong answer or timeout. Return value drives the feedback panel. */
   onMistake: (m: Mistake) => MistakeFeedback;
-  onComplete: (r: TaskResult) => void;
+  onComplete: (r: EngineResult) => void;
   /** Called after each answer so the host can track progress. */
   onProgress?: (answered: number, total: number) => void;
 }
@@ -119,6 +121,7 @@ export function QuizBlitz({
         pointsEarned = bossPointsForAnswer(timeLeftFraction, streak);
       } else {
         const m: Mistake = {
+          itemId: q.id,
           conceptId: q.conceptId,
           prompt: q.prompt,
           chosen: chosen === null ? 'No answer (time ran out)' : q.options[chosen]!.text,
@@ -156,17 +159,25 @@ export function QuizBlitz({
     const speed = relaxed
       ? economy.score.relaxedSpeed
       : history.reduce((s, a) => s + a.timeLeftFraction, 0) / Math.max(1, history.length);
+    const itemResults: Record<string, ItemOutcome> = {};
+    history.forEach((a, i) => {
+      const qq = prepared[i];
+      if (qq) itemResults[qq.id] = a.correct ? 'correct' : 'wrong';
+    });
     onComplete({
       accuracy: correct / Math.max(1, total),
       speed,
       mistakes,
+      shortcuts: [],
+      itemResults,
+      outcomes: emptyOutcomes(),
       correct,
       total,
       points,
       maxPoints: bossMaxPoints(total),
       heartsLost,
     });
-  }, [index, total, history, relaxed, onComplete, mistakes, points, heartsLost]);
+  }, [index, total, history, relaxed, onComplete, mistakes, points, heartsLost, prepared]);
 
   // Auto-advance after a correct answer in timed mode; wrong answers wait for "Next".
   useEffect(() => {

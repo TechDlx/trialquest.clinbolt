@@ -1,18 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { MeterId } from '@/content/types';
 import { content } from '@/content';
 import { economy } from '@/content/economy';
 import { navigate } from '@/app/router';
 import { useProgress } from '@/store/progress';
 import { useSettings } from '@/store/settings';
-import {
-  computeScore,
-  xpForLevel,
-  type Mistake,
-  type Stars,
-  type TaskResult,
-  type XpBreakdown,
-} from '@/engine/scoring';
+import type { EngineResult, Mistake } from '@/engine/scoring';
+import { applyMistake, conceptOutcomes, failureReason, scoreLevel, type LevelScore } from '@/engine/pipeline';
 import { msToNextHeart } from '@/engine/hearts';
 import { TaskShell } from '@/engine/TaskShell';
 import { QuizBlitz, type MistakeFeedback } from '@/engine/quiz-blitz/QuizBlitz';
@@ -27,24 +20,13 @@ import { employerLabel } from './BadgeSwap';
 type Phase =
   | { name: 'intro' }
   | { name: 'playing' }
-  | { name: 'debrief'; result: TaskResult; stars: Stars; score: number; xp: XpBreakdown }
-  | { name: 'failed'; mistakes: Mistake[]; reason: string; correct: number; total: number };
+  | { name: 'debrief'; result: EngineResult; score: LevelScore }
+  | { name: 'failed'; mistakes: Mistake[]; reason: string };
 
-const setbackTitles: Record<MeterId, { title: string; text: string }> = {
-  safety: {
-    title: 'Clinical hold',
-    text: 'Patient safety hit zero. In real life the regulator can halt a trial until the sponsor fixes the problem. Retry the level.',
-  },
-  integrity: {
-    title: 'Inspection finding',
-    text: 'Data integrity hit zero. An inspector would issue findings, and data from this site might be thrown out. Retry the level.',
-  },
-  timeline: {
-    title: 'Portfolio review',
-    text: 'Timeline and budget hit zero. Leadership pauses the program until the plan is fixed. Retry the level.',
-  },
-};
-
+/**
+ * Thin host for a level: intro card, the engine inside TaskShell, and the debrief.
+ * All rule logic (hearts, meters, setbacks, scoring, spaced repetition) is in engine/pipeline.ts.
+ */
 export function LevelScreen({ levelId }: { levelId: string }) {
   const level = content.levelById[levelId];
   const role = level ? content.roleById[level.roleId] : undefined;
@@ -56,7 +38,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   const [paused, setPaused] = useState(false);
   const [runKey, setRunKey] = useState(0);
   const [seed, setSeed] = useState(1);
-  const freeMistakeUsed = useRef(false);
+  const freeUsed = useRef(false);
   const hasCardFlipped = level ? !!progress.cardsViewed[level.roleId]?.flipped : false;
 
   useEffect(() => {
@@ -72,7 +54,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   }, [level, role, hasCardFlipped, levelId]);
 
   const start = useCallback(() => {
-    freeMistakeUsed.current = false;
+    freeUsed.current = false;
     setPaused(false);
     setRunKey((k) => k + 1);
     setSeed((Date.now() % 1_000_000) + 1);
@@ -82,56 +64,37 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   const onMistake = useCallback(
     (m: Mistake): MistakeFeedback => {
       if (!level || !world) return { heartLost: false };
-      if (world.firstMistakeFree && !freeMistakeUsed.current) {
-        freeMistakeUsed.current = true;
-        return {
-          heartLost: false,
-          note: 'Dose: "First slip in World 1 is free. The next one costs a heart."',
-        };
-      }
-      const hearts = progress.loseHeart();
-      const meter = level.meterFocus ?? 'integrity';
-      const delta = meter === 'integrity' ? economy.meters.defaultMistakeIntegrity : -5;
-      const value = progress.applyMeter(meter, delta);
-      if (value <= 0) {
-        progress.resetMeter(meter);
-        const sb = setbackTitles[meter];
-        setPhase({ name: 'failed', mistakes: [m], reason: `${sb.title}: ${sb.text}`, correct: 0, total: 0 });
-        return { heartLost: true };
-      }
-      if (hearts <= 0) {
-        setPhase({
-          name: 'failed',
-          mistakes: [m],
-          reason: 'Out of hearts. Every mistake below has a real-world cost. Take a breath and try again.',
-          correct: 0,
-          total: 0,
-        });
-      }
-      return { heartLost: true };
+      const s = useProgress.getState();
+      const out = applyMistake(
+        { hearts: s.hearts, heartsUpdatedAt: s.heartsUpdatedAt, meters: s.meters },
+        {
+          firstMistakeFree: world.firstMistakeFree,
+          freeUsed: freeUsed.current,
+          meterFocus: level.meterFocus ?? 'integrity',
+        },
+      );
+      freeUsed.current = out.freeUsed;
+      if (out.heartLost) s.commitSnapshot(out.snapshot);
+      const reason = failureReason(out);
+      if (reason) setPhase({ name: 'failed', mistakes: [m], reason });
+      return { heartLost: out.heartLost, note: out.note };
     },
-    [level, world, progress],
+    [level, world],
   );
 
   const onComplete = useCallback(
-    (result: TaskResult) => {
+    (result: EngineResult) => {
       if (!level) return;
-      const { score, stars } = computeScore(result.accuracy, result.speed);
-      const firstTime = !progress.levels[level.id]?.completedAt;
-      const xp = xpForLevel({
-        stars,
-        perfect: result.heartsLost === 0 && result.mistakes.length === 0,
-        firstTime,
-      });
-      progress.recordLevelResult(level.id, { stars, score, xp });
-      if (stars > 0) progress.touchStreak();
-      const missed = new Set(result.mistakes.map((m) => m.conceptId));
-      if (level.game.engine === 'quiz-blitz') {
-        for (const q of level.game.questions) progress.recordConcept(q.conceptId, !missed.has(q.conceptId));
-      }
-      setPhase({ name: 'debrief', result, stars, score, xp });
+      const s = useProgress.getState();
+      const score = scoreLevel(result, { firstTime: !s.levels[level.id]?.completedAt });
+      s.recordLevelResult(level.id, { stars: score.stars, score: score.score, xp: score.xp });
+      if (score.stars > 0) s.touchStreak();
+      const conceptIds =
+        level.game.engine === 'quiz-blitz' ? level.game.questions.map((q) => q.conceptId) : [];
+      for (const c of conceptOutcomes(conceptIds, result.mistakes)) s.recordConcept(c.conceptId, c.correct);
+      setPhase({ name: 'debrief', result, score });
     },
-    [level, progress],
+    [level],
   );
 
   if (!level || !role || !world) {
@@ -237,8 +200,8 @@ export function LevelScreen({ levelId }: { levelId: string }) {
         xp={{ total: 0, lines: [] }}
         learned={level.debrief.learned}
         mistakes={phase.mistakes}
-        correct={phase.correct}
-        total={phase.total}
+        correct={0}
+        total={0}
         failed
         failReason={phase.reason}
         canRetry={progress.hearts > 0}
@@ -250,21 +213,22 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   }
 
   const isLastLevel = world.nodes.filter((n) => n.kind === 'level').at(-1)?.id === level.id;
+  const { result, score } = phase;
   return (
     <Debrief
       kind="level"
       title={level.title}
-      stars={phase.stars}
-      score={phase.score}
-      xp={phase.xp}
+      stars={score.stars}
+      score={score.score}
+      xp={score.xp}
       learned={level.debrief.learned}
       handoffLine={level.debrief.handoffLine}
-      mistakes={phase.result.mistakes}
-      correct={phase.result.correct}
-      total={phase.result.total}
-      failed={phase.stars === 0}
+      mistakes={result.mistakes}
+      correct={result.correct}
+      total={result.total}
+      failed={score.stars === 0}
       failReason={
-        phase.stars === 0 ? 'Under half right. Read the consequences below and have another go.' : undefined
+        score.stars === 0 ? 'Under half right. Read the consequences below and have another go.' : undefined
       }
       canRetry={progress.hearts > 0}
       onContinue={goMap}
