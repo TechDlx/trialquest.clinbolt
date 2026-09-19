@@ -80,7 +80,6 @@ export const artifactRegistry = {
     description: 'How fast the Phase I doses step up, chosen by the Clinical Pharmacologist.',
     tags: ['slow', 'standard', 'fast'],
     defaultTag: 'standard',
-    planned: true,
   },
   'phase1.hold': {
     title: 'Hold resolution',

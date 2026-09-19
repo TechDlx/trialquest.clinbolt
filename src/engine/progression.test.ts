@@ -43,8 +43,8 @@ describe('computeMapState', () => {
     const s = computeMapState(content.worlds, { ...empty, levels, crises: { 'w1-crisis': { stars: 3 } } });
     expect(s.worldComplete.w1).toBe(true);
     expect(s.worldUnlocked.w2).toBe(true);
-    // World 2 is still 'planned' content, so its nodes show as planned rather than current.
-    expect(s.nodeStatus['w2-l1']).toBe('planned');
-    expect(s.currentNodeId).toBeNull();
+    // World 2 is ready, so its first level becomes the current node.
+    expect(s.nodeStatus['w2-l1']).toBe('current');
+    expect(s.currentNodeId).toBe('w2-l1');
   });
 });

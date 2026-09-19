@@ -5,21 +5,21 @@ import { glossary, glossaryById } from './glossary';
 import { w1Crisis, w1Levels, w1Review, w1Roles } from './worlds/w1';
 import { w2Crisis, w2Levels, w2Review, w2Roles } from './worlds/w2';
 import { w3Crisis, w3Levels, w3Reviews, w3Roles } from './worlds/w3';
-import { w4Levels } from './worlds/w4/levels';
+import { w4Crisis, w4Levels, w4Review, w4Roles } from './worlds/w4';
 import { w1Knowledge } from './knowledge/w1';
 import { w2Knowledge } from './knowledge/w2';
 import { w3Knowledge } from './knowledge/w3';
+import { w4Knowledge } from './knowledge/w4';
 export { artifactRegistry } from './artifacts';
 
 /**
- * Content registry. Milestone 3 turns this into per-world lazy imports.
- * Levels from planned worlds may be registered early when they consume artifacts (w4-l4).
+ * Content registry: every world's roles, levels, crises, review nodes and Test Yourself sets.
  */
-const roles: Role[] = [...w1Roles, ...w2Roles, ...w3Roles];
+const roles: Role[] = [...w1Roles, ...w2Roles, ...w3Roles, ...w4Roles];
 const levels: Level[] = [...w1Levels, ...w2Levels, ...w3Levels, ...w4Levels];
-const crises: CrisisBoss[] = [w1Crisis, w2Crisis, w3Crisis];
-const reviewNodes: ReviewNode[] = [w1Review, w2Review, ...w3Reviews];
-const knowledge: KnowledgeCheck[] = [...w1Knowledge, ...w2Knowledge, ...w3Knowledge];
+const crises: CrisisBoss[] = [w1Crisis, w2Crisis, w3Crisis, w4Crisis];
+const reviewNodes: ReviewNode[] = [w1Review, w2Review, ...w3Reviews, w4Review];
+const knowledge: KnowledgeCheck[] = [...w1Knowledge, ...w2Knowledge, ...w3Knowledge, ...w4Knowledge];
 
 export const content = {
   worlds,

@@ -1,16 +1,473 @@
 import type { Level } from '../../types';
 
 /**
- * World 4 (planned) — the clinical hold level is authored now because it consumes chain (c).
- * The hold ALWAYS happens; artifacts change only its cause, severity and copy (SPEC Amendment 1).
+ * World 4 — Phase I. The clinical hold (w4-l4) ALWAYS happens; artifacts change only its cause,
+ * severity and copy (SPEC Amendment 1). w4-l1 continues chain (a), w4-l2 starts chain (b),
+ * w4-l3 continues chain (c).
  */
 export const w4Levels: Level[] = [
+  // ------------------------------------------------------------------ w4-l1 Principal Investigator
+  {
+    id: 'w4-l1',
+    worldId: 'w4',
+    roleId: 'principal-investigator',
+    title: 'Screen the volunteers',
+    intro:
+      'Six healthy volunteers are in the waiting room for [[screening]]. The protocol says 18–55, normal liver tests, no daily medicines. Decide who is eligible. The liver rule exists because of what the rats showed.',
+    meterFocus: 'safety',
+    stages: [
+      {
+        id: 'screen',
+        title: 'Apply the criteria',
+        brief: 'Eligible, not eligible, or ask the sponsor before deciding?',
+        game: {
+          engine: 'bucket-sort',
+          prompt: 'Screen each volunteer against the protocol.',
+          seconds: 75,
+          buckets: [
+            { id: 'eligible', label: 'Eligible', hint: 'Meets every criterion' },
+            { id: 'not-eligible', label: 'Not eligible', hint: 'Fails a criterion: a screen failure' },
+            { id: 'query', label: 'Ask the sponsor', hint: 'The protocol does not say; get it in writing' },
+            {
+              id: 'enrol-anyway',
+              label: 'Enrol, note it later',
+              hint: 'Keep the cohort on schedule',
+              shortcut: {
+                meters: { timeline: 10, safety: -15 },
+                why: 'The cohort doses tomorrow. A borderline volunteer enrolled today becomes an eligibility deviation next week, or a liver case.',
+              },
+            },
+          ],
+          cards: [
+            {
+              id: 'v-clean',
+              text: 'Age 31, all labs normal, takes no medicines',
+              bucketId: 'eligible',
+              confirm: 'Eligible: meets every criterion.',
+              conceptId: 'eligibility-criteria',
+              explanation:
+                'Every criterion met and documented in the [[source-document|source]]. This is what eligible looks like.',
+              consequence: 'Turning away eligible volunteers stalls the cohort for no reason.',
+            },
+            {
+              id: 'v-alt',
+              text: 'Age 44, [[alt|ALT]] 1.4 times the upper limit, feels fine',
+              bucketId: 'not-eligible',
+              confirm: 'Not eligible: the liver rule is the whole point.',
+              conceptId: 'screen-failure',
+              explanation:
+                '"Normal liver tests" means normal. A raised ALT is a [[screen-failure|screen failure]], however well he feels.',
+              consequence:
+                'Dosing a volunteer with a raised liver enzyme in a study with a liver signal is how volunteers get hurt.',
+            },
+            {
+              id: 'v-age',
+              text: 'Age 57, labs normal, no medicines',
+              bucketId: 'not-eligible',
+              confirm: 'Not eligible: 57 is outside 18–55.',
+              conceptId: 'eligibility-criteria',
+              explanation: 'Two years over the limit is over the limit. Criteria are not suggestions.',
+              consequence: 'Age deviations are among the most common findings in Phase I inspections.',
+            },
+            {
+              id: 'v-vitamin',
+              text: 'Age 26, labs normal, takes a daily multivitamin',
+              bucketId: 'query',
+              confirm: 'Ask: the protocol does not define "medicine".',
+              conceptId: 'protocol-clarification',
+              explanation:
+                'Is a vitamin a "daily medicine"? The protocol does not say. A written [[protocol-clarification|clarification]] settles it for every site.',
+              consequence:
+                'Sites deciding grey areas alone apply the protocol differently, and the data cannot be pooled.',
+            },
+            {
+              id: 'v-consent',
+              text: 'Age 38, labs normal, signed the consent form before the doctor explained the study',
+              bucketId: 'not-eligible',
+              confirm: 'Not eligible until consent is done properly.',
+              conceptId: 'consent-process',
+              explanation:
+                'A signature before the explanation is not [[consent-process|informed consent]]. Re-consent first; only then can screening count.',
+              consequence: 'Consent obtained out of order is a critical GCP finding.',
+            },
+          ],
+        },
+      },
+    ],
+    emits: [
+      {
+        key: 'screening.eligibility',
+        outcomes: [
+          { tag: 'lenient', when: { stageId: 'screen', tookShortcut: 'enrol-anyway' } },
+          {
+            tag: 'lenient',
+            when: { stageId: 'screen', bucketOf: { itemId: 'v-alt', bucketId: 'eligible' } },
+          },
+          {
+            tag: 'strict',
+            when: { stageId: 'screen', bucketOf: { itemId: 'v-vitamin', bucketId: 'not-eligible' } },
+          },
+          { tag: 'standard', when: { stageId: 'screen', accuracyAtLeast: 0 } },
+        ],
+      },
+    ],
+    variants: [
+      {
+        when: { 'protocol.criteria': 'tight' },
+        patch: {
+          intro:
+            "Six healthy volunteers are in the waiting room for [[screening]]. The protocol's criteria are tight: 18–55, normal liver tests, no daily medicines, and more. Expect screen failures. The liver rule exists because of what the rats showed.",
+          meterOpening: { timeline: -5 },
+        },
+      },
+      {
+        when: { 'protocol.criteria': 'loose' },
+        patch: {
+          intro:
+            "Six healthy volunteers are in the waiting room for [[screening]]. The protocol's criteria are loose, so the sponsor added a note: check liver tests anyway. You are the last line between the rat data and a person.",
+          meterOpening: { safety: -5 },
+        },
+      },
+      {
+        when: { 'ecrf.fields': 'minimal' },
+        patch: {
+          stages: {
+            screen: {
+              brief:
+                'The screening form has no liver field, so work from the paper lab reports. Eligible, not eligible, or ask the sponsor?',
+            },
+          },
+        },
+      },
+      {
+        when: { 'ecrf.fields': 'bloated' },
+        patch: {
+          stages: {
+            screen: {
+              brief:
+                'Ninety fields per volunteer. Find the ones that matter. Eligible, not eligible, or ask the sponsor?',
+            },
+          },
+          meterOpening: { timeline: -5 },
+        },
+      },
+    ],
+    debrief: {
+      learned:
+        'The investigator applies the criteria exactly as written, documents every decision in source records, and asks the sponsor in writing when the protocol is silent. Consent comes before anything else.',
+      handoffLine:
+        'You hand the eligible volunteers to the Study Coordinator for dosing day. How strictly you screened will follow the data to the monitor.',
+    },
+  },
+
+  // ------------------------------------------------------------------ w4-l2 Clinical Research Coordinator / Study Nurse
+  {
+    id: 'w4-l2',
+    worldId: 'w4',
+    roleId: 'study-coordinator',
+    title: 'Dosing day',
+    intro:
+      'Cohort 2 doses today. Each volunteer needs consent confirmed, vitals, the dose, and blood draws at exact times for [[pk-sampling|PK]]. One will report a headache. Get everyone through the right stations before their window closes.',
+    meterFocus: 'integrity',
+    stages: [
+      {
+        id: 'visit',
+        title: 'Run the visit',
+        brief: 'Tap a volunteer, then their stations in order. Blood draws have a time window.',
+        game: {
+          engine: 'dash-manager',
+          prompt: 'Get every volunteer through dosing day correctly.',
+          seconds: 110,
+          stations: [
+            { id: 'consent', label: 'Confirm consent' },
+            { id: 'vitals', label: 'Vitals & labs' },
+            { id: 'dose', label: 'Dose' },
+            { id: 'draw', label: 'PK blood draw' },
+            { id: 'ae-form', label: 'Record the AE' },
+            {
+              id: 'skip-ae',
+              label: 'Note it verbally, skip the form',
+              shortcut: {
+                meters: { timeline: 10, integrity: -15 },
+                why: 'A headache is nothing, until the safety team needs to know whether it was one headache or six. The form is how they find out.',
+              },
+            },
+          ],
+          items: [
+            {
+              id: 'vol-a',
+              label: 'Volunteer A: first visit',
+              steps: ['consent', 'vitals', 'dose', 'draw'],
+              patienceSeconds: 45,
+              arrivesAt: 0,
+              conceptId: 'consent-process',
+              explanation:
+                'Consent is confirmed at every visit, vitals before dosing, then the dose, then the timed draw.',
+              consequence: 'A missed pre-dose vital sign leaves the safety data without a baseline.',
+            },
+            {
+              id: 'vol-b',
+              label: 'Volunteer B: dosing visit',
+              steps: ['vitals', 'dose', 'draw'],
+              patienceSeconds: 40,
+              arrivesAt: 10,
+              conceptId: 'pk-sampling',
+              explanation:
+                'The [[pk-sampling|PK draw]] must land inside its window or the concentration point is lost.',
+              consequence: 'A late draw distorts the PK curve the pharmacologist reads tomorrow.',
+            },
+            {
+              id: 'vol-c',
+              label: 'Volunteer C: reports a headache',
+              steps: ['vitals', 'ae-form', 'draw'],
+              patienceSeconds: 40,
+              arrivesAt: 22,
+              conceptId: 'adverse-event',
+              explanation:
+                'Any complaint is an [[adverse-event|adverse event]]: record it with onset, severity and what was done, then continue.',
+              consequence: 'Unrecorded events make the safety picture look cleaner than it is.',
+            },
+            {
+              id: 'draw-4h',
+              label: 'Cohort 4-hour draw window',
+              steps: ['draw'],
+              patienceSeconds: 25,
+              arrivesAt: 40,
+              conceptId: 'pk-sampling',
+              explanation: 'Timed draws are the whole point of the visit. The window does not wait.',
+              consequence: 'Missing the window means a cohort without a 4-hour point.',
+            },
+          ],
+        },
+      },
+    ],
+    emits: [
+      {
+        key: 'ae.report',
+        outcomes: [
+          { tag: 'incomplete', when: { stageId: 'visit', tookShortcut: 'skip-ae' } },
+          { tag: 'complete', when: { stageId: 'visit', accuracyAtLeast: 0 } },
+        ],
+      },
+    ],
+    debrief: {
+      learned:
+        'The coordinator makes the protocol happen: consent confirmed, vitals before dose, draws on the clock, and every complaint recorded as an adverse event with the details the safety team will need.',
+      handoffLine:
+        'You hand the timed samples and the adverse event forms to the Clinical Pharmacologist. Whether the headache was recorded properly follows the data into World 5.',
+    },
+  },
+
+  // ------------------------------------------------------------------ w4-l3 Clinical Pharmacologist
+  {
+    id: 'w4-l3',
+    worldId: 'w4',
+    roleId: 'clinical-pharmacologist',
+    title: 'Read the curve, choose the dose',
+    intro:
+      "Cohort 2's [[pharmacokinetics|PK]] results are in. Read what the curve says and set the rule that stops [[dose-escalation|escalation]]. Then choose cohort 3's dose, and Dose will project the exposure before anyone is dosed.",
+    meterFocus: 'safety',
+    stages: [
+      {
+        id: 'read',
+        title: 'Read cohort 2',
+        brief: 'Tap a part, then its slot. Read the curve, not the hope.',
+        weight: 1,
+        game: {
+          engine: 'builder',
+          prompt: 'What does cohort 2 show, and what ends escalation?',
+          seconds: 60,
+          slots: [
+            { id: 'reading', label: 'What cohort 2 shows' },
+            { id: 'rule', label: 'Stopping rule', hint: 'What ends escalation' },
+          ],
+          parts: [
+            {
+              id: 'read-linear',
+              text: 'Exposure doubled when the dose doubled; [[half-life]] about 8 hours; peak at 50% of the ceiling',
+              slotId: 'reading',
+              confirm: 'Right: predictable, with room above.',
+              conceptId: 'exposure',
+              explanation:
+                'Doubling exposure with doubling dose means the next step is predictable. Half the ceiling leaves margin.',
+              consequence: 'Misreading the curve is how a cohort is dosed past the ceiling.',
+            },
+            {
+              id: 'read-flat',
+              text: 'Exposure barely changed with dose; the drug is not being absorbed',
+              conceptId: 'exposure',
+              explanation: 'The data show a clean doubling. Calling it flat would justify a dangerous jump.',
+              consequence: 'A false "flat" reading is the classic prelude to an overdose cohort.',
+            },
+            {
+              id: 'rule-stop',
+              text: 'Stop if any volunteer has a Grade 2 or worse event, or exposure exceeds the ceiling',
+              slotId: 'rule',
+              confirm: 'Yes: a stopping rule written before the data.',
+              conceptId: 'stopping-rule',
+              explanation:
+                'A [[stopping-rule|stopping rule]] fixed in advance takes the decision out of the moment.',
+              consequence: 'Without a rule, escalation continues on optimism.',
+            },
+            {
+              id: 'rule-vibes',
+              text: 'Stop when the investigator feels uncomfortable',
+              conceptId: 'stopping-rule',
+              explanation: 'Discomfort is not a criterion. The rule must name a grade and a number.',
+              consequence: 'Vague stopping rules are why escalations go one cohort too far.',
+            },
+          ],
+        },
+      },
+      {
+        id: 'escalate',
+        title: 'Choose cohort 3',
+        brief: 'Pick the step, then project the exposure. Your first projection counts.',
+        weight: 2,
+        game: {
+          engine: 'builder',
+          prompt: 'How big a step for cohort 3?',
+          seconds: 60,
+          sandbox: true,
+          slots: [{ id: 'next-dose', label: 'Cohort 3 dose', hint: 'Cohort 2 peaked at 50% of the ceiling' }],
+          parts: [
+            {
+              id: 'dose-slow',
+              text: 'Small step: 1.5 times cohort 2',
+              slotId: 'next-dose',
+              conceptId: 'dose-escalation',
+              explanation: 'Safe, and slow. With this much margin it costs an extra cohort and a month.',
+              consequence: 'Steps that are too small add cohorts and expose more volunteers overall.',
+            },
+            {
+              id: 'dose-standard',
+              text: 'Standard step: double cohort 2',
+              slotId: 'next-dose',
+              confirm: 'Standard: predicted peak at 80% of the ceiling.',
+              conceptId: 'dose-escalation',
+              explanation: 'A doubling from 50% lands near 80% of the ceiling: measurable, with margin.',
+              consequence: 'This is the step the escalation plan was written for.',
+            },
+            {
+              id: 'dose-fast',
+              text: 'Big step: 3.3 times cohort 2',
+              slotId: 'next-dose',
+              conceptId: 'dose-escalation',
+              explanation: 'From 50%, 3.3 times lands well above the ceiling. The curve told you that.',
+              consequence: 'Over-shooting the ceiling is how liver signals appear in cohort 3.',
+            },
+            {
+              id: 'dose-effective',
+              text: 'Jump straight to the dose expected to work in patients',
+              conceptId: 'dose-escalation',
+              shortcut: {
+                meters: { timeline: 15, safety: -20 },
+                why: 'Two cohorts saved. The whole point of escalation is that nobody knows what happens between here and there.',
+              },
+              explanation:
+                'Escalation exists because the model is a guess. Skipping steps is skipping the safety data.',
+              consequence:
+                'Jumping to the target dose has caused serious harm in real first-in-human studies.',
+            },
+          ],
+          simulation: {
+            kind: 'pk-next-dose',
+            host: 'builder',
+            slotId: 'next-dose',
+            preview: 'on-commit',
+            revealSeconds: 4,
+            commitLabel: 'Project cohort 3 exposure',
+            targetBand: 'standard',
+            bands: [
+              {
+                tag: 'slow',
+                label: 'Small step',
+                parts: ['dose-slow'],
+                narration:
+                  "Dose's projection: peak exposure at 60% of the ceiling. Safe, and you will need an extra cohort to reach a useful dose.",
+                meters: { timeline: -5 },
+                consequence: 'Small steps cost months and expose more volunteers overall.',
+                visual: {
+                  exposure: 60,
+                  safetyCeiling: 100,
+                  points: [
+                    { t: 0, c: 0 },
+                    { t: 1, c: 45 },
+                    { t: 2, c: 60 },
+                    { t: 4, c: 40 },
+                    { t: 8, c: 15 },
+                    { t: 12, c: 5 },
+                  ],
+                },
+              },
+              {
+                tag: 'standard',
+                label: 'Standard step',
+                parts: ['dose-standard'],
+                narration:
+                  "Dose's projection: peak exposure at 80% of the ceiling. Measurable, with margin. The stopping rule stays untouched.",
+                visual: {
+                  exposure: 80,
+                  safetyCeiling: 100,
+                  points: [
+                    { t: 0, c: 0 },
+                    { t: 1, c: 60 },
+                    { t: 2, c: 80 },
+                    { t: 4, c: 55 },
+                    { t: 8, c: 20 },
+                    { t: 12, c: 7 },
+                  ],
+                },
+              },
+              {
+                tag: 'fast',
+                label: 'Big step',
+                parts: ['dose-fast', 'dose-effective'],
+                narration:
+                  "Dose's projection: peak exposure at 130% of the ceiling. One volunteer's liver enzymes rise. Dosing stops for review.",
+                meters: { safety: -10, timeline: -5 },
+                consequence: 'A step that overshoots the ceiling turns cohort 3 into the safety experiment.',
+                visual: {
+                  exposure: 130,
+                  safetyCeiling: 100,
+                  points: [
+                    { t: 0, c: 0 },
+                    { t: 1, c: 95 },
+                    { t: 2, c: 130 },
+                    { t: 4, c: 90 },
+                    { t: 8, c: 35 },
+                    { t: 12, c: 12 },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      },
+    ],
+    emits: [
+      {
+        key: 'phase1.escalation',
+        outcomes: [
+          { tag: 'slow', when: { stageId: 'escalate', band: 'slow' } },
+          { tag: 'standard', when: { stageId: 'escalate', band: 'standard' } },
+          { tag: 'fast', when: { stageId: 'escalate', band: 'fast' } },
+        ],
+      },
+    ],
+    debrief: {
+      learned:
+        'Clinical pharmacology reads exposure, not just dose: how much drug reaches the blood, how fast it clears, and how far below the safety ceiling the next step lands. Stopping rules are written before the data.',
+      handoffLine:
+        "You hand the cohort 3 plan to the Safety Review Committee. Your step size, and the Toxicologist's starting dose, are about to matter.",
+    },
+  },
+
   {
     id: 'w4-l4',
     worldId: 'w4',
     roleId: 'safety-review-committee',
     title: 'Clinical hold',
-    planned: true,
     meterFocus: 'safety',
     // Base = 'standard' starting dose and 'standard' escalation. The cause is independent of the player's dose.
     intro:
