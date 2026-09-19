@@ -28,6 +28,11 @@ export function Branching(p: EngineProps<BranchingConfig>) {
   const single = !!p.onlyItems?.length;
   const [nodeId, setNodeId] = useState(startId);
   const [pending, setPending] = useState<Pending | null>(null);
+
+  const { onHold } = p;
+  useEffect(() => {
+    onHold?.(!!pending);
+  }, [pending, onHold]);
   const [decisions, setDecisions] = useState<{ choiceId: string; quality: number; outcome: ItemOutcome }[]>(
     [],
   );

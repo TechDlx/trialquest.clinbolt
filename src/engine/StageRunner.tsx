@@ -40,6 +40,7 @@ export function StageRunner({
   const [phase, setPhase] = useState<'card' | 'play'>('card');
   const [byStage, setByStage] = useState<Record<string, EngineResult>>({});
   const [promptDone, setPromptDone] = useState(false);
+  const [held, setHeld] = useState(false);
   const stage = level.stages[index]!;
   const game = stage.game as MainPathConfig;
   const base = configSeconds(game);
@@ -48,7 +49,7 @@ export function StageRunner({
   const countdown = useCountdown({
     seconds: seconds || 1,
     enabled: timed,
-    running: phase === 'play' && !paused,
+    running: phase === 'play' && !paused && !held,
     resetKey: `${level.id}:${stage.id}:${seed}`,
   });
 
@@ -56,6 +57,7 @@ export function StageRunner({
     (r: EngineResult) => {
       const next = { ...byStage, [stage.id]: r };
       setByStage(next);
+      setHeld(false);
       if (index + 1 < level.stages.length) {
         setIndex(index + 1);
         setPhase('card');
@@ -140,6 +142,7 @@ export function StageRunner({
         onMistake={onMistake}
         onShortcut={onShortcut}
         onMeters={onMeters}
+        onHold={setHeld}
         onComplete={onStageComplete}
       />
     </div>

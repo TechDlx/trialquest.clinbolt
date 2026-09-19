@@ -24,6 +24,11 @@ export function BucketSort(p: EngineProps<BucketSortConfig>) {
   const [results, setResults] = useState<Record<string, ItemOutcome>>({});
   const [buckets, setBuckets] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<Pending | null>(null);
+
+  const { onHold } = p;
+  useEffect(() => {
+    onHold?.(!!pending);
+  }, [pending, onHold]);
   const [heartsLost, setHeartsLost] = useState(0);
   const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
   const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);

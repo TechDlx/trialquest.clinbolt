@@ -29,6 +29,11 @@ export function DashManager(p: EngineProps<DashConfig>) {
     explanation: string;
     note?: string;
   } | null>(null);
+
+  const { onHold } = p;
+  useEffect(() => {
+    onHold?.(!!pending);
+  }, [pending, onHold]);
   const [heartsLost, setHeartsLost] = useState(0);
   const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
   const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);

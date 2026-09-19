@@ -26,6 +26,7 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
   const [phase, setPhase] = useState<'intro' | 'playing' | 'done'>('intro');
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [held, setHeld] = useState(false);
   const [clean, setClean] = useState(0);
   const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
   const rounds = useMemo<ReviewRound[]>(
@@ -42,7 +43,7 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
   const clock = useCountdown({
     seconds: seconds || 1,
     enabled: timed,
-    running: phase === 'playing' && !paused,
+    running: phase === 'playing' && !paused && !held,
     resetKey: index,
   });
 
@@ -153,6 +154,7 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
           onMistake={() => ({ heartLost: false, note: 'No heart lost in a review.' })}
           onShortcut={() => {}}
           onMeters={() => {}}
+          onHold={setHeld}
           onComplete={onRoundComplete}
         />
       </TaskShell>

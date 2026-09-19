@@ -28,6 +28,11 @@ export function Builder(p: EngineProps<BuilderConfig>) {
   const [placed, setPlaced] = useState<Record<string, string>>({}); // slotId -> partId
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
+
+  const { onHold } = p;
+  useEffect(() => {
+    onHold?.(!!pending);
+  }, [pending, onHold]);
   const [locked, setLocked] = useState<Record<string, boolean>>({});
   const [heartsLost, setHeartsLost] = useState(0);
   const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);

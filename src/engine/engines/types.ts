@@ -23,6 +23,8 @@ export interface EngineProps<C> {
   /** Direct meter effects (scenario choice meters, simulation bands, combined shortcut consequences). */
   onMeters: (delta: MeterDelta, why?: string) => void;
   onComplete: (r: EngineResult) => void;
+  /** The engine is showing feedback, a reveal or a sandbox: the host may hold its clock. */
+  onHold?: (held: boolean) => void;
 }
 
 export function seededShuffle<T>(arr: T[], seed: number): T[] {

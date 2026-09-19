@@ -23,6 +23,11 @@ export function MatchPairs(p: EngineProps<MatchPairsConfig>) {
     finish?: boolean;
     kind: 'correct' | 'wrong';
   } | null>(null);
+
+  const { onHold } = p;
+  useEffect(() => {
+    onHold?.(!!pending);
+  }, [pending, onHold]);
   const [heartsLost, setHeartsLost] = useState(0);
   const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
   const done = useRef(false);

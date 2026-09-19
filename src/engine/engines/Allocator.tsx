@@ -89,6 +89,11 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
   const [values, setValues] = useState<Record<string, number>>(initialValues);
   const [phase, setPhase] = useState<Phase>('adjust');
   const [pending, setPending] = useState<Pending | null>(null);
+
+  const { onHold } = p;
+  useEffect(() => {
+    onHold?.(!!pending || phase !== 'adjust');
+  }, [pending, phase, onHold]);
   const [heartsLost, setHeartsLost] = useState(0);
   const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
   const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);

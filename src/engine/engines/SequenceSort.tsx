@@ -24,6 +24,11 @@ export function SequenceSort(p: EngineProps<SequenceSortConfig>) {
   const [order, setOrder] = useState(() => seededShuffle(correctOrder, p.seed).map((i) => i.id));
   const [selected, setSelected] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
+
+  const { onHold } = p;
+  useEffect(() => {
+    onHold?.(!!pending);
+  }, [pending, onHold]);
   const [locked, setLocked] = useState<Record<string, boolean>>({});
   const [heartsLost, setHeartsLost] = useState(0);
   const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
