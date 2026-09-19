@@ -1,6 +1,7 @@
 import type { MapNode, StoryBeat, World, WorldId } from './types';
 import { roleIndex } from './roleIndex';
 import { w1Intro, w1Outro } from './worlds/w1';
+import { w2Intro, w2Outro } from './worlds/w2';
 
 function levelNodes(worldId: WorldId): MapNode[] {
   return roleIndex
@@ -62,10 +63,16 @@ export const worlds: World[] = [
     { intro: w1Intro, outro: w1Outro },
     'ready',
   ),
-  world('w2', 2, 'Designing the Trial', 'Protocol, statistics, ethics, budget', [5], 1.2, {
-    intro: planned('w2-intro', 'On paper first', 'Waiting for a trial to exist.'),
-    outro: planned('w2-outro', 'Permission to begin', 'Waiting for a trial to open.'),
-  }),
+  world(
+    'w2',
+    2,
+    'Designing the Trial',
+    'Protocol, statistics, ethics, budget',
+    [5],
+    1.2,
+    { intro: w2Intro, outro: w2Outro },
+    'ready',
+  ),
   world('w3', 3, 'Study Start-Up', 'Sites, supplies, systems', [4, 7], 1.0, {
     intro: planned('w3-intro', 'Building the machine', 'Waiting for a site near her.'),
     outro: planned('w3-outro', 'Ready to dose', 'Waiting for a site near her.'),

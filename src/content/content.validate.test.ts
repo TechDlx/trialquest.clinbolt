@@ -28,7 +28,12 @@ describe('content validator', () => {
   it('has 44 roles and every authored question keeps the quiz shape', () => {
     expect(content.roleIndex.length).toBe(44);
     const all = content.knowledge.flatMap((k) => k.questions);
-    expect(all.length).toBe(32);
+    // The 32 Milestone 1 questions for World 1 are preserved; later worlds add at least 4 per role.
+    const w1 = content.knowledge.filter((k) => content.roleRefById[k.roleId]?.worldId === 'w1');
+    expect(w1.flatMap((k) => k.questions).length).toBe(32);
+    for (const w of content.worlds.filter((x) => x.status === 'ready'))
+      for (const r of content.roleIndex.filter((x) => x.worldId === w.id))
+        expect(content.knowledgeByRole[r.id]?.questions.length ?? 0, r.id).toBeGreaterThanOrEqual(4);
     for (const q of all) expect(q.options.filter((o) => o.correct).length).toBe(1);
   });
 

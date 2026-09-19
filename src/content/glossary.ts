@@ -1,4 +1,5 @@
 import type { GlossaryTerm } from './types';
+import { w2Terms } from './glossary/w2';
 
 /**
  * Glossary. Link to a term in any copy with [[id]] or [[id|Shown text]].
@@ -404,6 +405,7 @@ export const glossary: GlossaryTerm[] = [
     short: 'A lab test of how fast a tablet or capsule releases its drug, run on every batch.',
     worldId: 'w1',
   },
+  ...w2Terms,
 ];
 
 export const glossaryById: Record<string, GlossaryTerm> = Object.fromEntries(glossary.map((t) => [t.id, t]));
