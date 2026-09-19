@@ -1,54 +1,47 @@
 import { expect, test, type Page } from '@playwright/test';
 import { w1Levels } from '../src/content/worlds/w1/levels';
-import { w1Boss } from '../src/content/worlds/w1/boss';
+import type {
+  AllocatorConfig,
+  BranchingConfig,
+  BucketSortConfig,
+  BuilderConfig,
+  ImpostorConfig,
+} from '../src/content/types';
 
 /**
- * Smoke test: a new player goes from the title screen through World 1 (all four levels and
- * the boss quiz) using only taps/clicks. Runs at 360x740 (touch) and 1440x900 (mouse).
- * Correct answers are looked up from the content files, so nothing leaks into the DOM.
+ * Smoke test: a new player goes from the title screen through World 1 (four levels on their
+ * intended engines, the crisis boss, the story beat) and one optional Test Yourself run.
+ * Runs at 360x740 (touch) and 1440x900. Correct answers come from the content files.
+ * Reports wall-clock timings for the 2c checkpoint.
  */
-
-const correctFor = (prompt: string) => {
-  const all = [...w1Levels.flatMap((l) => l.game.questions), ...w1Boss.questions];
-  const q = all.find((x) => x.prompt === prompt);
-  if (!q) throw new Error(`No question matches prompt: ${prompt}`);
-  return q.options.find((o) => o.correct)!.text;
+const level = (id: string) => w1Levels.find((l) => l.id === id)!;
+const timings: Record<string, number> = {};
+const timed = async (label: string, fn: () => Promise<void>) => {
+  const t = Date.now();
+  await fn();
+  timings[label] = (Date.now() - t) / 1000;
 };
 
-async function answerAllCorrectly(page: Page, count: number) {
-  for (let i = 0; i < count; i++) {
-    await expect(page.getByTestId('quiz-progress')).toHaveText(`Question ${i + 1} of ${count}`);
-    const prompt = (await page.getByTestId('quiz-prompt').innerText()).trim();
-    const answer = correctFor(prompt);
-    await page.getByRole('button', { name: new RegExp(`: ${escapeRe(answer)}$`) }).click();
-    await expect(page.getByTestId('quiz-feedback')).toContainText('Correct!');
-    // Relaxed mode shows a Next/Finish button; timed mode auto-advances.
-    const next = page.getByTestId('quiz-next');
-    if (await next.isVisible().catch(() => false)) await next.click();
-  }
-}
-
-const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-async function playLevel(page: Page, levelId: string) {
-  const level = w1Levels.find((l) => l.id === levelId)!;
+async function openLevel(page: Page, levelId: string) {
   await page.getByTestId(`node-${levelId}`).click();
   await expect(page.getByTestId('badge-swap')).toBeVisible();
-  await page.getByTestId('badge-swap').click(); // skip the animation
+  await page.getByTestId('badge-swap').click();
   await expect(page.getByTestId('rolecard-front')).toBeVisible();
   await expect(page.getByTestId('start-task')).toBeDisabled();
   await page.getByTestId('flip-card').click();
   await expect(page.getByTestId('rolecard-back')).toBeVisible();
   await page.getByTestId('start-task').click();
   await page.getByTestId('start-level').click();
-  await answerAllCorrectly(page, level.game.questions.length);
+}
+
+async function finishLevel(page: Page, levelId: string, expectContinueLabel?: string) {
   await expect(page.getByTestId('debrief')).toBeVisible();
-  await expect(page.getByTestId('debrief-score')).toContainText(
-    `${level.game.questions.length} of ${level.game.questions.length} correct`,
-  );
+  if (expectContinueLabel) await expect(page.getByTestId('debrief-continue')).toHaveText(expectContinueLabel);
   await page.getByTestId('debrief-continue').click();
   await expect(page.getByTestId(`node-${levelId}`)).toHaveAttribute('data-status', 'done');
 }
+
+const strip = (s: string) => s.replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1').replace(/\[\[([^\]]+)\]\]/g, '$1');
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -56,68 +49,177 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
-test('new player completes World 1 end to end', async ({ page }) => {
-  test.setTimeout(180_000);
+test('new player completes World 1 end to end on the intended engines', async ({ page }) => {
+  test.setTimeout(240_000);
+  const t0 = Date.now();
   await expect(page).toHaveTitle(/Trial Quest/);
   await page.getByTestId('play').click();
   await expect(page.getByTestId('intro')).toBeVisible();
   await page.getByTestId('story-continue').click();
-
   await expect(page.getByTestId('node-w1-l1')).toHaveAttribute('data-status', 'current');
   await expect(page.getByTestId('node-w1-l2')).toBeDisabled();
 
-  for (const id of ['w1-l1', 'w1-l2', 'w1-l3', 'w1-l4']) await playLevel(page, id);
+  // ---- w1-l1 branching scenario: best choices, plus the shortcut once to see the meters move.
+  await timed('l1', async () => {
+    await openLevel(page, 'w1-l1');
+    await page.getByTestId('start-stage-voice').click();
+    const cfg = level('w1-l1').stages[0].game as BranchingConfig;
+    let nodeId = cfg.start;
+    while (true) {
+      const node = cfg.nodes.find((n) => n.id === nodeId)!;
+      if (node.end) break;
+      const best = node.choices!.find((c) => c.quality === 'best')!;
+      await page.getByTestId(`choice-${best.id}`).click();
+      await page.getByTestId('engine-next').click();
+      nodeId = best.next;
+    }
+    await page.getByTestId('branching-finish').click();
+    await finishLevel(page, 'w1-l1');
+  });
 
-  // Progress survives a reload (the map is restored from localStorage), and the title offers Continue.
+  // ---- w1-l2 spot the hit.
+  await timed('l2', async () => {
+    await openLevel(page, 'w1-l2');
+    await page.getByTestId('start-stage-screen').click();
+    const cfg = level('w1-l2').stages[0].game as ImpostorConfig;
+    const hit = cfg.cards.find((c) => c.impostor)!;
+    await page.getByTestId(`card-${hit.id}`).click();
+    await page.getByTestId('impostor-accuse').click();
+    await page.getByTestId('engine-next').click();
+    await finishLevel(page, 'w1-l2');
+  });
+
+  // ---- w1-l3 classify findings, then the dose simulation (first commit binding, sandbox free).
+  await timed('l3', async () => {
+    await openLevel(page, 'w1-l3');
+    await page.getByTestId('start-stage-findings').click();
+    const bucket = level('w1-l3').stages[0].game as BucketSortConfig;
+    for (let i = 0; i < bucket.cards.length; i++) {
+      const text = (await page.getByTestId('bucket-card').innerText()).trim();
+      const card = bucket.cards.find((c) => strip(c.text) === text)!;
+      await page.getByTestId(`bucket-${card.bucketId}`).click();
+      await page.getByTestId('engine-next').click();
+    }
+    await page.getByTestId('start-stage-dose').click();
+    const alloc = level('w1-l3').stages[1].game as AllocatorConfig;
+    await page.getByTestId('slider-dose').fill('0.5');
+    await page.getByTestId('allocator-commit').click();
+    await expect(page.getByTestId('reveal')).toHaveAttribute('data-band', alloc.simulation!.targetBand);
+    await page.getByTestId('reveal-done').click();
+    await expect(page.getByTestId('sandbox-banner')).toBeVisible();
+    await page.getByTestId('slider-dose').fill('4.8');
+    await expect(page.getByTestId('reveal')).toHaveAttribute('data-band', 'reckless');
+    await page.getByTestId('sandbox-done').click();
+    await expect(page.getByTestId('debrief-artifacts')).toContainText('Starting dose');
+    await expect(page.getByTestId('debrief-artifacts')).toContainText('standard');
+    await finishLevel(page, 'w1-l3');
+  });
+
+  // ---- w1-l4 builder.
+  await timed('l4', async () => {
+    await openLevel(page, 'w1-l4');
+    await page.getByTestId('start-stage-build').click();
+    const cfg = level('w1-l4').stages[0].game as BuilderConfig;
+    for (const slot of cfg.slots) {
+      const part = cfg.parts.find((p) => p.slotId === slot.id)!;
+      await page.getByTestId(`part-${part.id}`).click();
+      await page.getByTestId(`slot-${slot.id}`).click();
+    }
+    await page.getByTestId('builder-check').click();
+    await page.getByTestId('engine-next').click();
+    await finishLevel(page, 'w1-l4', 'Continue to the crisis');
+  });
+
+  // Progress survives a reload.
   await page.reload();
   await expect(page.getByTestId('node-w1-l4')).toHaveAttribute('data-status', 'done');
-  await page.goto('/#/');
-  await expect(page.getByTestId('continue')).toBeVisible();
-  await page.getByTestId('continue').click();
-  await expect(page.getByTestId('node-w1-l4')).toHaveAttribute('data-status', 'done');
-  await expect(page.getByTestId('node-w1-boss')).toHaveAttribute('data-status', 'current');
+  await expect(page.getByTestId('node-w1-crisis')).toHaveAttribute('data-status', 'current');
 
-  // Boss quiz.
-  await page.getByTestId('node-w1-boss').click();
-  await page.getByTestId('start-boss').click();
-  await answerAllCorrectly(page, w1Boss.questions.length);
-  await expect(page.getByTestId('debrief')).toBeVisible();
-  await page.getByTestId('debrief-continue').click();
-  await expect(page.getByTestId('story-outro')).toBeVisible();
-  await page.getByTestId('story-continue').click();
+  // ---- Crisis boss: four rounds, four engines, one clock.
+  await timed('crisis', async () => {
+    await page.getByTestId('node-w1-crisis').click();
+    await page.getByTestId('start-crisis').click();
+    const { w1Crisis } = await import('../src/content/worlds/w1/crisis');
+    for (let i = 0; i < w1Crisis.rounds.length; i++) {
+      const round = w1Crisis.rounds[i]!;
+      await expect(page.getByTestId('crisis-brief')).toBeVisible({ timeout: 10_000 });
+      const g = round.game;
+      if (g.engine === 'bucket-sort') {
+        for (let k = 0; k < g.cards.length; k++) {
+          const text = (await page.getByTestId('bucket-card').innerText()).trim();
+          const card = g.cards.find((c) => strip(c.text) === text)!;
+          await page.getByTestId(`bucket-${card.bucketId}`).click();
+          await page.getByTestId('engine-next').click();
+        }
+      } else if (g.engine === 'builder') {
+        for (const slot of g.slots) {
+          const part = g.parts.find((p) => p.slotId === slot.id)!;
+          await page.getByTestId(`part-${part.id}`).click();
+          await page.getByTestId(`slot-${slot.id}`).click();
+        }
+        await page.getByTestId('builder-check').click();
+        await page.getByTestId('engine-next').click();
+      } else if (g.engine === 'spot-the-impostor') {
+        const hit = g.cards.find((c) => c.impostor)!;
+        await page.getByTestId(`card-${hit.id}`).click();
+        await page.getByTestId('impostor-accuse').click();
+        await page.getByTestId('engine-next').click();
+      } else if (g.engine === 'branching-scenario') {
+        const node = g.nodes.find((n) => n.id === g.start)!;
+        const best = node.choices!.find((c) => c.quality === 'best')!;
+        await page.getByTestId(`choice-${best.id}`).click();
+        await page.getByTestId('engine-next').click();
+        await page.getByTestId('branching-finish').click();
+      }
+      if (i + 1 < w1Crisis.rounds.length) await page.getByTestId('crisis-next-round').click();
+    }
+    await expect(page.getByTestId('crisis-success')).toBeVisible();
+    await page.getByTestId('story-continue').click();
+    await expect(page.getByTestId('story-outro')).toBeVisible();
+    await page.getByTestId('story-continue').click();
+  });
+  timings.total = (Date.now() - t0) / 1000;
 
-  // World 2 header is unlocked (content is planned, so nodes show as coming soon).
+  // World 2 unlocked (planned content shows as coming soon).
   await expect(page.getByTestId('node-w2-l1')).toHaveAttribute('data-status', 'planned');
 
-  // Codex has the four World 1 badges.
-  await page.getByTestId('nav-codex').click();
-  await expect(page.getByTestId('codex-cmc-scientist')).toBeVisible();
+  // ---- Optional Test Yourself from a done node; never required, never costs hearts.
+  await page.getByTestId('node-w1-l1').click();
+  await page.getByTestId('sheet-test').click();
+  await page.getByTestId('start-test').click();
+  await expect(page.getByTestId('quiz-blitz')).toBeVisible();
+
+  console.log('TIMINGS_JSON ' + JSON.stringify(timings));
 });
 
-test('a wrong answer explains itself and the role card gate holds', async ({ page }) => {
+test('a wrong turn explains itself, the shortcut costs meters not hearts, and the card gate holds', async ({
+  page,
+}) => {
   await page.getByTestId('play').click();
   await page.getByTestId('story-continue').click();
-  // Deep-linking to a level without reading the card redirects to the card.
   await page.goto('/#/level/w1-l1');
   await expect(page.getByTestId('rolecard-front')).toBeVisible();
   await page.getByTestId('flip-card').click();
   await page.getByTestId('start-task').click();
   await page.getByTestId('start-level').click();
-
-  const prompt = (await page.getByTestId('quiz-prompt').innerText()).trim();
-  const right = correctFor(prompt);
-  const options = page.getByTestId('quiz-option');
-  const n = await options.count();
-  for (let i = 0; i < n; i++) {
-    const label = (await options.nth(i).getAttribute('aria-label')) ?? '';
-    if (!label.endsWith(`: ${right}`)) {
-      await options.nth(i).click();
-      break;
-    }
-  }
-  await expect(page.getByTestId('quiz-feedback')).toContainText('Not quite.');
-  await expect(page.getByTestId('quiz-feedback')).toContainText('Correct answer:');
-  await expect(page.getByTestId('quiz-feedback')).toContainText('First slip in World 1 is free');
+  await page.getByTestId('start-stage-voice').click();
+  await page.getByTestId('choice-c-no').click();
+  await expect(page.getByTestId('engine-feedback')).toHaveAttribute('data-kind', 'wrong');
+  await expect(page.getByTestId('engine-feedback')).toContainText('First slip in World 1 is free');
+  await page.getByTestId('engine-next').click();
+  await page.getByTestId('choice-c-fatigue').click();
+  await page.getByTestId('engine-next').click();
+  await page.getByTestId('choice-c-hype').click();
+  await expect(page.getByTestId('engine-feedback')).toHaveAttribute('data-kind', 'shortcut');
+  const hearts = await page.evaluate(
+    () => JSON.parse(window.localStorage.getItem('trialquest.progress')!).state.hearts,
+  );
+  const meters = await page.evaluate(
+    () => JSON.parse(window.localStorage.getItem('trialquest.progress')!).state.meters,
+  );
+  expect(hearts).toBe(5);
+  expect(meters.integrity).toBe(85);
+  expect(meters.timeline).toBe(100);
 });
 
 test('settings: relaxed mode removes the timer and reset clears progress', async ({ page }) => {
@@ -125,12 +227,11 @@ test('settings: relaxed mode removes the timer and reset clears progress', async
   await page.getByTestId('story-continue').click();
   await page.getByTestId('nav-settings').click();
   await page.getByTestId('setting-relaxed').check();
-  await page.goto('/#/role/patient-advocate?level=w1-l1');
+  await page.goto('/#/role/preclinical-toxicologist?level=w1-l3');
   await page.getByTestId('flip-card').click();
   await page.getByTestId('start-task').click();
   await page.getByTestId('start-level').click();
-  await expect(page.getByText('Relaxed mode: no timer')).toBeVisible();
-
+  await expect(page.getByTestId('stage-card-findings')).toContainText('Relaxed mode');
   await page.goto('/#/settings');
   await page.getByTestId('reset-progress').click();
   await page.getByTestId('reset-confirm-input').fill('RESET');

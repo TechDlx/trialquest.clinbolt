@@ -1,462 +1,611 @@
 import type { Level } from '../../types';
 
-/**
- * World 1 levels. Milestone 1 ships these as quiz-blitz "story quizzes".
- * Milestone 2 swaps them to the engines named in SPEC.md
- * (branching-scenario, spot-the-impostor, bucket-sort, builder).
- */
+/** World 1 levels, retrofitted onto their intended engines (SPEC Amendment 1). */
 export const w1Levels: Level[] = [
+  // ------------------------------------------------------------------ w1-l1 Patient Advocate
   {
     id: 'w1-l1',
     worldId: 'w1',
     roleId: 'patient-advocate',
     title: "Maya's diagnosis",
     intro:
-      'Maya has been tired and in pain for two years. Today a specialist finally names it: Veridian Syndrome. There is no approved treatment. Help Maya understand what happens next.',
-    game: {
-      engine: 'quiz-blitz',
-      secondsPerQuestion: 20,
-      shuffleOptions: true,
-      questions: [
-        {
-          id: 'w1-l1-q1',
-          conceptId: 'unmet-need',
-          prompt:
-            'The doctor says there is "no approved treatment" for Veridian Syndrome. That makes it an example of…',
-          options: [
-            { text: 'An unmet medical need', correct: true },
-            { text: 'A cured disease' },
-            { text: 'A placebo condition' },
-            { text: 'A side effect' },
-          ],
-          explanation:
-            'An unmet need is a health problem with no good treatment. It is the starting point for almost every new medicine.',
-          consequence:
-            'If nobody names the unmet need clearly, researchers may build a medicine that does not solve the problem patients actually have.',
-        },
-        {
-          id: 'w1-l1-q2',
-          conceptId: 'rare-disease',
-          prompt: 'Veridian Syndrome affects about 1 in 50,000 people. That makes it…',
-          options: [
-            { text: 'A rare disease', correct: true },
-            { text: 'A common infection' },
-            { text: 'A seasonal outbreak' },
-            { text: 'A lifestyle condition' },
-          ],
-          explanation:
-            'In the US a rare disease affects fewer than 200,000 people; in the EU, fewer than 1 in 2,000. Special incentives ("orphan drug" programs) exist to encourage research into them.',
-          consequence:
-            'Rare diseases without loud advocates often get no research at all. Most rare diseases still have no approved treatment.',
-        },
-        {
-          id: 'w1-l1-q3',
-          conceptId: 'patient-advocate',
-          prompt: 'A patient advocate is best described as…',
-          options: [
+      'Maya has a name for it at last: Veridian Syndrome. [[rare-disease|Rare]], real, and with no approved treatment. A patient group has asked her to help shape what research comes next. You are her voice.',
+    meterFocus: 'integrity',
+    stages: [
+      {
+        id: 'voice',
+        title: 'Be the patient voice',
+        brief: 'Three decisions. Each one shapes the research that follows.',
+        game: {
+          engine: 'branching-scenario',
+          start: 'n-interview',
+          nodes: [
             {
-              text: 'Someone who speaks up for what patients need to researchers, companies and regulators',
-              correct: true,
+              id: 'n-interview',
+              speaker: 'Maya',
+              text: 'A university lab wants to interview patients about living with the disease. It means a two-hour call and a lot of questions about bad days. What do I tell them?',
+              choices: [
+                {
+                  id: 'c-yes',
+                  text: 'Yes. That interview is how researchers learn what a bad day is, and what a treatment would have to change.',
+                  quality: 'best',
+                  next: 'n-outcome',
+                  conceptId: 'natural-history',
+                  explanation:
+                    'Interviews and [[natural-history|natural history]] data tell researchers what the disease does and what to measure.',
+                  consequence: 'Without patient input, trials measure what is easy instead of what matters.',
+                },
+                {
+                  id: 'c-later',
+                  text: 'Maybe later, when there is a treatment to talk about.',
+                  quality: 'ok',
+                  next: 'n-outcome',
+                  meters: { timeline: -5 },
+                  conceptId: 'natural-history',
+                  explanation:
+                    'Research starts with patients, not after them. Waiting delays the study that could lead to a treatment.',
+                  consequence:
+                    'Trials designed without patients often measure the wrong thing and have to be redone.',
+                },
+                {
+                  id: 'c-no',
+                  text: 'No. They only want data; nothing ever comes back to patients.',
+                  quality: 'bad',
+                  next: 'n-outcome',
+                  conceptId: 'unmet-need',
+                  explanation:
+                    'That data is the start of everything that could come back. Nobody designs a trial for a disease they do not understand.',
+                  consequence: 'Diseases without patient data stay diseases without research.',
+                },
+              ],
             },
-            { text: 'A lawyer who sues hospitals' },
-            { text: 'A doctor who prescribes medicines' },
-            { text: 'A nurse who gives injections' },
-          ],
-          explanation:
-            'Advocates bring the patient voice into research decisions: what to study, how to measure it, and how to make trials easier to join.',
-          consequence:
-            'Without advocates, trials get designed around what is easy to measure instead of what matters to people living with the disease.',
-        },
-        {
-          id: 'w1-l1-q4',
-          conceptId: 'clinical-trial',
-          prompt: 'Maya hears the words "clinical trial". What is a clinical trial?',
-          options: [
             {
-              text: 'A research study in people that tests whether a treatment is safe and works',
-              correct: true,
+              id: 'n-outcome',
+              speaker: 'Researcher',
+              text: 'We can design our first study around one main outcome. Which matters most to people with Veridian Syndrome?',
+              choices: [
+                {
+                  id: 'c-fatigue',
+                  text: 'Days without crushing fatigue, reported by the patients themselves',
+                  quality: 'best',
+                  next: 'n-press',
+                  conceptId: 'patient-reported-outcome',
+                  explanation:
+                    'A [[patient-reported-outcome|patient-reported outcome]] captures how people actually feel and function.',
+                  consequence:
+                    'A drug can move a lab number while patients feel no better. Measuring the wrong thing wastes years and hope.',
+                },
+                {
+                  id: 'c-marker',
+                  text: 'The VRD-1 blood marker; it is objective and easy to measure',
+                  quality: 'ok',
+                  next: 'n-press',
+                  conceptId: 'biomarker',
+                  explanation:
+                    'A [[biomarker]] is useful, but a number can improve while people feel no better.',
+                  consequence: 'Drugs approved on markers alone sometimes fail to help anyone feel better.',
+                },
+                {
+                  id: 'c-fastest',
+                  text: 'Whatever gets the study approved fastest',
+                  quality: 'bad',
+                  next: 'n-press',
+                  meters: { integrity: -10 },
+                  conceptId: 'clinical-trial',
+                  explanation:
+                    'A [[clinical-trial|trial]] that answers the wrong question is not fast. It is wasted.',
+                  consequence: 'Regulators reject studies whose main outcome does not matter to patients.',
+                },
+              ],
             },
-            { text: 'A free treatment that is guaranteed to cure you' },
-            { text: 'A test run only on animals' },
-            { text: 'A survey about hospital food' },
+            {
+              id: 'n-press',
+              speaker: 'Patient group chair',
+              text: 'A journalist wants Maya\'s story for a piece titled "Miracle cure in the lab". Coverage would bring donations to the group and pressure on the company.',
+              choices: [
+                {
+                  id: 'c-honest',
+                  text: 'Give the interview, but insist on honest words: early research, most molecules fail, no cure yet.',
+                  quality: 'best',
+                  next: 'end-good',
+                  conceptId: 'attrition',
+                  explanation:
+                    'Only about [[attrition|1 in 10]] molecules that reach human trials is ever approved. Honest hope survives that.',
+                  consequence:
+                    'Communities sold a cure turn on the researchers when the first compound fails.',
+                },
+                {
+                  id: 'c-hype',
+                  text: 'Take the headline. Hope brings donations and speed.',
+                  quality: 'bad',
+                  next: 'end-hype',
+                  conceptId: 'attrition',
+                  shortcut: {
+                    meters: { timeline: 10, integrity: -15 },
+                    why: 'Hype raises money fast. It also raises hopes the science cannot yet keep, and people remember who promised.',
+                  },
+                  explanation: 'A headline is not a result. The science is years from knowing.',
+                  consequence: 'Overpromising to patients about experimental drugs is a real harm.',
+                },
+                {
+                  id: 'c-refuse',
+                  text: 'Refuse all press until there is a treatment.',
+                  quality: 'ok',
+                  next: 'end-good',
+                  meters: { timeline: -5 },
+                  conceptId: 'patient-advocate',
+                  explanation:
+                    'Silence protects nobody. Honest coverage brings patients to registries and trials.',
+                  consequence: 'Rare diseases nobody hears about get no funding.',
+                },
+              ],
+            },
+            {
+              id: 'end-good',
+              text: 'The lab has patient interviews, a main outcome patients chose, and a community that understands the odds. That is a better start than most molecules get.',
+              end: { summary: 'Every medicine starts with a person who can describe what needs to change.' },
+            },
+            {
+              id: 'end-hype',
+              text: "The headline runs. Donations jump. Six months later the first compound fails, and the group's inbox fills with people who thought a cure was coming.",
+              end: { summary: 'Honest hope lasts longer than headlines.' },
+            },
           ],
-          explanation:
-            'Trials are experiments, not guaranteed treatments. Participants may receive the new drug, a standard treatment, or a placebo.',
-          consequence:
-            'Patients who think a trial is guaranteed treatment can feel misled. Honest expectations are the foundation of informed consent.',
         },
-        {
-          id: 'w1-l1-q5',
-          conceptId: 'patient-reported-outcome',
-          prompt: "Researchers ask Maya's patient group what improvement would matter most to them. Why?",
-          options: [
-            { text: 'So the trial measures outcomes patients actually care about', correct: true },
-            { text: "To decide the drug's price" },
-            { text: "To pick the trial's logo" },
-            { text: 'Because it is required to be on TV' },
-          ],
-          explanation:
-            'Patient-reported outcomes (PROs) capture how people feel and function in their own words. Regulators encourage sponsors to include them.',
-          consequence:
-            'A drug can improve a lab number while patients feel no better. Measuring the wrong thing wastes years and hope.',
-        },
-        {
-          id: 'w1-l1-q6',
-          conceptId: 'attrition',
-          prompt: 'Roughly what fraction of drug candidates that enter human trials ever get approved?',
-          options: [
-            { text: 'About 1 in 10', correct: true },
-            { text: 'About 9 in 10' },
-            { text: 'Nearly all of them' },
-            { text: 'About half' },
-          ],
-          explanation:
-            'Most candidates fail for safety or lack of effect. That is why the process has so many checkpoints.',
-          consequence:
-            'Overpromising to patients about an experimental drug is a real harm. Advocates keep hope honest.',
-        },
-      ],
-    },
+      },
+    ],
     debrief: {
       learned:
-        'Every medicine starts with an unmet need and a patient who can describe it. Advocates make sure research measures what matters to people, not just what is easy to measure.',
+        'Every medicine starts with an [[unmet-need|unmet need]] and a patient who can describe it. Advocates make sure research measures what matters to people, and keep hope honest.',
       handoffLine: "You hand Maya's story and her community's priorities to the Discovery Scientist.",
     },
-    meterFocus: 'safety',
   },
+
+  // ------------------------------------------------------------------ w1-l2 Discovery Scientist
   {
     id: 'w1-l2',
     worldId: 'w1',
     roleId: 'discovery-scientist',
     title: 'Find the hit',
     intro:
-      "In a lab across the city, a team studies why Maya's cells misbehave. They find a protein, VRD-1, that seems to drive the disease. Now: find a molecule that can block it.",
-    game: {
-      engine: 'quiz-blitz',
-      secondsPerQuestion: 20,
-      shuffleOptions: true,
-      questions: [
-        {
-          id: 'w1-l2-q1',
-          conceptId: 'target',
-          prompt: 'In drug discovery, the protein VRD-1 that drives the disease is called the…',
-          options: [
-            { text: 'Target', correct: true },
-            { text: 'Placebo' },
-            { text: 'Excipient' },
-            { text: 'Sponsor' },
+      "Your lab found VRD-1, the protein driving Maya's disease. A [[hts|screen]] of 200,000 compounds is back. Five look promising. Only one is a real [[hit]]: potent, [[selectivity|selective]], and reproducible. Inspect the data and find it.",
+    stages: [
+      {
+        id: 'screen',
+        title: 'Read the screening data',
+        brief: 'Tap a compound to inspect it. Accuse the one you would carry forward.',
+        game: {
+          engine: 'spot-the-impostor',
+          prompt: 'Which compound is the real hit?',
+          seconds: 120,
+          targetLabel: 'the real hit',
+          cards: [
+            {
+              id: 'vx-088',
+              title: 'VX-088',
+              lines: [
+                'Blocks VRD-1 strongly',
+                'Also blocks 6 similar proteins (2× selectivity)',
+                'Reproduced in 3 of 3 runs',
+              ],
+              conceptId: 'selectivity',
+              explanation:
+                'Potent, but it hits six related proteins almost as hard. That is a side-effect machine.',
+              consequence: 'Poorly selective leads fail later in animals or people, after years of work.',
+            },
+            {
+              id: 'vx-101',
+              title: 'VX-101',
+              lines: [
+                'Blocks VRD-1 strongly',
+                'Ignores similar proteins (>100× selectivity)',
+                'Reproduced in 3 of 3 runs',
+                'No assay interference',
+              ],
+              impostor: true,
+              conceptId: 'hit',
+              explanation: 'Potent, selective, reproducible and clean. This is what a real hit looks like.',
+              consequence: 'Passing over the real hit means chasing a worse molecule for months.',
+            },
+            {
+              id: 'vx-114',
+              title: 'VX-114',
+              lines: [
+                'Blocks VRD-1 strongly in 1 of 3 runs',
+                'No effect in the other 2 runs',
+                'Selectivity not tested',
+              ],
+              conceptId: 'hit',
+              explanation: 'One good run out of three is noise until proven otherwise. Hits must reproduce.',
+              consequence: 'Chasing a false positive wastes a chemistry team for a year.',
+            },
+            {
+              id: 'vx-127',
+              title: 'VX-127',
+              lines: [
+                'Blocks VRD-1 strongly',
+                "Flagged: interferes with the assay's light signal",
+                'Reproduced in 3 of 3 runs',
+              ],
+              conceptId: 'pains',
+              explanation:
+                'Compounds that interfere with the test itself look active when they are not. This is a known false-positive class.',
+              consequence: 'Assay artefacts are the most common reason early "hits" evaporate.',
+            },
+            {
+              id: 'vx-133',
+              title: 'VX-133',
+              lines: ['Blocks VRD-1 weakly', 'Clean selectivity', 'Reproduced in 3 of 3 runs'],
+              conceptId: 'lead-compound',
+              explanation: 'Clean but weak. It would need a dose too high to be practical.',
+              consequence: 'Weak leads rarely become medicines; potency is hard to add later.',
+            },
           ],
-          explanation:
-            'A target is the molecule in the body a drug is designed to act on. Picking the wrong target is the most expensive mistake in discovery.',
-          consequence:
-            'Chasing a target that does not really drive the disease means years of work on a drug that cannot help anyone.',
+          signOff: {
+            id: 'nominate-potent',
+            label: 'Nominate the most potent compound now, skip the checks',
+            shortcut: {
+              meters: { timeline: 10, integrity: -15 },
+              why: 'Potency without selectivity is a side-effect machine. You would find out in animals, months from now.',
+            },
+          },
         },
-        {
-          id: 'w1-l2-q2',
-          conceptId: 'hts',
-          prompt:
-            'The lab uses robots to test 200,000 compounds against VRD-1 in a few days. This is called…',
-          options: [
-            { text: 'High-throughput screening', correct: true },
-            { text: 'A Phase III trial' },
-            { text: 'Good Manufacturing Practice' },
-            { text: 'Informed consent' },
-          ],
-          explanation:
-            'High-throughput screening (HTS) tests huge compound libraries quickly to find the few that act on the target.',
-          consequence: 'Without screening at scale, discovery relies on guesswork and takes far longer.',
-        },
-        {
-          id: 'w1-l2-q3',
-          conceptId: 'hit',
-          prompt: 'Compound #4471 blocks VRD-1 strongly in the screen. Right now it is a…',
-          options: [
-            { text: 'Hit', correct: true },
-            { text: 'Approved drug' },
-            { text: 'Placebo' },
-            { text: 'Biomarker' },
-          ],
-          explanation:
-            'A hit is any compound that shows activity in a screen. Most hits fail once you look closer.',
-          consequence:
-            'Treating a raw hit as a drug skips the work that weeds out false positives and toxic molecules.',
-        },
-        {
-          id: 'w1-l2-q4',
-          conceptId: 'lead-compound',
-          prompt:
-            'The team improves #4471 so it blocks VRD-1 more strongly and ignores similar proteins. They name it VX-101. VX-101 is now the…',
-          options: [
-            { text: 'Lead compound', correct: true },
-            { text: 'Excipient' },
-            { text: 'Adverse event' },
-            { text: 'Clinical hold' },
-          ],
-          explanation:
-            'A lead is the improved, best-in-class molecule chosen to move forward. Chemists tune it for potency, selectivity and safety.',
-          consequence:
-            'A lead that hits many similar proteins ("off-target") is a common source of side effects later.',
-        },
-        {
-          id: 'w1-l2-q5',
-          conceptId: 'in-vitro',
-          prompt: "Testing VX-101 on Maya's cells in a dish is an example of…",
-          options: [
-            { text: 'In vitro testing', correct: true },
-            { text: 'In vivo testing' },
-            { text: 'A clinical trial' },
-            { text: 'Post-market surveillance' },
-          ],
-          explanation:
-            '"In vitro" means in glass: cells or molecules in a dish. "In vivo" means in a living organism.',
-          consequence:
-            'Results in a dish often do not carry over to a whole body. Knowing which is which keeps claims honest.',
-        },
-        {
-          id: 'w1-l2-q6',
-          conceptId: 'mechanism-of-action',
-          prompt: '"Mechanism of action" means…',
-          options: [
-            { text: 'How a drug produces its effect in the body', correct: true },
-            { text: 'How much a drug costs' },
-            { text: 'How a drug is packaged' },
-            { text: 'Who sells the drug' },
-          ],
-          explanation:
-            'Knowing the mechanism helps predict both benefits and side effects, and it goes into every later document about the drug.',
-          consequence:
-            'Drugs with unclear mechanisms are harder to dose, harder to explain to regulators, and harder to trust.',
-        },
-      ],
-    },
+      },
+    ],
     debrief: {
       learned:
-        'Discovery goes target, then screen, then hit, then lead. Each step throws away most candidates so that only the strongest molecule moves forward.',
+        'A real hit is potent, selective and reproducible, and it does not fool the assay. Discovery throws away most candidates so only the strongest molecule moves forward.',
       handoffLine: 'You hand VX-101, and everything you know about it, to the Toxicologist.',
     },
   },
+
+  // ------------------------------------------------------------------ w1-l3 Toxicologist
   {
     id: 'w1-l3',
     worldId: 'w1',
     roleId: 'preclinical-toxicologist',
     title: 'Is it safe enough to try?',
     intro:
-      'VX-101 works in a dish. Before anyone can take it, you must learn what it does to a whole living body, and pick a first human dose that will not hurt a volunteer.',
+      'The 28-day rat study on VX-101 is back. Sort what the pathologist found, then set the first dose a human volunteer will ever receive. In the US the default is a safety factor on the animal [[noael|NOAEL]]; in the EU, higher-risk molecules also use a [[mabel|MABEL]] approach: start from the lowest dose expected to have any effect.',
     meterFocus: 'safety',
-    game: {
-      engine: 'quiz-blitz',
-      secondsPerQuestion: 20,
-      shuffleOptions: true,
-      questions: [
-        {
-          id: 'w1-l3-q1',
-          conceptId: 'preclinical',
-          prompt: 'Studies done in the lab and in animals before human testing are called…',
-          options: [
-            { text: 'Preclinical studies', correct: true },
-            { text: 'Phase III studies' },
-            { text: 'Post-market studies' },
-            { text: 'Market access studies' },
+    stages: [
+      {
+        id: 'findings',
+        title: 'Classify the findings',
+        brief: 'Adverse, not adverse, or send it to pathology review?',
+        weight: 1,
+        game: {
+          engine: 'bucket-sort',
+          prompt: 'Sort each finding from the 28-day rat study.',
+          seconds: 75,
+          buckets: [
+            { id: 'adverse', label: 'Adverse', hint: 'Harmful, dose-related, or would matter in a person' },
+            { id: 'not-adverse', label: 'Not adverse', hint: 'Within normal range, or not related to dose' },
+            { id: 'review', label: 'Pathology review', hint: 'Could go either way; needs the slides' },
+            {
+              id: 'noise',
+              label: 'Log as noise',
+              hint: 'Skip the review, keep the timeline',
+              shortcut: {
+                meters: { timeline: 10, safety: -15 },
+                why: 'Skipping review is how a real liver signal gets found in humans instead of rats.',
+              },
+            },
           ],
-          explanation:
-            'Preclinical (or nonclinical) work answers "is it safe enough to try in people?" before any human is dosed.',
-          consequence: 'Skipping or rushing preclinical work is how dangerous drugs reach volunteers.',
-        },
-        {
-          id: 'w1-l3-q2',
-          conceptId: 'glp',
-          prompt: 'The strict rules for how preclinical safety studies are run and recorded are called…',
-          options: [
-            { text: 'GLP: Good Laboratory Practice', correct: true },
-            { text: 'GCP: Good Clinical Practice' },
-            { text: 'GMP: Good Manufacturing Practice' },
-            { text: 'GDP: Good Distribution Practice' },
+          cards: [
+            {
+              id: 'alt',
+              text: '[[alt|ALT]] (a liver enzyme) 3 times the upper limit at 100 mg/kg, rising with dose',
+              bucketId: 'adverse',
+              conceptId: 'toxicology',
+              explanation:
+                'A dose-related rise in a liver enzyme is a classic adverse finding. The liver is a target organ.',
+              consequence:
+                'Missing a liver signal in animals is how first-in-human trials produce serious liver injury.',
+            },
+            {
+              id: 'weight-gain',
+              text: 'Males gained slightly more weight than controls at every dose',
+              bucketId: 'not-adverse',
+              conceptId: 'noael',
+              explanation:
+                "A small change in the same direction at every dose, inside the lab's normal range, is not adverse.",
+              consequence:
+                'Calling everything adverse buries the real signal and delays a drug patients need.',
+            },
+            {
+              id: 'hypertrophy',
+              text: 'Liver cells enlarged at 100 mg/kg; no cell death seen',
+              bucketId: 'review',
+              conceptId: 'toxicology',
+              explanation:
+                'Enlarged liver cells can be the liver adapting, or the start of injury. The pathologist decides from the slides.',
+              consequence:
+                'Guessing instead of reviewing means the wrong NOAEL, and the wrong starting dose.',
+            },
+            {
+              id: 'skin',
+              text: 'One rat at 10 mg/kg had a skin lesion; so did one control rat',
+              bucketId: 'not-adverse',
+              conceptId: 'noael',
+              explanation: 'Seen in a control animal too, and at only one dose: not related to the drug.',
+              consequence: 'Chasing background findings wastes months and animals.',
+            },
+            {
+              id: 'food',
+              text: '10% weight loss and reduced food intake at 100 mg/kg',
+              bucketId: 'adverse',
+              conceptId: 'toxicology',
+              explanation: 'Weight loss of this size is a sign of toxicity, whatever the mechanism.',
+              consequence:
+                'Ignoring general signs of toxicity leads to a starting dose that makes volunteers ill.',
+            },
+            {
+              id: 'liver-weight',
+              text: 'Liver weight up 15% at 30 mg/kg; enzymes and slides normal',
+              bucketId: 'review',
+              conceptId: 'noael',
+              explanation:
+                'An organ-weight change with nothing else is a judgement call. It is often adaptive, but it must be checked.',
+              consequence:
+                'If this is early injury, 30 mg/kg is not the NOAEL and the human dose is set too high.',
+            },
+            {
+              id: 'thyroid',
+              text: 'Thyroid weight up 10% at the top dose; nothing unusual on the slides',
+              bucketId: 'review',
+              conceptId: 'toxicology',
+              explanation:
+                'An organ-weight change with clean slides is a judgement call. In rats it is often a harmless adaptation, but the pathologist must confirm it.',
+              consequence:
+                'Thyroid findings in rats sometimes matter for people and sometimes do not. Skipping the review means nobody finds out which.',
+            },
           ],
-          explanation:
-            'GLP covers lab safety studies. GCP covers trials in people. GMP covers manufacturing. Regulators check all three.',
-          consequence:
-            'A safety study that was not run under GLP may be rejected by regulators, and must be repeated.',
         },
-        {
-          id: 'w1-l3-q3',
-          conceptId: 'noael',
-          prompt:
-            'In the rat study, 30 mg/kg per day caused no harmful effects, but 100 mg/kg caused liver changes. The NOAEL is…',
-          options: [
-            { text: '30 mg/kg', correct: true },
-            { text: '100 mg/kg' },
-            { text: '0 mg/kg' },
-            { text: '1,000 mg/kg' },
+      },
+      {
+        id: 'dose',
+        title: 'Set the first human dose',
+        brief:
+          'Use the NOAEL, the human equivalent dose and a safety factor. Dose will project how the first cohort responds.',
+        weight: 2,
+        game: {
+          engine: 'allocator',
+          prompt: 'Choose the starting dose for the first cohort of six healthy volunteers.',
+          seconds: 90,
+          context: [
+            'Rat [[noael|NOAEL]]: 30 mg/kg per day (liver changes at 100 mg/kg)',
+            '[[hed|Human equivalent dose]] (by body surface area): about 4.8 mg/kg',
+            'Default [[safety-factor|safety factor]]: divide by at least 10',
+            'Target organ to watch: liver',
           ],
-          explanation:
-            'NOAEL is the highest dose with no observed adverse effect. It anchors the first human dose.',
-          consequence:
-            'Picking the wrong NOAEL can put the first human dose in the range that damaged animal livers.',
-        },
-        {
-          id: 'w1-l3-q4',
-          conceptId: 'starting-dose',
-          prompt:
-            'To choose the first human dose, you convert the animal NOAEL to a human equivalent dose, then…',
-          options: [
-            { text: 'Divide by a safety factor of at least 10', correct: true },
-            { text: 'Multiply by 10 to make sure it works' },
-            { text: 'Use it unchanged' },
-            { text: 'Double it for adults' },
+          categories: [
+            {
+              id: 'dose',
+              label: 'Starting dose',
+              unit: 'mg/kg',
+              min: 0.1,
+              max: 5,
+              step: 0.1,
+              initial: 2.4,
+              target: [0.3, 0.7],
+              conceptId: 'starting-dose',
+              explanation:
+                '4.8 mg/kg divided by 10 is about 0.5 mg/kg. A little lower is fine; a lot lower wastes cohorts.',
+              consequence:
+                'Starting too high is how first-in-human trials cause serious harm. Starting far too low adds cohorts and months.',
+            },
           ],
-          explanation:
-            'Humans may be more sensitive than the animals studied. The safety factor gives room for that uncertainty.',
-          consequence:
-            'Starting too high is how first-in-human trials cause serious harm. Starting low and stepping up is the rule.',
-        },
-        {
-          id: 'w1-l3-q5',
-          conceptId: 'three-rs',
-          prompt: 'The "3Rs" of ethical animal research are…',
-          options: [
-            { text: 'Replace, Reduce, Refine', correct: true },
-            { text: 'Repeat, Record, Report' },
-            { text: 'Randomize, Recruit, Retain' },
-            { text: 'Review, Reject, Resubmit' },
+          presets: [
+            {
+              id: 'use-hed',
+              label: 'Start at the human equivalent dose (4.8 mg/kg)',
+              values: { dose: 4.8 },
+              shortcut: {
+                meters: { timeline: 15, safety: -25 },
+                why: 'Skipping the safety factor saves cohorts and time, and bets every volunteer on rats being a perfect model of people.',
+              },
+            },
           ],
-          explanation:
-            'Use non-animal methods where possible, use as few animals as possible, and minimize any suffering.',
-          consequence:
-            'Ethics committees and regulators expect the 3Rs; ignoring them can block a study from being approved.',
+          simulation: {
+            kind: 'dose-response',
+            host: 'allocator',
+            preview: 'on-commit',
+            revealSeconds: 4,
+            commitLabel: 'Project the first cohort',
+            targetBand: 'standard',
+            input: { categoryId: 'dose', min: 0.1, max: 5, step: 0.1, unit: 'mg/kg' },
+            curves: [
+              {
+                id: 'exposure',
+                label: 'Projected exposure',
+                unit: '% of target',
+                format: 'integer',
+                points: [
+                  [0.1, 3],
+                  [0.3, 10],
+                  [0.5, 25],
+                  [0.8, 45],
+                  [1.5, 80],
+                  [2, 110],
+                  [5, 260],
+                ],
+              },
+            ],
+            bands: [
+              {
+                tag: 'cautious',
+                label: 'Very cautious',
+                range: [0.1, 0.3],
+                narration:
+                  "Dose's projection: all six volunteers fine. Drug levels barely measurable. You would need extra cohorts before learning anything.",
+                meters: { timeline: -5 },
+                consequence:
+                  'A start far below the standard margin adds months and cost, and still teaches nothing about safety at useful doses.',
+                visual: { cohort: 6, fine: 6, mild: 0, serious: 0, exposureCurve: 'exposure' },
+              },
+              {
+                tag: 'standard',
+                label: 'Standard (HED ÷ 10)',
+                range: [0.3, 0.8],
+                narration:
+                  "Dose's projection: all six volunteers fine. Blood levels measurable and well below the animal NOAEL. Escalation can begin.",
+                visual: { cohort: 6, fine: 6, mild: 0, serious: 0, exposureCurve: 'exposure' },
+              },
+              {
+                tag: 'aggressive',
+                label: 'Aggressive',
+                range: [0.8, 2],
+                narration:
+                  "Dose's projection: one volunteer reports nausea and one shows a mild rise in liver enzymes. Dosing would pause for review.",
+                meters: { safety: -5, timeline: -5 },
+                consequence:
+                  'A start above the standard margin turns the first cohort into the safety experiment.',
+                visual: { cohort: 6, fine: 4, mild: 2, serious: 0, exposureCurve: 'exposure' },
+              },
+              {
+                tag: 'reckless',
+                label: 'No safety factor',
+                range: [2, 5],
+                narration:
+                  "Dose's projection: one volunteer admitted with liver enzymes far above the limit. The study stops. The regulator opens a review.",
+                meters: { safety: -10, timeline: -10 },
+                consequence:
+                  'This is the scenario the safety factor exists to prevent. Real first-in-human trials have injured volunteers this way.',
+                visual: { cohort: 6, fine: 2, mild: 3, serious: 1, exposureCurve: 'exposure' },
+              },
+            ],
+          },
         },
-        {
-          id: 'w1-l3-q6',
-          conceptId: 'pharmacokinetics',
-          prompt: 'Pharmacokinetics (PK) describes…',
-          options: [
-            { text: 'What the body does to the drug: absorb, distribute, break down, remove', correct: true },
-            { text: 'What the drug costs' },
-            { text: 'How the drug is advertised' },
-            { text: 'Which regulator approves it' },
-          ],
-          explanation:
-            'PK tells you how much drug is in the blood over time. Pharmacodynamics (PD) is the flip side: what the drug does to the body.',
-          consequence:
-            'Without PK data you cannot say how often to dose, or whether a drug even reaches the organ it needs to.',
-        },
-      ],
-    },
+      },
+    ],
+    emits: [
+      {
+        key: 'dose.starting',
+        outcomes: [
+          { tag: 'cautious', when: { stageId: 'dose', band: 'cautious' } },
+          { tag: 'standard', when: { stageId: 'dose', band: 'standard' } },
+          { tag: 'aggressive', when: { stageId: 'dose', band: 'aggressive' } },
+          { tag: 'reckless', when: { stageId: 'dose', band: 'reckless' } },
+        ],
+        data: { mgPerKg: 'inputValue' },
+      },
+    ],
     debrief: {
       learned:
-        'Animal studies under GLP find the highest safe dose (the NOAEL) and the organs at risk. The first human dose is set well below that with a safety factor.',
+        'Animal studies find the highest dose with no harmful effect (the NOAEL) and the organs at risk. The first human dose sits well below that, with a safety factor of at least 10.',
       handoffLine:
-        'You hand the safety data and the recommended starting dose to the CMC Scientist and the trial designers.',
+        'You hand the safety data and your starting dose to the CMC Scientist. That dose will follow you into World 4.',
     },
   },
+
+  // ------------------------------------------------------------------ w1-l4 CMC Scientist
   {
     id: 'w1-l4',
     worldId: 'w1',
     roleId: 'cmc-scientist',
     title: 'Make it a medicine',
     intro:
-      'VX-101 is a white powder in a vial. Maya cannot swallow a powder. Turn it into a product that is stable, safe to make, and identical every time.',
-    game: {
-      engine: 'quiz-blitz',
-      secondsPerQuestion: 20,
-      shuffleOptions: true,
-      questions: [
-        {
-          id: 'w1-l4-q1',
-          conceptId: 'cmc',
-          prompt: 'CMC stands for…',
-          options: [
-            { text: 'Chemistry, Manufacturing and Controls', correct: true },
-            { text: 'Clinical Monitoring Committee' },
-            { text: 'Cost, Marketing and Compliance' },
-            { text: 'Central Medical Coding' },
-          ],
-          explanation:
-            'CMC is everything about making the product and proving each batch meets its specification.',
-          consequence:
-            'Weak CMC is one of the most common reasons regulators delay approving a drug that otherwise works.',
-        },
-        {
-          id: 'w1-l4-q2',
-          conceptId: 'api',
-          prompt: 'The part of a tablet that actually produces the effect is the…',
-          options: [
-            { text: 'API: active pharmaceutical ingredient', correct: true },
-            { text: 'Excipient' },
-            { text: 'Coating color' },
-            { text: 'Barcode' },
-          ],
-          explanation:
-            'The API (also called the drug substance) is the molecule itself. Everything else in the tablet is there to deliver it.',
-          consequence:
-            'Mixing up the API and the excipients on a label or batch record is a serious quality failure.',
-        },
-        {
-          id: 'w1-l4-q3',
-          conceptId: 'excipient',
-          prompt: 'The fillers, binders and coatings that help deliver the active ingredient are called…',
-          options: [
-            { text: 'Excipients', correct: true },
-            { text: 'Adverse events' },
-            { text: 'Biomarkers' },
-            { text: 'Endpoints' },
-          ],
-          explanation:
-            'Excipients are "inactive" but critical: they control how fast a tablet dissolves and how long it lasts on a shelf.',
-          consequence:
-            'A poorly chosen excipient can make a drug absorb too fast, too slow, or fall apart in the bottle.',
-        },
-        {
-          id: 'w1-l4-q4',
-          conceptId: 'stability',
-          prompt: 'A stability study tells you…',
-          options: [
+      'VX-101 is a white powder in a vial. Maya cannot swallow a powder. Build a product that is stable, safe to make, and identical every time, and be ready to prove it under [[gmp|GMP]].',
+    meterFocus: 'integrity',
+    stages: [
+      {
+        id: 'build',
+        title: 'Build the product',
+        brief: 'Tap a part, then tap the slot it belongs in. Not every part belongs anywhere.',
+        game: {
+          engine: 'builder',
+          prompt: 'Assemble the VX-101 capsule and its quality controls.',
+          seconds: 120,
+          slots: [
+            { id: 'form', label: 'Dosage form', hint: 'What the patient takes' },
             {
-              text: 'How long the product keeps its strength and purity under set storage conditions',
-              correct: true,
+              id: 'excipient',
+              label: 'Key excipient',
+              hint: 'The inactive ingredient that controls release',
             },
-            { text: 'How many patients to enrol' },
-            { text: 'Whether the drug works in people' },
-            { text: 'What the drug should cost' },
+            { id: 'test', label: 'Batch release test', hint: 'What proves each batch is right' },
+            { id: 'storage', label: 'Storage condition', hint: 'What goes on the label' },
           ],
-          explanation:
-            'Stability data sets the shelf life and the storage instructions ("store below 25 °C") on the label.',
-          consequence:
-            'Drug that degrades in storage can lose effect or form harmful by-products before it reaches a patient.',
-        },
-        {
-          id: 'w1-l4-q5',
-          conceptId: 'gmp',
-          prompt: 'Clinical trial batches must be made under…',
-          options: [
-            { text: 'GMP: Good Manufacturing Practice', correct: true },
-            { text: 'GLP: Good Laboratory Practice' },
-            { text: 'GCP: Good Clinical Practice' },
-            { text: 'No rules until the drug is approved' },
+          parts: [
+            {
+              id: 'capsule',
+              text: 'Hard capsule, 50 mg VX-101',
+              slotId: 'form',
+              conceptId: 'formulation',
+              explanation:
+                'A capsule suits a daily medicine taken at home and protects a molecule that dislikes water.',
+              consequence: 'The wrong dosage form means a medicine patients cannot or will not take.',
+            },
+            {
+              id: 'iv-bag',
+              text: 'IV infusion bag',
+              conceptId: 'formulation',
+              explanation:
+                'An infusion needs a clinic visit. Fine for a hospital drug, wrong for a daily home medicine.',
+              consequence: 'Patients stop taking medicines that are hard to take.',
+            },
+            {
+              id: 'lactose-coat',
+              text: 'Lactose filler with a slow-release coating',
+              slotId: 'excipient',
+              conceptId: 'excipient',
+              explanation:
+                'The filler gives the capsule bulk; the coating controls how fast VX-101 dissolves.',
+              consequence:
+                'The wrong [[excipient]] makes a drug absorb too fast, too slow, or fall apart in the bottle.',
+            },
+            {
+              id: 'sugar-syrup',
+              text: 'Sugar syrup base',
+              conceptId: 'stability',
+              explanation: 'VX-101 breaks down in water. A syrup would lose strength on the shelf.',
+              consequence: 'Drug that degrades in storage loses effect or forms harmful by-products.',
+            },
+            {
+              id: 'assay-dissolution',
+              text: 'Assay and [[dissolution]] test on every batch',
+              slotId: 'test',
+              conceptId: 'gmp',
+              explanation:
+                'The assay proves how much drug is there; dissolution proves it will be released as designed.',
+              consequence: 'A batch released without testing can be under-dosed, over-dosed, or inert.',
+            },
+            {
+              id: 'visual-only',
+              text: 'Visual inspection only',
+              conceptId: 'gmp',
+              explanation: 'Looking at a capsule tells you nothing about what is inside it.',
+              consequence: 'Regulators can shut a facility for releasing batches without proper testing.',
+            },
+            {
+              id: 'below-25',
+              text: 'Store below 25 °C, protect from light (6-month stability data)',
+              slotId: 'storage',
+              conceptId: 'stability',
+              explanation:
+                'Storage instructions come from your own [[stability|stability study]] on this product.',
+              consequence: 'A storage claim without data behind it is a label nobody can trust.',
+            },
+            {
+              id: 'borrowed-stability',
+              text: 'Use stability data from a similar molecule; skip the 6-month study',
+              conceptId: 'stability',
+              shortcut: {
+                meters: { timeline: 10, integrity: -15 },
+                why: 'Six months saved. And a shelf life you cannot prove when the inspector asks.',
+              },
+              explanation: 'Stability is product-specific. A similar molecule is not this one.',
+              consequence:
+                'Borrowed stability data is a common inspection finding and can void a whole batch.',
+            },
           ],
-          explanation: 'GMP ensures every batch is made and tested the same way, with records to prove it.',
-          consequence:
-            'A batch made outside GMP cannot be given to trial participants. Regulators can shut a facility for GMP failures.',
         },
-        {
-          id: 'w1-l4-q6',
-          conceptId: 'ectd',
-          prompt: 'The CMC information goes into which part of the IND / CTA submission?',
-          options: [
-            { text: 'The Quality section (eCTD Module 3)', correct: true },
-            { text: 'The marketing plan' },
-            { text: 'The informed consent form' },
-            { text: 'The site contract' },
-          ],
-          explanation:
-            'The eCTD has five modules. Module 3 is Quality (CMC), Module 4 is nonclinical, Module 5 is clinical.',
-          consequence:
-            'Filing information in the wrong module causes validation errors and delays the review clock.',
-        },
-      ],
-    },
+      },
+    ],
     debrief: {
       learned:
-        'CMC turns a molecule into a product: the right formulation, proven stability, and batches made under GMP. Every batch must be identical and documented.',
+        '[[cmc|CMC]] turns a molecule into a product: the right formulation, proven stability, and batches made and tested under GMP. Every batch must be identical and documented.',
       handoffLine:
         'You hand stable VX-101 capsules and their batch records to the trial team. World 1 is almost complete.',
     },

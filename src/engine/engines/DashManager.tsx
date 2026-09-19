@@ -1,0 +1,256 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { DashConfig } from '@/content/types';
+import { economy } from '@/content/economy';
+import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
+import { RichText } from '@/components/RichText';
+import { Feedback } from './Feedback';
+import type { EngineProps } from './types';
+
+interface Live {
+  id: string;
+  step: number;
+  patience: number; // seconds left
+  outcome?: ItemOutcome;
+  shortcut?: boolean;
+}
+
+const TICK = 250;
+
+/** Queue of items with patience bars; select an item, tap the right station in order. */
+export function DashManager(p: EngineProps<DashConfig>) {
+  const items = p.onlyItems ? p.config.items.filter((i) => p.onlyItems!.includes(i.id)) : p.config.items;
+  const patienceScale = p.onlyItems ? 1.5 : 1;
+  const [, setElapsed] = useState(0);
+  const [live, setLive] = useState<Record<string, Live>>({});
+  const [selected, setSelected] = useState<string | null>(null);
+  const [pending, setPending] = useState<{
+    kind: 'correct' | 'wrong' | 'shortcut';
+    title: string;
+    explanation: string;
+    note?: string;
+  } | null>(null);
+  const [heartsLost, setHeartsLost] = useState(0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
+  const [shortcuts, setShortcuts] = useState<EngineResult['shortcuts']>([]);
+  const usedCarriers = useRef(new Set<string>());
+  const done = useRef(false);
+  const liveRef = useRef(live);
+  const elapsedRef = useRef(0);
+  useEffect(() => {
+    liveRef.current = live;
+  }, [live]);
+
+  const finish = useCallback(
+    (state: Record<string, Live>) => {
+      if (done.current) return;
+      done.current = true;
+      const itemResults: Record<string, ItemOutcome> = {};
+      let patienceLeft = 0;
+      for (const it of items) {
+        const l = state[it.id];
+        itemResults[it.id] = l?.outcome ?? 'skipped';
+        if (l?.outcome === 'correct')
+          patienceLeft += Math.max(0, l.patience) / (it.patienceSeconds * patienceScale);
+      }
+      const correct = Object.values(itemResults).filter((v) => v === 'correct').length;
+      p.onComplete({
+        accuracy: items.length ? correct / items.length : 0,
+        speed: p.relaxed ? economy.score.relaxedSpeed : correct ? patienceLeft / correct : 0,
+        mistakes,
+        shortcuts,
+        itemResults,
+        outcomes: { ...emptyOutcomes(), shortcutsTaken: shortcuts.map((s) => s.itemId) },
+        correct,
+        total: items.length,
+        heartsLost,
+      });
+    },
+    [items, patienceScale, mistakes, shortcuts, heartsLost, p],
+  );
+
+  const handleExpire = useCallback(
+    (id: string) => {
+      const expired = items.find((it) => it.id === id);
+      if (!expired) return;
+      const m = {
+        itemId: expired.id,
+        conceptId: expired.conceptId,
+        prompt: expired.label,
+        chosen: 'Left waiting',
+        correctAnswer: expired.steps
+          .map((st) => p.config.stations.find((x) => x.id === st)?.label)
+          .join(' → '),
+        explanation: expired.explanation,
+        consequence: expired.consequence,
+      };
+      setMistakes((ms) => [...ms, m]);
+      const fb = p.onMistake(m);
+      if (fb.heartLost) setHeartsLost((h) => h + 1);
+      setSelected((sel) => (sel === id ? null : sel));
+      setPending({
+        kind: 'wrong',
+        title: `${expired.label} waited too long.`,
+        explanation: expired.explanation,
+        note: fb.note,
+      });
+    },
+    [items, p],
+  );
+
+  // Clock: arrivals, patience decay and expiry, all inside the tick.
+  useEffect(() => {
+    if (p.paused || pending || done.current) return;
+    const id = window.setInterval(() => {
+      elapsedRef.current += TICK / 1000;
+      const state = liveRef.current;
+      const next = { ...state };
+      let expiredId: string | undefined;
+      for (const it of items) {
+        const l = next[it.id];
+        if (!l && elapsedRef.current >= it.arrivesAt)
+          next[it.id] = { id: it.id, step: 0, patience: it.patienceSeconds * patienceScale };
+        else if (l && !l.outcome) {
+          const decay = p.relaxed ? TICK / 1000 / 3 : TICK / 1000;
+          const patience = l.patience - decay;
+          if (patience <= 0 && !p.relaxed && !expiredId) {
+            expiredId = it.id;
+            next[it.id] = { ...l, patience: 0, outcome: 'wrong' };
+          } else next[it.id] = { ...l, patience };
+        }
+      }
+      liveRef.current = next;
+      setLive(next);
+      setElapsed(elapsedRef.current);
+      if (expiredId) handleExpire(expiredId);
+    }, TICK);
+    return () => window.clearInterval(id);
+  }, [p.paused, pending, items, patienceScale, p.relaxed, handleExpire]);
+
+  // All resolved or time up -> finish.
+  useEffect(() => {
+    const allDone = items.every((it) => live[it.id]?.outcome);
+    if ((allDone && items.length > 0 && !pending) || p.timeUp) finish(live);
+  }, [live, items, pending, p.timeUp, finish]);
+
+  const tapStation = (stationId: string) => {
+    if (!selected || pending || p.paused) return;
+    const it = items.find((x) => x.id === selected)!;
+    const l = live[selected]!;
+    const station = p.config.stations.find((s) => s.id === stationId)!;
+    if (station.shortcut) {
+      if (!usedCarriers.current.has(station.id)) {
+        usedCarriers.current.add(station.id);
+        const ev = { itemId: station.id, meters: station.shortcut.meters, why: station.shortcut.why };
+        p.onShortcut(ev);
+        setShortcuts((s) => [...s, ev]);
+      }
+      setLive((s) => ({ ...s, [selected]: { ...l, outcome: 'shortcut', shortcut: true } }));
+      setSelected(null);
+      setPending({
+        kind: 'shortcut',
+        title: 'Shortcut taken',
+        explanation: station.shortcut.why,
+        note: 'Served, but not counted as correct.',
+      });
+      return;
+    }
+    if (it.steps[l.step] === stationId) {
+      const step = l.step + 1;
+      const doneItem = step >= it.steps.length;
+      setLive((s) => ({ ...s, [selected]: { ...l, step, outcome: doneItem ? 'correct' : undefined } }));
+      if (doneItem) setSelected(null);
+      return;
+    }
+    const m = {
+      itemId: it.id,
+      conceptId: it.conceptId,
+      prompt: it.label,
+      chosen: station.label,
+      correctAnswer: p.config.stations.find((s) => s.id === it.steps[l.step])?.label ?? '',
+      explanation: it.explanation,
+      consequence: it.consequence,
+    };
+    setMistakes((ms) => [...ms, m]);
+    const fb = p.onMistake(m);
+    if (fb.heartLost) setHeartsLost((h) => h + 1);
+    setPending({
+      kind: 'wrong',
+      title: `${it.label}: wrong station.`,
+      explanation: it.explanation,
+      note: fb.note,
+    });
+  };
+
+  const queue = items.filter((it) => live[it.id] && !live[it.id]!.outcome);
+
+  return (
+    <div className="flex flex-1 flex-col gap-3" data-testid="dash-manager">
+      <p className="text-sm font-semibold">
+        <RichText text={p.config.prompt} />
+      </p>
+      <div className="grid gap-2" role="group" aria-label="Queue">
+        {queue.length === 0 && <p className="text-sm text-muted">Waiting for the next arrival…</p>}
+        {queue.map((it) => {
+          const l = live[it.id]!;
+          const frac = Math.max(0, l.patience / (it.patienceSeconds * patienceScale));
+          return (
+            <button
+              key={it.id}
+              type="button"
+              onClick={() => setSelected(selected === it.id ? null : it.id)}
+              aria-pressed={selected === it.id}
+              disabled={!!pending || p.paused}
+              data-testid={`dash-item-${it.id}`}
+              className={`tap rounded-2xl border-2 p-2 text-left ${selected === it.id ? 'border-brand-600 bg-brand-50' : 'border-border bg-surface'}`}
+            >
+              <div className="flex items-center justify-between text-sm font-bold">
+                <span>{it.label}</span>
+                <span className="text-xs text-muted">
+                  next: {p.config.stations.find((s) => s.id === it.steps[l.step])?.label}
+                </span>
+              </div>
+              <div
+                className="mt-1 h-2 overflow-hidden rounded-full bg-border"
+                role="meter"
+                aria-label="Patience"
+                aria-valuenow={Math.round(frac * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className={`h-full ${frac < 0.3 ? 'bg-bad' : 'bg-brand-500'}`}
+                  style={{ width: `${frac * 100}%` }}
+                />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-label="Stations">
+        {p.config.stations.map((s, i) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => tapStation(s.id)}
+            disabled={!selected || !!pending || p.paused}
+            data-testid={`station-${s.id}`}
+            className={`tap rounded-2xl border-2 px-2 py-3 text-sm font-bold ${s.shortcut ? 'border-star bg-star-soft text-amber-950' : 'border-brand-600 bg-surface'} disabled:opacity-50`}
+          >
+            <kbd className="mr-1 hidden rounded bg-black/10 px-1 text-xs sm:inline">{i + 1}</kbd>
+            {s.label}
+          </button>
+        ))}
+      </div>
+      {pending && (
+        <Feedback
+          kind={pending.kind}
+          title={pending.title}
+          explanation={pending.explanation}
+          note={pending.note}
+          nextLabel="Continue"
+          onNext={() => setPending(null)}
+        />
+      )}
+    </div>
+  );
+}

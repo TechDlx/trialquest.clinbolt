@@ -1,66 +1,70 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { QuizQuestion } from '@/content/types';
-import { content, questionsByConcept } from '@/content';
+import { content } from '@/content';
 import { economy } from '@/content/economy';
+import type { MainPathConfig } from '@/content/types';
 import { navigate } from '@/app/router';
 import { useProgress } from '@/store/progress';
 import { useSettings } from '@/store/settings';
-import { computeScore, xpForReview, type EngineResult } from '@/engine/scoring';
-import { conceptOutcomes } from '@/engine/pipeline';
+import { xpForReview, type EngineResult } from '@/engine/scoring';
+import { buildReviewRound, dueSituations, type ReviewRound } from '@/engine/review';
+import { EngineHost } from '@/engine/EngineHost';
+import { useCountdown } from '@/engine/useCountdown';
 import { TaskShell } from '@/engine/TaskShell';
-import { QuizBlitz } from '@/engine/quiz-blitz/QuizBlitz';
 import { Button } from '@/components/Button';
 import { Page, TopBar } from '@/components/Layout';
+import { TimerBar } from '@/components/Hud';
 import { Speech } from '@/components/Mascot';
 import { RefreshIcon } from '@/components/Icons';
 import { Debrief } from './Debrief';
 
-/** Picks up to N due concepts (oldest due first) and one question for each. */
-export function pickReviewQuestions(
-  concepts: Record<string, { box: number; dueAt: string }>,
-  now = new Date(),
-): QuizQuestion[] {
-  const byConcept = questionsByConcept();
-  const due = Object.entries(concepts)
-    .filter(([, c]) => c.box < 5 && new Date(c.dueAt).getTime() <= now.getTime())
-    .sort((a, b) => new Date(a[1].dueAt).getTime() - new Date(b[1].dueAt).getTime())
-    .map(([id]) => id);
-  const out: QuizQuestion[] = [];
-  for (const id of due) {
-    const q = byConcept[id]?.[0];
-    if (q) out.push(q);
-    if (out.length >= economy.review.maxItems) break;
-  }
-  return out;
-}
-
+/** Review node: replays missed situations as 20-second micro-rounds of their original engine. */
 export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
   const review = content.reviewById[reviewId];
   const world = review ? content.worldById[review.worldId] : undefined;
   const progress = useProgress();
   const relaxed = useSettings((s) => s.relaxed);
   const [phase, setPhase] = useState<'intro' | 'playing' | 'done'>('intro');
-  const [result, setResult] = useState<EngineResult | null>(null);
+  const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [seed, setSeed] = useState(1);
-  const questions = useMemo(() => pickReviewQuestions(progress.concepts), [progress.concepts]);
+  const [clean, setClean] = useState(0);
+  const [mistakes, setMistakes] = useState<EngineResult['mistakes']>([]);
+  const rounds = useMemo<ReviewRound[]>(
+    () =>
+      dueSituations(progress.situations)
+        .map((s) => buildReviewRound(content, s, review?.roundSeconds ?? economy.review.roundSeconds))
+        .filter((r): r is ReviewRound => !!r),
+    [progress.situations, review?.roundSeconds],
+  );
+  const round = rounds[index];
+  const seconds =
+    round && 'seconds' in round.stage.game ? (round.stage.game as { seconds: number }).seconds : 0;
+  const timed = !relaxed && seconds > 0;
+  const clock = useCountdown({
+    seconds: seconds || 1,
+    enabled: timed,
+    running: phase === 'playing' && !paused,
+    resetKey: index,
+  });
 
-  const onComplete = useCallback(
+  const onRoundComplete = useCallback(
     (r: EngineResult) => {
-      if (!review) return;
-      const perfect = r.mistakes.length === 0;
-      progress.recordReview(review.id, xpForReview(perfect));
-      progress.touchStreak();
-      for (const c of conceptOutcomes(
-        questions.map((q) => q.conceptId),
-        r.mistakes,
-      )) {
-        progress.recordConcept(c.conceptId, c.correct);
+      if (!round) return;
+      const outcome = r.itemResults[round.itemId];
+      const correct = round.isShortcut
+        ? !r.outcomes.shortcutsTaken.includes(round.itemId)
+        : outcome === 'correct';
+      useProgress.getState().recordSituation(round.levelId, round.stage.id, round.itemId, correct);
+      if (correct) setClean((n) => n + 1);
+      setMistakes((m) => [...m, ...r.mistakes]);
+      if (index + 1 < rounds.length) setIndex(index + 1);
+      else {
+        const perfect = clean + (correct ? 1 : 0) === rounds.length;
+        useProgress.getState().recordReview(review!.id, xpForReview(perfect));
+        useProgress.getState().touchStreak();
+        setPhase('done');
       }
-      setResult(r);
-      setPhase('done');
     },
-    [review, progress, questions],
+    [round, index, rounds.length, clean, review],
   );
 
   if (!review || !world) {
@@ -73,7 +77,6 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
   const goMap = () => navigate({ name: 'map', worldId: world.id });
 
   if (phase === 'intro') {
-    const nothingDue = questions.length === 0;
     return (
       <Page>
         <TopBar title={review.title} back={{ name: 'map', worldId: world.id }} />
@@ -83,11 +86,11 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
             <h1 className="text-xl font-black text-fg">Review node</h1>
           </div>
           <p className="mt-2 text-sm text-muted">
-            Review nodes bring back concepts you missed, spaced out over days so they stick. Finishing one
-            refills your hearts.
+            Review nodes replay the exact situations you got wrong, or the shortcuts you took, as short rounds
+            spaced out over days. Finishing one refills your hearts.
           </p>
         </div>
-        {nothingDue ? (
+        {rounds.length === 0 ? (
           <>
             <Speech mood="cheer" className="mt-3">
               All caught up. Nothing is due for review right now. Have your hearts back anyway.
@@ -108,17 +111,14 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
         ) : (
           <>
             <Speech mood="think" className="mt-3">
-              {questions.length} concept{questions.length === 1 ? '' : 's'} to revisit. No hearts at stake
-              here.
+              {rounds.length} situation{rounds.length === 1 ? '' : 's'} to revisit,{' '}
+              {review.roundSeconds ?? economy.review.roundSeconds} seconds each. No hearts at stake.
             </Speech>
             <Button
               size="lg"
               full
               className="mt-4"
-              onClick={() => {
-                setSeed((Date.now() % 1_000_000) + 1);
-                setPhase('playing');
-              }}
+              onClick={() => setPhase('playing')}
               data-testid="start-review"
             >
               Start review
@@ -129,48 +129,52 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
     );
   }
 
-  if (phase === 'playing') {
+  if (phase === 'playing' && round) {
     return (
       <TaskShell
-        title={review.title}
+        title={`Review ${index + 1}/${rounds.length}: ${round.levelTitle}`}
         hearts={progress.hearts}
         meters={progress.meters}
         paused={paused}
         onPause={setPaused}
         onQuit={goMap}
       >
-        <QuizBlitz
-          questions={questions}
-          secondsPerQuestion={economy.quiz.defaultSecondsPerQuestion}
-          timerScale={world.timerScale}
-          relaxed={relaxed}
+        <TimerBar fraction={clock.fraction} remaining={clock.remaining} relaxed={!timed} />
+        <EngineHost
+          key={round.key}
+          config={round.stage.game as MainPathConfig}
+          onlyItems={round.onlyItems}
+          seed={index + 1}
           paused={paused}
+          relaxed={relaxed}
+          remainingFraction={timed ? clock.fraction : 1}
+          timeUp={timed && clock.expired}
           mode="review"
-          seed={seed}
           onMistake={() => ({ heartLost: false, note: 'No heart lost in a review.' })}
-          onComplete={onComplete}
+          onShortcut={() => {}}
+          onMeters={() => {}}
+          onComplete={onRoundComplete}
         />
       </TaskShell>
     );
   }
 
-  const r = result!;
-  const { score, stars } = computeScore(r.accuracy, r.speed);
+  const perfect = clean === rounds.length;
   return (
     <Debrief
       kind="review"
       title={review.title}
-      stars={stars === 0 ? 1 : stars}
-      score={score}
-      xp={xpForReview(r.mistakes.length === 0)}
-      mistakes={r.mistakes}
-      correct={r.correct}
-      total={r.total}
+      stars={perfect ? 3 : clean > 0 ? 2 : 1}
+      score={Math.round((clean / Math.max(1, rounds.length)) * 100)}
+      xp={xpForReview(perfect)}
+      mistakes={mistakes}
+      correct={clean}
+      total={rounds.length}
       failed={false}
       canRetry={false}
       onContinue={goMap}
       onRetry={goMap}
-      learned="Hearts refilled. Missed concepts will come back in a later review."
+      learned="Hearts refilled. Situations you missed will come back in a later review."
     />
   );
 }

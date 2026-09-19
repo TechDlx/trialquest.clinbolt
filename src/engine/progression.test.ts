@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { computeMapState } from './progression';
 import { content } from '@/content';
 
-const empty = { levels: {}, bosses: {}, reviews: {} };
+const empty = { levels: {}, crises: {}, reviews: {} };
 
 describe('computeMapState', () => {
   it('starts with the first level current and everything else locked', () => {
@@ -10,7 +10,7 @@ describe('computeMapState', () => {
     expect(s.currentNodeId).toBe('w1-l1');
     expect(s.nodeStatus['w1-l1']).toBe('current');
     expect(s.nodeStatus['w1-l2']).toBe('locked');
-    expect(s.nodeStatus['w1-boss']).toBe('locked');
+    expect(s.nodeStatus['w1-crisis']).toBe('locked');
     expect(s.worldUnlocked.w1).toBe(true);
     expect(s.worldUnlocked.w2).toBe(false);
   });
@@ -30,7 +30,7 @@ describe('computeMapState', () => {
     };
     const s = computeMapState(content.worlds, { ...empty, levels });
     expect(s.nodeStatus['w1-r1']).toBe('available');
-    expect(s.nodeStatus['w1-boss']).toBe('current');
+    expect(s.nodeStatus['w1-crisis']).toBe('current');
   });
 
   it('unlocks the next world once the boss is done', () => {
@@ -40,7 +40,7 @@ describe('computeMapState', () => {
       'w1-l3': { stars: 1 },
       'w1-l4': { stars: 1 },
     };
-    const s = computeMapState(content.worlds, { ...empty, levels, bosses: { 'w1-boss': { stars: 3 } } });
+    const s = computeMapState(content.worlds, { ...empty, levels, crises: { 'w1-crisis': { stars: 3 } } });
     expect(s.worldComplete.w1).toBe(true);
     expect(s.worldUnlocked.w2).toBe(true);
     // World 2 is still 'planned' content, so its nodes show as planned rather than current.

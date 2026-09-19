@@ -184,3 +184,16 @@ export const ShapeIcon = ({
       );
   }
 };
+
+export const SirenIcon = ({ size = 20, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M6 18v-6a6 6 0 0 1 12 0v6M4 18h16v3H4zM12 3v2M4.5 6.5l1.5 1.5M19.5 6.5L18 8" />
+  </svg>
+);
+
+export const RibbonIcon = ({ size = 16, ...p }: P) => (
+  <svg {...base(size, p)} fill="currentColor" stroke="none">
+    <circle cx="12" cy="8" r="5" />
+    <path d="M8 12l-2 9 6-3 6 3-2-9z" opacity="0.8" />
+  </svg>
+);

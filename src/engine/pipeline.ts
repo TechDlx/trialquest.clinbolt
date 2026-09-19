@@ -8,8 +8,10 @@ import { economy } from '@/content/economy';
 import type { MeterId } from '@/content/types';
 import { loseHeart } from './hearts';
 import {
+  clamp01,
   computeScore,
   emptyOutcomes,
+  streakMultiplier,
   xpForBoss,
   xpForLevel,
   type EngineResult,
@@ -191,4 +193,93 @@ export function aggregateStages(results: EngineResult[], weights?: number[]): En
     maxPoints: hasPoints ? results.reduce((s, r) => s + (r.maxPoints ?? 0), 0) : undefined,
     heartsLost: results.reduce((s, r) => s + r.heartsLost, 0),
   };
+}
+
+// ---------------------------------------------------------------- direct meter effects (shortcuts, bands, crisis rounds)
+
+export interface MeterOutcome {
+  snapshot: PipelineSnapshot;
+  /** First meter that hit zero (already reset to the setback value in the snapshot). */
+  setback?: MeterId;
+}
+
+/** Applies a meter delta (no hearts). A meter hitting zero is a setback, exactly as for mistakes. */
+export function applyMeterDelta(
+  snapshot: PipelineSnapshot,
+  delta: Partial<Record<MeterId, number>>,
+): MeterOutcome {
+  const meters: Meters = { ...snapshot.meters };
+  let setback: MeterId | undefined;
+  for (const m of ['safety', 'integrity', 'timeline'] as MeterId[]) {
+    const d = delta[m];
+    if (!d) continue;
+    meters[m] = clampMeter(meters[m] + d);
+    if (meters[m] <= 0 && !setback) {
+      setback = m;
+      meters[m] = economy.meters.setbackResetTo;
+    }
+  }
+  return { snapshot: { ...snapshot, meters }, setback };
+}
+
+// ---------------------------------------------------------------- crisis boss
+
+export interface CrisisRoundOutcome {
+  cleared: boolean;
+  accuracy: number;
+  /** 0..1 of the round's budget used (clamped). */
+  timeUsedFraction: number;
+  points: number;
+}
+
+/** Points for one cleared round: 100 + speed bonus, times the streak multiplier. */
+export function crisisRoundPoints(timeUsedFraction: number, clearedStreakBefore: number): number {
+  const base =
+    economy.boss.basePoints + Math.round(economy.boss.speedPoints * (1 - clamp01(timeUsedFraction)));
+  return Math.round(base * streakMultiplier(clearedStreakBefore + 1));
+}
+
+export function crisisMaxPoints(roundCount: number): number {
+  let total = 0;
+  for (let i = 0; i < roundCount; i++) total += crisisRoundPoints(0, i);
+  return total;
+}
+
+export type CrisisOutcome = 'success' | 'partial' | 'fail';
+
+export interface CrisisScore {
+  outcome: CrisisOutcome;
+  stars: Stars;
+  score: number;
+  points: number;
+  xp: XpBreakdown;
+  clearedCount: number;
+}
+
+export function scoreCrisis(
+  rounds: CrisisRoundOutcome[],
+  opts: {
+    totalRounds: number;
+    passFraction: number;
+    poolExpired: boolean;
+    meterZero: boolean;
+    firstTry: boolean;
+  },
+): CrisisScore {
+  const clearedCount = rounds.filter((r) => r.cleared).length;
+  const points = rounds.reduce((s, r) => s + r.points, 0);
+  const max = crisisMaxPoints(opts.totalRounds);
+  let outcome: CrisisOutcome;
+  if (opts.meterZero || clearedCount === 0) outcome = 'fail';
+  else if (clearedCount / opts.totalRounds >= opts.passFraction && !opts.poolExpired) outcome = 'success';
+  else outcome = 'partial';
+  const meanAcc = rounds.length ? rounds.reduce((s, r) => s + r.accuracy, 0) / opts.totalRounds : 0;
+  const meanSpeed = rounds.length
+    ? rounds.reduce((s, r) => s + (1 - clamp01(r.timeUsedFraction)), 0) / opts.totalRounds
+    : 0;
+  const { score, stars: raw } = computeScore(meanAcc, meanSpeed);
+  const stars: Stars = outcome === 'success' ? (raw === 0 ? 1 : raw) : 0;
+  const xp = outcome === 'success' ? xpForBoss(points, max, opts.firstTry) : { total: 0, lines: [] };
+  if (outcome === 'success' && xp.lines[0]) xp.lines[0].label = 'Crisis points';
+  return { outcome, stars, score, points, xp, clearedCount };
 }

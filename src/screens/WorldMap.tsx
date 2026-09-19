@@ -8,7 +8,9 @@ import { useSettings, resolveReducedMotion } from '@/store/settings';
 import { Page, Disclaimer } from '@/components/Layout';
 import { Hearts, Meters, Stars } from '@/components/Hud';
 import { BadgeGlyph } from '@/components/BadgeGlyph';
-import { CrownIcon, FlagIcon, FlameIcon, LockIcon, RefreshIcon } from '@/components/Icons';
+import { FlagIcon, FlameIcon, LockIcon, RefreshIcon, RibbonIcon, SirenIcon } from '@/components/Icons';
+import { Modal } from '@/components/Modal';
+import { useState } from 'react';
 import { Dose, Speech } from '@/components/Mascot';
 import { Button } from '@/components/Button';
 import { navigate, type Route } from '@/app/router';
@@ -29,8 +31,8 @@ function routeFor(node: MapNode): Route {
   switch (node.kind) {
     case 'level':
       return { name: 'badge', levelId: node.id };
-    case 'boss':
-      return { name: 'boss', bossId: node.id };
+    case 'crisis':
+      return { name: 'crisis', crisisId: node.id };
     case 'review':
       return { name: 'review', reviewId: node.id };
     case 'finale':
@@ -42,8 +44,8 @@ function nodeLabel(node: MapNode): string {
   switch (node.kind) {
     case 'level':
       return content.roleRefById[node.roleId]?.shortTitle ?? node.id;
-    case 'boss':
-      return 'Boss quiz';
+    case 'crisis':
+      return 'Crisis';
     case 'review':
       return 'Review';
     case 'finale':
@@ -65,6 +67,14 @@ function NodeButton({
   const playable = isPlayable(status);
   const role = node.kind === 'level' ? content.roleRefById[node.roleId] : undefined;
   const label = nodeLabel(node);
+  const [sheet, setSheet] = useState(false);
+  const ribbon = useProgress((s) => (role ? !!s.knowledge[role.id]?.ribbon : false));
+  const legacy = useProgress((s) => (node.kind === 'crisis' ? !!s.crises[node.id]?.legacy : false));
+  const hasTest = !!role && !!content.knowledgeByRole[role.id];
+  const onTap = () => {
+    if (status === 'done' && (hasTest || node.kind === 'crisis')) setSheet(true);
+    else navigate(routeFor(node));
+  };
   const statusText =
     status === 'locked'
       ? 'locked'
@@ -88,8 +98,8 @@ function NodeButton({
   const icon =
     node.kind === 'level' && role ? (
       <BadgeGlyph icon={role.badgeIcon} size={28} />
-    ) : node.kind === 'boss' ? (
-      <CrownIcon size={28} />
+    ) : node.kind === 'crisis' ? (
+      <SirenIcon size={28} />
     ) : node.kind === 'review' ? (
       <RefreshIcon size={26} />
     ) : (
@@ -101,7 +111,7 @@ function NodeButton({
       <button
         type="button"
         disabled={!playable}
-        onClick={() => navigate(routeFor(node))}
+        onClick={onTap}
         data-testid={`node-${node.id}`}
         data-status={status}
         aria-label={`${label}, ${statusText}`}
@@ -116,11 +126,45 @@ function NodeButton({
             <LockIcon size={14} />
           </span>
         )}
+        {ribbon && (
+          <span
+            className="absolute -top-1 -right-1 rounded-full bg-surface p-0.5 text-star shadow"
+            title="Knowledge Check ribbon"
+            data-testid={`ribbon-${node.id}`}
+          >
+            <RibbonIcon size={14} />
+          </span>
+        )}
       </button>
       <span className={`text-center text-xs font-semibold leading-tight ${playable ? '' : 'text-muted'}`}>
         {label}
+        {legacy && <span className="block text-[10px] font-normal text-muted">cleared (legacy quiz)</span>}
       </span>
       {status === 'done' && stars > 0 && <Stars stars={stars} size={14} />}
+      <Modal open={sheet} title={label} onClose={() => setSheet(false)}>
+        <div className="grid gap-2">
+          <Button full onClick={() => navigate(routeFor(node))} data-testid="sheet-replay">
+            {node.kind === 'crisis'
+              ? legacy
+                ? 'Play the crisis for stars'
+                : 'Replay for more stars'
+              : 'Replay for more stars'}
+          </Button>
+          {hasTest && role && (
+            <Button
+              variant="secondary"
+              full
+              onClick={() => navigate({ name: 'test', roleId: role.id })}
+              data-testid="sheet-test"
+            >
+              Test Yourself (optional)
+            </Button>
+          )}
+          <Button variant="ghost" full onClick={() => setSheet(false)}>
+            Close
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -221,11 +265,11 @@ export function WorldMapScreen({ focusWorldId }: { focusWorldId?: string }) {
     () =>
       computeMapState(content.worlds, {
         levels: progress.levels,
-        bosses: progress.bosses,
+        crises: progress.crises,
         reviews: progress.reviews,
         finaleSeen: progress.finaleSeen,
       }),
-    [progress.levels, progress.bosses, progress.reviews, progress.finaleSeen],
+    [progress.levels, progress.crises, progress.reviews, progress.finaleSeen],
   );
   const syncHearts = useProgress((s) => s.syncHearts);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -298,7 +342,7 @@ export function WorldMapScreen({ focusWorldId }: { focusWorldId?: string }) {
             onClick={() => navigate(routeFor(currentNode))}
             data-testid="continue-current"
           >
-            {currentNode.kind === 'boss' ? 'Take the boss quiz' : `Next: ${nodeLabel(currentNode)}`}
+            {currentNode.kind === 'crisis' ? 'Face the crisis' : `Next: ${nodeLabel(currentNode)}`}
           </Button>
         )}
         {allReadyDone && (
@@ -321,8 +365,8 @@ export function WorldMapScreen({ focusWorldId }: { focusWorldId?: string }) {
             stars={(n) =>
               n.kind === 'level'
                 ? (progress.levels[n.id]?.stars ?? 0)
-                : n.kind === 'boss'
-                  ? (progress.bosses[n.id]?.stars ?? 0)
+                : n.kind === 'crisis'
+                  ? (progress.crises[n.id]?.stars ?? 0)
                   : 0
             }
           />

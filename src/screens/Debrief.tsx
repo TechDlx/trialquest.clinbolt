@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
-import type { Mistake, Stars as StarCount, XpBreakdown } from '@/engine/scoring';
+import type { Mistake, ShortcutEvent, Stars as StarCount, XpBreakdown } from '@/engine/scoring';
+import type { StoredArtifact } from '@/content/artifacts';
+import { artifactRegistry } from '@/content/artifacts';
 import { Stars } from '@/components/Hud';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
@@ -14,6 +16,8 @@ export interface DebriefProps {
   learned?: string;
   handoffLine?: string;
   mistakes: Mistake[];
+  shortcuts?: ShortcutEvent[];
+  artifacts?: StoredArtifact[];
   correct: number;
   total: number;
   failed: boolean;
@@ -103,6 +107,48 @@ export function Debrief(p: DebriefProps) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {p.shortcuts && p.shortcuts.length > 0 && (
+        <section className="mt-4">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-muted">Shortcuts you took</h2>
+          <ul className="mt-1 grid gap-2">
+            {p.shortcuts.map((s, i) => (
+              <li
+                key={i}
+                className="rounded-xl border border-star/60 bg-star-soft p-3 text-sm text-amber-950"
+              >
+                <p className="font-semibold">
+                  {Object.entries(s.meters)
+                    .map(([m, d]) => `${m} ${(d ?? 0) > 0 ? '+' : ''}${d}`)
+                    .join(', ')}
+                </p>
+                <p className="mt-1">{s.why}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {p.artifacts && p.artifacts.length > 0 && !p.failed && (
+        <section
+          className="mt-4 rounded-card border-2 border-border bg-surface p-3 text-sm"
+          data-testid="debrief-artifacts"
+        >
+          <h2 className="text-xs font-bold uppercase tracking-wide text-muted">You handed off</h2>
+          <ul className="mt-1 grid gap-1">
+            {p.artifacts.map((a) => (
+              <li key={a.key} className="flex items-center justify-between">
+                <span className="font-semibold">{artifactRegistry[a.key].title}</span>
+                <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-800">
+                  {a.tag}
+                  {a.data && Object.values(a.data).length > 0 ? ` · ${Object.values(a.data).join(', ')}` : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-xs text-muted">This will shape a later level.</p>
         </section>
       )}
 

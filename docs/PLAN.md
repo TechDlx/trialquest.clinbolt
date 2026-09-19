@@ -34,7 +34,7 @@ Other findings:
   `economy.boss`, `progress.bosses` all need renaming/retirement to crisis.
 - No level has a shortcut option or an artifact. Store schema must bump to v2.
 
-## Milestone 2 — Engines, crisis boss, artifacts, World 1 retrofit
+## Milestone 2 — Engines, crisis boss, artifacts, World 1 retrofit (2a + 2b done 2026-09-18; 2c playtest checkpoint open)
 
 Order matters: engines first, then the systems they plug into, then the retrofit.
 

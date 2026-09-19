@@ -9,7 +9,8 @@ import { WorldMapScreen } from '@/screens/WorldMap';
 import { BadgeSwapScreen } from '@/screens/BadgeSwap';
 import { RoleCardScreen } from '@/screens/RoleCard';
 import { LevelScreen } from '@/screens/Level';
-import { BossQuizScreen } from '@/screens/BossQuiz';
+import { CrisisScreen } from '@/screens/Crisis';
+import { TestYourselfScreen } from '@/screens/TestYourself';
 import { ReviewNodeScreen } from '@/screens/ReviewNode';
 import { CodexScreen } from '@/screens/Codex';
 import { GlossaryScreen } from '@/screens/Glossary';
@@ -79,8 +80,17 @@ export function App() {
     case 'level':
       screen = <LevelScreen key={route.levelId} levelId={route.levelId} />;
       break;
-    case 'boss':
-      screen = <BossQuizScreen key={route.bossId} bossId={route.bossId} />;
+    case 'crisis':
+      screen = <CrisisScreen key={route.crisisId} crisisId={route.crisisId} />;
+      break;
+    case 'test':
+      screen = (
+        <TestYourselfScreen
+          key={route.roleId ?? route.worldId}
+          roleId={route.roleId}
+          worldId={route.worldId}
+        />
+      );
       break;
     case 'review':
       screen = <ReviewNodeScreen key={route.reviewId} reviewId={route.reviewId} />;

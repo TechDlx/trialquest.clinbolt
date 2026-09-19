@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "validate:content": "vitest run src/content/content.validate.test.ts",
     "e2e": "playwright test",
-    "e2e:install": "playwright install chromium"
+    "e2e:install": "playwright install chromium",
+    "e2e:pace": "playwright test pace --project=phone-360x740"
   },
   "dependencies": {
     "framer-motion": "^12.23.0",

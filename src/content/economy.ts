@@ -3,7 +3,6 @@ export const economy = {
   score: {
     accuracyWeight: 80,
     speedWeight: 20,
-    /** Speed value used when the timer is off (relaxed mode / untimed engines). */
     relaxedSpeed: 0.5,
     starThresholds: { three: 85, two: 65, one: 45 },
   },
@@ -18,6 +17,9 @@ export const economy = {
     reviewPerfect: 5,
     worldMeterBonus: 15,
     worldMeterThreshold: 70,
+    knowledgeFirstRibbon: 10,
+    knowledgePerCorrectReplay: 2,
+    knowledgeReplayMaxPerDay: 10,
     streakMilestones: { 3: 25, 7: 50, 14: 100, 30: 200 } as Record<number, number>,
   },
   ranks: [
@@ -30,33 +32,38 @@ export const economy = {
     { title: 'VP Development', xp: 3800 },
     { title: 'Chief Development Officer', xp: 4400 },
   ],
-  hearts: {
-    max: 5,
-    refillMinutes: 30,
-    codexReviewRefill: 1,
-  },
+  hearts: { max: 5, refillMinutes: 30, codexReviewRefill: 1 },
   meters: {
     max: 100,
     worldStartMinimum: 60,
     setbackResetTo: 40,
     defaultMistakeIntegrity: -3,
+    /** Summed variant meterOpening hits may never take a meter to this value or below from the setback floor. */
+    openingFloor: 10,
   },
   boss: {
     basePoints: 100,
     speedPoints: 50,
     passFraction: 0.6,
-    /** Checked in order; first match wins. */
     streak: [
       { after: 5, multiplier: 1.5 },
       { after: 3, multiplier: 1.25 },
     ],
   },
-  quiz: {
-    defaultSecondsPerQuestion: 20,
-    bossSecondsPerQuestion: 15,
+  crisis: {
+    slack: 0.15,
+    clearThreshold: 0.6,
+    passFraction: 0.6,
+    heartsPerAttempt: 1,
+    minRounds: 4,
+    maxRounds: 7,
+    roundSeconds: [15, 40] as const,
+    world1PoolMax: 120,
   },
+  knowledge: { ribbonFraction: 0.8 },
+  quiz: { defaultSecondsPerQuestion: 20, bossSecondsPerQuestion: 15 },
   streak: { maxFreezes: 2 },
-  review: { maxItems: 8, boxDelaysDays: [0, 1, 3, 7] },
+  review: { maxItems: 6, roundSeconds: 20, boxDelaysDays: [0, 1, 3, 7] },
 } as const;
 
 export interface Rank {

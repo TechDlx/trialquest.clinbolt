@@ -338,6 +338,72 @@ export const glossary: GlossaryTerm[] = [
     short: 'Large trials that aim to prove the drug works and is safe enough to approve.',
     worldId: 'w1',
   },
+
+  // Amendment 1 additions
+  {
+    id: 'alt',
+    term: 'ALT',
+    short: 'Alanine aminotransferase: a liver enzyme that rises in the blood when liver cells are damaged.',
+    aliases: ['liver enzyme'],
+    worldId: 'w1',
+  },
+  {
+    id: 'hed',
+    term: 'Human equivalent dose (HED)',
+    short:
+      'An animal dose converted to a human dose, usually by body surface area, before a safety factor is applied.',
+    aliases: ['HED'],
+    worldId: 'w1',
+  },
+  {
+    id: 'safety-factor',
+    term: 'Safety factor',
+    short:
+      'The number (at least 10 by default) the human equivalent dose is divided by to set a cautious first dose.',
+    worldId: 'w1',
+  },
+  {
+    id: 'mabel',
+    term: 'MABEL',
+    short:
+      'Minimal Anticipated Biological Effect Level: a first-dose approach used in the EU for higher-risk molecules, starting from the lowest dose expected to do anything.',
+    worldId: 'w1',
+  },
+  {
+    id: 'clinical-hold',
+    term: 'Clinical hold',
+    short:
+      'An FDA order pausing a trial until the sponsor answers safety or quality questions; EU regulators use similar powers under different names.',
+    worldId: 'w4',
+  },
+  {
+    id: 'sentinel-dosing',
+    term: 'Sentinel dosing',
+    short:
+      'Dosing one or two volunteers first and waiting before the rest of the cohort, to limit exposure if something goes wrong.',
+    worldId: 'w4',
+  },
+  {
+    id: 'selectivity',
+    term: 'Selectivity',
+    short:
+      'How much more strongly a compound acts on its target than on similar molecules; poor selectivity means side effects.',
+    worldId: 'w1',
+  },
+  {
+    id: 'pains',
+    term: 'Assay interference',
+    short:
+      'Compounds that fool the screening test itself, looking active when they are not; a common source of false hits.',
+    aliases: ['PAINS'],
+    worldId: 'w1',
+  },
+  {
+    id: 'dissolution',
+    term: 'Dissolution test',
+    short: 'A lab test of how fast a tablet or capsule releases its drug, run on every batch.',
+    worldId: 'w1',
+  },
 ];
 
 export const glossaryById: Record<string, GlossaryTerm> = Object.fromEntries(glossary.map((t) => [t.id, t]));

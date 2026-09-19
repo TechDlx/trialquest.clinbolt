@@ -11,7 +11,8 @@ export type Route =
   | { name: 'badge'; levelId: string }
   | { name: 'role'; roleId: string; levelId?: string }
   | { name: 'level'; levelId: string }
-  | { name: 'boss'; bossId: string }
+  | { name: 'crisis'; crisisId: string }
+  | { name: 'test'; roleId?: string; worldId?: string }
   | { name: 'review'; reviewId: string }
   | { name: 'story'; worldId: string; beat: 'intro' | 'outro' }
   | { name: 'codex'; roleId?: string }
@@ -41,8 +42,11 @@ export function parseHash(hash: string): Route {
     }
     case 'level':
       return a ? { name: 'level', levelId: a } : { name: 'map' };
-    case 'boss':
-      return a ? { name: 'boss', bossId: a } : { name: 'map' };
+    case 'crisis':
+      return a ? { name: 'crisis', crisisId: a } : { name: 'map' };
+    case 'test':
+      if (a === 'world' && b) return { name: 'test', worldId: b };
+      return a ? { name: 'test', roleId: a } : { name: 'codex' };
     case 'review':
       return a ? { name: 'review', reviewId: a } : { name: 'map' };
     case 'story':
@@ -74,8 +78,10 @@ export function href(route: Route): string {
       return route.levelId ? `#/role/${route.roleId}?level=${route.levelId}` : `#/role/${route.roleId}`;
     case 'level':
       return `#/level/${route.levelId}`;
-    case 'boss':
-      return `#/boss/${route.bossId}`;
+    case 'crisis':
+      return `#/crisis/${route.crisisId}`;
+    case 'test':
+      return route.worldId ? `#/test/world/${route.worldId}` : `#/test/${route.roleId}`;
     case 'review':
       return `#/review/${route.reviewId}`;
     case 'story':

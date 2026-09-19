@@ -2,12 +2,16 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { economy } from '@/content/economy';
 import type { MeterId } from '@/content/types';
+import type { ArtifactStore, StoredArtifact } from '@/content/artifacts';
 import { gainHearts, loseHeart as loseHeartPure, refillHearts } from '@/engine/hearts';
 import { dayKey, daysBetween } from '@/engine/dates';
 import type { Stars, XpBreakdown } from '@/engine/scoring';
 import { safeStorage, STORAGE_KEYS } from './storage';
 
-export const PROGRESS_VERSION = 1;
+export const PROGRESS_VERSION = 2;
+
+/** Node ids renamed between schema versions; applied to every id-keyed map on migration. */
+export const ID_RENAMES: Record<string, string> = { 'w1-boss': 'w1-crisis' };
 
 export interface LevelRecord {
   stars: number;
@@ -16,11 +20,13 @@ export interface LevelRecord {
   completedAt?: string;
 }
 
-export interface BossRecord {
+export interface CrisisRecord {
   stars: number;
   bestPoints: number;
   attempts: number;
   completedAt?: string;
+  /** Migrated from a v1 boss-quiz record. */
+  legacy?: boolean;
 }
 
 export interface ReviewRecord {
@@ -35,10 +41,25 @@ export interface CardRecord {
 }
 
 export interface ConceptRecord {
-  /** Leitner box 1..5 (5 = retired). */
   box: number;
   dueAt: string;
   misses: number;
+}
+
+export interface SituationRecord {
+  levelId: string;
+  stageId: string;
+  itemId: string;
+  box: number;
+  dueAt: string;
+  misses: number;
+}
+
+export interface KnowledgeRecord {
+  attempts: number;
+  bestFraction: number;
+  ribbon: boolean;
+  lastPlayedDay?: string;
 }
 
 export interface Meters {
@@ -53,11 +74,14 @@ export interface ProgressData {
   heartsUpdatedAt: string | null;
   streak: { count: number; lastDay: string | null; freezes: number };
   levels: Record<string, LevelRecord>;
-  bosses: Record<string, BossRecord>;
+  crises: Record<string, CrisisRecord>;
   reviews: Record<string, ReviewRecord>;
   cardsViewed: Record<string, CardRecord>;
   meters: Meters;
   concepts: Record<string, ConceptRecord>;
+  situations: Record<string, SituationRecord>;
+  artifacts: ArtifactStore;
+  knowledge: Record<string, KnowledgeRecord>;
   worldsCompleted: string[];
   worldsStarted: string[];
   introSeen: boolean;
@@ -65,6 +89,9 @@ export interface ProgressData {
   tipsDismissed: Record<string, boolean>;
   createdAt: string;
 }
+
+export const situationKey = (levelId: string, stageId: string, itemId: string) =>
+  `${levelId}:${stageId}:${itemId}`;
 
 export interface ProgressActions {
   markCardViewed: (roleId: string, now?: Date) => { xpGained: number };
@@ -74,14 +101,15 @@ export interface ProgressActions {
     r: { stars: Stars; score: number; xp: XpBreakdown },
     now?: Date,
   ) => void;
-  recordBossResult: (
-    bossId: string,
+  recordCrisisResult: (
+    crisisId: string,
     r: { stars: Stars; points: number; xp: XpBreakdown },
     now?: Date,
   ) => void;
   recordReview: (reviewId: string, xp: XpBreakdown, now?: Date) => void;
+  recordKnowledge: (roleId: string, fraction: number, xpGained: number, now?: Date) => void;
+  setArtifacts: (artifacts: StoredArtifact[]) => void;
   addXp: (amount: number) => void;
-  /** Commits a pipeline snapshot (hearts + meters) in one update. */
   commitSnapshot: (s: { hearts: number; heartsUpdatedAt: string | null; meters: Meters }) => void;
   loseHeart: (now?: Date) => number;
   syncHearts: (now?: Date) => void;
@@ -90,6 +118,8 @@ export interface ProgressActions {
   startWorld: (worldId: string) => void;
   completeWorld: (worldId: string) => { xpGained: number };
   recordConcept: (conceptId: string, correct: boolean, now?: Date) => void;
+  recordSituation: (levelId: string, stageId: string, itemId: string, correct: boolean, now?: Date) => void;
+  pruneSituations: (exists: (levelId: string, stageId: string, itemId: string) => boolean) => void;
   touchStreak: (now?: Date) => { milestoneXp: number };
   setIntroSeen: () => void;
   setFinaleSeen: () => void;
@@ -106,11 +136,14 @@ export function initialProgress(now: Date = new Date()): ProgressData {
     heartsUpdatedAt: null,
     streak: { count: 0, lastDay: null, freezes: 0 },
     levels: {},
-    bosses: {},
+    crises: {},
     reviews: {},
     cardsViewed: {},
     meters: { safety: economy.meters.max, integrity: economy.meters.max, timeline: economy.meters.max },
     concepts: {},
+    situations: {},
+    artifacts: {},
+    knowledge: {},
     worldsCompleted: [],
     worldsStarted: [],
     introSeen: false,
@@ -122,23 +155,52 @@ export function initialProgress(now: Date = new Date()): ProgressData {
 
 const clampMeter = (n: number) => Math.max(0, Math.min(economy.meters.max, Math.round(n)));
 
+function renameKeys<T>(map: Record<string, T> | undefined): Record<string, T> {
+  const out: Record<string, T> = {};
+  for (const [k, v] of Object.entries(map ?? {})) out[ID_RENAMES[k] ?? k] = v;
+  return out;
+}
+
+/** v1 -> v2: boss records become legacy crisis records, ids renamed everywhere, new maps added. */
+function migrateV1toV2(data: Record<string, unknown>): Record<string, unknown> {
+  const bosses = renameKeys(data.bosses as Record<string, CrisisRecord> | undefined);
+  const crises: Record<string, CrisisRecord> = {};
+  for (const [k, v] of Object.entries(bosses)) crises[k] = { ...v, legacy: true };
+  const renameList = (list: unknown) =>
+    Array.isArray(list) ? list.map((x) => ID_RENAMES[String(x)] ?? x) : [];
+  const { bosses: _drop, ...rest } = data;
+  return {
+    ...rest,
+    levels: renameKeys(data.levels as Record<string, LevelRecord> | undefined),
+    reviews: renameKeys(data.reviews as Record<string, ReviewRecord> | undefined),
+    tipsDismissed: renameKeys(data.tipsDismissed as Record<string, boolean> | undefined),
+    worldsCompleted: renameList(data.worldsCompleted),
+    worldsStarted: renameList(data.worldsStarted),
+    crises,
+    situations: {},
+    artifacts: {},
+    knowledge: {},
+  };
+}
+
 /**
- * Schema migrations. Add a case per version bump; each case upgrades from (version) to (version + 1).
- * Unknown or corrupt data falls back to a fresh profile rather than crashing.
+ * Schema migrations, one case per version. Unknown or corrupt data falls back to a fresh
+ * profile; partial saves are filled with defaults.
  */
 export function migrateProgress(persisted: unknown, fromVersion: number): ProgressData {
-  let data = (persisted ?? {}) as Partial<ProgressData>;
+  let data = (persisted && typeof persisted === 'object' ? persisted : {}) as Record<string, unknown>;
   let version = fromVersion;
   while (version < PROGRESS_VERSION) {
     switch (version) {
-      // case 1: data = migrateV1toV2(data); break;
+      case 1:
+        data = migrateV1toV2(data);
+        break;
       default:
         data = {};
     }
     version += 1;
   }
-  // Fill any missing keys with defaults so partial/corrupt saves still load.
-  return { ...initialProgress(), ...data };
+  return { ...initialProgress(), ...(data as Partial<ProgressData>) };
 }
 
 export const useProgress = create<ProgressState>()(
@@ -172,35 +234,43 @@ export const useProgress = create<ProgressState>()(
           { hearts: s.hearts, heartsUpdatedAt: s.heartsUpdatedAt },
           economy.hearts.codexReviewRefill,
         );
-        set({
-          ...next,
-          cardsViewed: { ...s.cardsViewed, [roleId]: { ...card, lastHeartClaimDay: today } },
-        });
+        set({ ...next, cardsViewed: { ...s.cardsViewed, [roleId]: { ...card, lastHeartClaimDay: today } } });
         return true;
       },
 
       recordLevelResult: (levelId, r, now = new Date()) => {
         const s = get();
         const prev = s.levels[levelId] ?? { stars: 0, bestScore: 0, attempts: 0 };
-        const record: LevelRecord = {
-          stars: Math.max(prev.stars, r.stars),
-          bestScore: Math.max(prev.bestScore, r.score),
-          attempts: prev.attempts + 1,
-          completedAt: prev.completedAt ?? (r.stars > 0 ? now.toISOString() : undefined),
-        };
-        set({ levels: { ...s.levels, [levelId]: record }, xp: s.xp + r.xp.total });
+        set({
+          levels: {
+            ...s.levels,
+            [levelId]: {
+              stars: Math.max(prev.stars, r.stars),
+              bestScore: Math.max(prev.bestScore, r.score),
+              attempts: prev.attempts + 1,
+              completedAt: prev.completedAt ?? (r.stars > 0 ? now.toISOString() : undefined),
+            },
+          },
+          xp: s.xp + r.xp.total,
+        });
       },
 
-      recordBossResult: (bossId, r, now = new Date()) => {
+      recordCrisisResult: (crisisId, r, now = new Date()) => {
         const s = get();
-        const prev = s.bosses[bossId] ?? { stars: 0, bestPoints: 0, attempts: 0 };
-        const record: BossRecord = {
-          stars: Math.max(prev.stars, r.stars),
-          bestPoints: Math.max(prev.bestPoints, r.points),
-          attempts: prev.attempts + 1,
-          completedAt: prev.completedAt ?? (r.stars > 0 ? now.toISOString() : undefined),
-        };
-        set({ bosses: { ...s.bosses, [bossId]: record }, xp: s.xp + r.xp.total });
+        const prev = s.crises[crisisId] ?? { stars: 0, bestPoints: 0, attempts: 0 };
+        set({
+          crises: {
+            ...s.crises,
+            [crisisId]: {
+              stars: Math.max(prev.stars, r.stars),
+              bestPoints: Math.max(prev.bestPoints, r.points),
+              attempts: prev.attempts + 1,
+              completedAt: prev.completedAt ?? (r.stars > 0 ? now.toISOString() : undefined),
+              legacy: r.stars > 0 ? undefined : prev.legacy,
+            },
+          },
+          xp: s.xp + r.xp.total,
+        });
       },
 
       recordReview: (reviewId, xp, now = new Date()) => {
@@ -212,6 +282,31 @@ export const useProgress = create<ProgressState>()(
           hearts: economy.hearts.max,
           heartsUpdatedAt: null,
         });
+      },
+
+      recordKnowledge: (roleId, fraction, xpGained, now = new Date()) => {
+        const s = get();
+        const prev = s.knowledge[roleId] ?? { attempts: 0, bestFraction: 0, ribbon: false };
+        const best = Math.max(prev.bestFraction, fraction);
+        set({
+          knowledge: {
+            ...s.knowledge,
+            [roleId]: {
+              attempts: prev.attempts + 1,
+              bestFraction: best,
+              ribbon: best >= economy.knowledge.ribbonFraction,
+              lastPlayedDay: dayKey(now),
+            },
+          },
+          xp: s.xp + xpGained,
+        });
+      },
+
+      setArtifacts: (artifacts) => {
+        if (artifacts.length === 0) return;
+        const next: ArtifactStore = { ...get().artifacts };
+        for (const a of artifacts) next[a.key] = a;
+        set({ artifacts: next });
       },
 
       addXp: (amount) => set({ xp: get().xp + amount }),
@@ -239,9 +334,8 @@ export const useProgress = create<ProgressState>()(
         return value;
       },
 
-      resetMeter: (meter, to = economy.meters.setbackResetTo) => {
-        set({ meters: { ...get().meters, [meter]: clampMeter(to) } });
-      },
+      resetMeter: (meter, to = economy.meters.setbackResetTo) =>
+        set({ meters: { ...get().meters, [meter]: clampMeter(to) } }),
 
       startWorld: (worldId) => {
         const s = get();
@@ -275,18 +369,53 @@ export const useProgress = create<ProgressState>()(
       recordConcept: (conceptId, correct, now = new Date()) => {
         const s = get();
         const prev = s.concepts[conceptId];
-        const delays = economy.review.boxDelaysDays;
-        let box: number;
-        if (correct) box = Math.min(5, (prev?.box ?? 1) + 1);
-        else box = 1;
-        const delayDays = delays[Math.min(box, delays.length) - 1] ?? 0;
-        const dueAt = new Date(now.getTime() + delayDays * 86_400_000).toISOString();
+        const box = correct ? Math.min(5, (prev?.box ?? 1) + 1) : 1;
+        const delayDays =
+          economy.review.boxDelaysDays[Math.min(box, economy.review.boxDelaysDays.length) - 1] ?? 0;
         set({
           concepts: {
             ...s.concepts,
-            [conceptId]: { box, dueAt, misses: (prev?.misses ?? 0) + (correct ? 0 : 1) },
+            [conceptId]: {
+              box,
+              dueAt: new Date(now.getTime() + delayDays * 86_400_000).toISOString(),
+              misses: (prev?.misses ?? 0) + (correct ? 0 : 1),
+            },
           },
         });
+      },
+
+      recordSituation: (levelId, stageId, itemId, correct, now = new Date()) => {
+        const s = get();
+        const key = situationKey(levelId, stageId, itemId);
+        const prev = s.situations[key];
+        if (correct && !prev) return; // nothing to review
+        const box = correct ? Math.min(5, (prev?.box ?? 1) + 1) : 1;
+        const delayDays =
+          economy.review.boxDelaysDays[Math.min(box, economy.review.boxDelaysDays.length) - 1] ?? 0;
+        set({
+          situations: {
+            ...s.situations,
+            [key]: {
+              levelId,
+              stageId,
+              itemId,
+              box,
+              dueAt: new Date(now.getTime() + delayDays * 86_400_000).toISOString(),
+              misses: (prev?.misses ?? 0) + (correct ? 0 : 1),
+            },
+          },
+        });
+      },
+
+      pruneSituations: (exists) => {
+        const s = get();
+        const kept: Record<string, SituationRecord> = {};
+        let changed = false;
+        for (const [k, v] of Object.entries(s.situations)) {
+          if (exists(v.levelId, v.stageId, v.itemId)) kept[k] = v;
+          else changed = true;
+        }
+        if (changed) set({ situations: kept });
       },
 
       touchStreak: (now = new Date()) => {
@@ -312,7 +441,6 @@ export const useProgress = create<ProgressState>()(
       setIntroSeen: () => set({ introSeen: true }),
       setFinaleSeen: () => set({ finaleSeen: true }),
       dismissTip: (id) => set({ tipsDismissed: { ...get().tipsDismissed, [id]: true } }),
-
       resetProgress: () => set({ ...initialProgress() }),
     }),
     {
@@ -328,11 +456,14 @@ export const useProgress = create<ProgressState>()(
           heartsUpdatedAt,
           streak,
           levels,
-          bosses,
+          crises,
           reviews,
           cardsViewed,
           meters,
           concepts,
+          situations,
+          artifacts,
+          knowledge,
           worldsCompleted,
           worldsStarted,
           introSeen,
@@ -346,11 +477,14 @@ export const useProgress = create<ProgressState>()(
           heartsUpdatedAt,
           streak,
           levels,
-          bosses,
+          crises,
           reviews,
           cardsViewed,
           meters,
           concepts,
+          situations,
+          artifacts,
+          knowledge,
           worldsCompleted,
           worldsStarted,
           introSeen,
@@ -362,11 +496,3 @@ export const useProgress = create<ProgressState>()(
     },
   ),
 );
-
-/** Selector helpers */
-export const selectProgressSnapshot = (s: ProgressState) => ({
-  levels: s.levels,
-  bosses: s.bosses,
-  reviews: s.reviews,
-  finaleSeen: s.finaleSeen,
-});

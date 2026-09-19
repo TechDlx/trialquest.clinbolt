@@ -58,6 +58,8 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
   const claimCodexHeart = useProgress((s) => s.claimCodexHeart);
   const tipsDismissed = useProgress((s) => s.tipsDismissed);
   const dismissTip = useProgress((s) => s.dismissTip);
+  const levelsDone = useProgress((s) => s.levels);
+  const ribbon = useProgress((s) => !!s.knowledge[roleId]?.ribbon);
   const reduced = resolveReducedMotion(useSettings((s) => s.motion));
   const [face, setFace] = useState<'front' | 'back'>('front');
   const [flips, setFlips] = useState(0);
@@ -233,6 +235,20 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
             {canStart ? `Start task: ${level.title}` : 'Flip the card to unlock the task'}
           </Button>
         )}
+        {fromCodex &&
+          content.knowledgeByRole[roleId] &&
+          Object.values(content.levelById).some(
+            (l) => l.roleId === roleId && (levelsDone[l.id]?.stars ?? 0) > 0,
+          ) && (
+            <Button
+              variant="secondary"
+              full
+              onClick={() => navigate({ name: 'test', roleId })}
+              data-testid="codex-test"
+            >
+              {ribbon ? '🎗️ Test Yourself again (optional)' : 'Test Yourself (optional)'}
+            </Button>
+          )}
         {canClaimHeart && (
           <Button
             variant="secondary"

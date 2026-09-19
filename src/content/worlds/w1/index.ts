@@ -1,7 +1,7 @@
 import type { ReviewNode, StoryBeat } from '../../types';
 export { w1Roles } from './roles';
 export { w1Levels } from './levels';
-export { w1Boss } from './boss';
+export { w1Crisis } from './crisis';
 
 export const w1Intro: StoryBeat = {
   id: 'w1-intro',

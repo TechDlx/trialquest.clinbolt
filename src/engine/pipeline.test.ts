@@ -6,7 +6,11 @@ import {
   failureReason,
   FREE_MISTAKE_NOTE,
   OUT_OF_HEARTS_TEXT,
+  applyMeterDelta,
+  crisisMaxPoints,
+  crisisRoundPoints,
   scoreBoss,
+  scoreCrisis,
   scoreLevel,
   type PipelineSnapshot,
 } from './pipeline';
@@ -174,5 +178,70 @@ describe('aggregateStages', () => {
     const only = result({ accuracy: 0.75 });
     expect(aggregateStages([only]).accuracy).toBe(0.75);
     expect(aggregateStages([]).total).toBe(0);
+  });
+});
+
+describe('applyMeterDelta (shortcuts, bands, crisis rounds)', () => {
+  it('applies several meters at once and clamps', () => {
+    const out = applyMeterDelta(snap(), { timeline: 15, safety: -25 });
+    expect(out.snapshot.meters).toEqual({ safety: 75, integrity: 100, timeline: 100 });
+    expect(out.setback).toBeUndefined();
+  });
+  it('a crisis round meterHit that drives a meter to zero is a setback and resets it to 40', () => {
+    const out = applyMeterDelta(snap({ meters: { safety: 8, integrity: 100, timeline: 100 } }), {
+      safety: -10,
+    });
+    expect(out.setback).toBe('safety');
+    expect(out.snapshot.meters.safety).toBe(40);
+    expect(out.snapshot.hearts).toBe(5);
+  });
+});
+
+describe('scoreCrisis', () => {
+  const r = (cleared: boolean, accuracy: number, t: number, points: number) => ({
+    cleared,
+    accuracy,
+    timeUsedFraction: t,
+    points,
+  });
+  it('round points reward speed and streak', () => {
+    expect(crisisRoundPoints(0, 0)).toBe(150);
+    expect(crisisRoundPoints(1, 0)).toBe(100);
+    expect(crisisRoundPoints(0.5, 2)).toBe(Math.round(125 * 1.25));
+    expect(crisisMaxPoints(4)).toBe(150 + 150 + Math.round(150 * 1.25) + Math.round(150 * 1.25));
+  });
+  it('success needs the pass fraction before the pool expires; a pass is never 0 stars', () => {
+    const s = scoreCrisis(
+      [r(true, 1, 0.5, 125), r(true, 0.8, 0.5, 125), r(true, 0.7, 1, 100), r(false, 0.2, 1, 0)],
+      {
+        totalRounds: 4,
+        passFraction: 0.6,
+        poolExpired: false,
+        meterZero: false,
+        firstTry: true,
+      },
+    );
+    expect(s.outcome).toBe('success');
+    expect(s.clearedCount).toBe(3);
+    expect(s.stars).toBeGreaterThanOrEqual(1);
+    expect(s.xp.lines.map((l) => l.label)).toEqual(['Crisis points', 'Passed first try']);
+  });
+  it('partial when below the pass fraction or the pool expired; fail on zero cleared or a meter at zero', () => {
+    const base = { totalRounds: 4, passFraction: 0.6, poolExpired: false, meterZero: false, firstTry: false };
+    expect(scoreCrisis([r(true, 1, 0, 150), r(false, 0, 1, 0)], base).outcome).toBe('partial');
+    expect(
+      scoreCrisis([r(true, 1, 0, 150), r(true, 1, 0, 150), r(true, 1, 0, 188)], {
+        ...base,
+        poolExpired: true,
+      }).outcome,
+    ).toBe('partial');
+    expect(scoreCrisis([r(false, 0, 1, 0)], base).outcome).toBe('fail');
+    const mz = scoreCrisis([r(true, 1, 0, 150), r(true, 1, 0, 150), r(true, 1, 0, 188)], {
+      ...base,
+      meterZero: true,
+    });
+    expect(mz.outcome).toBe('fail');
+    expect(mz.stars).toBe(0);
+    expect(mz.xp.total).toBe(0);
   });
 });

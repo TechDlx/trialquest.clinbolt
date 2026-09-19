@@ -1,14 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { content } from '@/content';
 import { economy } from '@/content/economy';
+import type { MeterDelta } from '@/content/types';
+import type { StoredArtifact } from '@/content/artifacts';
 import { navigate } from '@/app/router';
 import { useProgress } from '@/store/progress';
 import { useSettings } from '@/store/settings';
-import type { EngineResult, Mistake } from '@/engine/scoring';
-import { applyMistake, conceptOutcomes, failureReason, scoreLevel, type LevelScore } from '@/engine/pipeline';
+import type { EngineResult, Mistake, ShortcutEvent } from '@/engine/scoring';
+import {
+  applyMeterDelta,
+  applyMistake,
+  failureReason,
+  scoreLevel,
+  setbackCopy,
+  type LevelScore,
+} from '@/engine/pipeline';
+import { buildLevel } from '@/engine/variants';
+import { evaluateEmits } from '@/engine/artifacts';
 import { msToNextHeart } from '@/engine/hearts';
 import { TaskShell } from '@/engine/TaskShell';
-import { QuizBlitz, type MistakeFeedback } from '@/engine/quiz-blitz/QuizBlitz';
+import { StageRunner } from '@/engine/StageRunner';
 import { Button } from '@/components/Button';
 import { Page, TopBar } from '@/components/Layout';
 import { RichText } from '@/components/RichText';
@@ -20,84 +31,131 @@ import { employerLabel } from './BadgeSwap';
 type Phase =
   | { name: 'intro' }
   | { name: 'playing' }
-  | { name: 'debrief'; result: EngineResult; score: LevelScore }
+  | { name: 'debrief'; result: EngineResult; score: LevelScore; artifacts: StoredArtifact[] }
   | { name: 'failed'; mistakes: Mistake[]; reason: string };
 
-/**
- * Thin host for a level: intro card, the engine inside TaskShell, and the debrief.
- * All rule logic (hearts, meters, setbacks, scoring, spaced repetition) is in engine/pipeline.ts.
- */
-export function LevelScreen({ levelId }: { levelId: string }) {
-  const level = content.levelById[levelId];
-  const role = level ? content.roleById[level.roleId] : undefined;
-  const world = level ? content.worldById[level.worldId] : undefined;
+const snap = () => {
+  const s = useProgress.getState();
+  return { hearts: s.hearts, heartsUpdatedAt: s.heartsUpdatedAt, meters: s.meters };
+};
 
+/** Thin host for a level. All rule logic lives in engine/pipeline.ts; variants in engine/variants.ts. */
+export function LevelScreen({ levelId }: { levelId: string }) {
+  const raw = content.levelById[levelId];
+  const role = raw ? (content.roleById[raw.roleId] ?? content.roleRefById[raw.roleId]) : undefined;
+  const world = raw ? content.worldById[raw.worldId] : undefined;
   const progress = useProgress();
   const relaxed = useSettings((s) => s.relaxed);
   const [phase, setPhase] = useState<Phase>({ name: 'intro' });
   const [paused, setPaused] = useState(false);
-  const [runKey, setRunKey] = useState(0);
   const [seed, setSeed] = useState(1);
   const freeUsed = useRef(false);
-  const hasCardFlipped = level ? !!progress.cardsViewed[level.roleId]?.flipped : false;
+  const usedCarriers = useRef(new Set<string>());
+  const hasCardFlipped = raw ? !!progress.cardsViewed[raw.roleId]?.flipped : false;
+  // Built once per attempt so the artifact assignment is fixed for the run.
+  const [level, setLevel] = useState(() => (raw ? buildLevel(raw, useProgress.getState().artifacts) : undefined));
 
   useEffect(() => {
-    if (!level) return;
+    if (!raw) return;
     progress.syncHearts();
-    progress.startWorld(level.worldId);
+    progress.startWorld(raw.worldId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [levelId]);
 
-  // Guard: the Role Card must be viewed before the task can start.
   useEffect(() => {
-    if (level && role && !hasCardFlipped) navigate({ name: 'role', roleId: role.id, levelId }, true);
-  }, [level, role, hasCardFlipped, levelId]);
+    if (raw && role && !hasCardFlipped) navigate({ name: 'role', roleId: role.id, levelId }, true);
+  }, [raw, role, hasCardFlipped, levelId]);
+
+  const fail = useCallback(
+    (reason: string, mistakes: Mistake[]) => setPhase({ name: 'failed', mistakes, reason }),
+    [],
+  );
 
   const start = useCallback(() => {
     freeUsed.current = false;
+    usedCarriers.current.clear();
     setPaused(false);
-    setRunKey((k) => k + 1);
     setSeed((Date.now() % 1_000_000) + 1);
+    const built = raw ? buildLevel(raw, useProgress.getState().artifacts) : undefined;
+    setLevel(built);
+    if (built && Object.keys(built.meterOpening).length) {
+      const out = applyMeterDelta(snap(), built.meterOpening);
+      useProgress.getState().commitSnapshot(out.snapshot);
+    }
     setPhase({ name: 'playing' });
-  }, []);
+  }, [raw]);
 
   const onMistake = useCallback(
-    (m: Mistake): MistakeFeedback => {
-      if (!level || !world) return { heartLost: false };
-      const s = useProgress.getState();
-      const out = applyMistake(
-        { hearts: s.hearts, heartsUpdatedAt: s.heartsUpdatedAt, meters: s.meters },
-        {
-          firstMistakeFree: world.firstMistakeFree,
-          freeUsed: freeUsed.current,
-          meterFocus: level.meterFocus ?? 'integrity',
-        },
-      );
+    (m: Mistake) => {
+      if (!raw || !world) return { heartLost: false };
+      const out = applyMistake(snap(), {
+        firstMistakeFree: world.firstMistakeFree,
+        freeUsed: freeUsed.current,
+        meterFocus: raw.meterFocus ?? 'integrity',
+      });
       freeUsed.current = out.freeUsed;
-      if (out.heartLost) s.commitSnapshot(out.snapshot);
+      if (out.heartLost) useProgress.getState().commitSnapshot(out.snapshot);
       const reason = failureReason(out);
-      if (reason) setPhase({ name: 'failed', mistakes: [m], reason });
+      if (reason) fail(reason, [m]);
       return { heartLost: out.heartLost, note: out.note };
     },
-    [level, world],
+    [raw, world, fail],
+  );
+
+  const applyDelta = useCallback(
+    (delta: MeterDelta) => {
+      const out = applyMeterDelta(snap(), delta);
+      useProgress.getState().commitSnapshot(out.snapshot);
+      if (out.setback) {
+        const sb = setbackCopy[out.setback];
+        fail(`${sb.title}: ${sb.text}`, []);
+      }
+    },
+    [fail],
+  );
+
+  const onShortcut = useCallback(
+    (ev: ShortcutEvent) => {
+      if (!raw) return;
+      if (usedCarriers.current.has(ev.itemId)) return;
+      usedCarriers.current.add(ev.itemId);
+      applyDelta(ev.meters);
+      // A shortcut that hurts safety or integrity is a situation to review later.
+      if ((ev.meters.safety ?? 0) < 0 || (ev.meters.integrity ?? 0) < 0) {
+        const stage =
+          raw.stages.find((s) => JSON.stringify(s.game).includes(`"${ev.itemId}"`)) ?? raw.stages[0];
+        useProgress.getState().recordSituation(raw.id, stage.id, ev.itemId, false);
+      }
+    },
+    [raw, applyDelta],
   );
 
   const onComplete = useCallback(
-    (result: EngineResult) => {
-      if (!level) return;
+    (result: EngineResult, byStage: Record<string, EngineResult>) => {
+      if (!raw || !level) return;
       const s = useProgress.getState();
-      const score = scoreLevel(result, { firstTime: !s.levels[level.id]?.completedAt });
-      s.recordLevelResult(level.id, { stars: score.stars, score: score.score, xp: score.xp });
+      const score = scoreLevel(result, { firstTime: !s.levels[raw.id]?.completedAt });
+      s.recordLevelResult(raw.id, { stars: score.stars, score: score.score, xp: score.xp });
       if (score.stars > 0) s.touchStreak();
-      const conceptIds =
-        level.game.engine === 'quiz-blitz' ? level.game.questions.map((q) => q.conceptId) : [];
-      for (const c of conceptOutcomes(conceptIds, result.mistakes)) s.recordConcept(c.conceptId, c.correct);
-      setPhase({ name: 'debrief', result, score });
+      let artifacts: StoredArtifact[] = [];
+      if (score.stars > 0) {
+        artifacts = evaluateEmits(level.emits, { byStage, level: result }, raw.id);
+        s.setArtifacts(artifacts);
+      }
+      for (const stage of level.stages) {
+        const r = byStage[stage.id];
+        if (!r) continue;
+        for (const [itemId, outcome] of Object.entries(r.itemResults)) {
+          if (outcome === 'wrong') s.recordSituation(raw.id, stage.id, itemId, false);
+          else if (outcome === 'correct') s.recordSituation(raw.id, stage.id, itemId, true);
+        }
+      }
+      setPhase({ name: 'debrief', result, score, artifacts });
     },
-    [level],
+    [raw, level],
   );
 
-  if (!level || !role || !world) {
+  if (!raw || !role || !world || !level) {
     return (
       <Page nav="map">
         <TopBar title="Level not found" back={{ name: 'map' }} />
@@ -107,7 +165,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   if (!hasCardFlipped) return null;
 
   const goMap = () => navigate({ name: 'map', worldId: world.id });
-  const readCard = () => navigate({ name: 'role', roleId: role.id, levelId: level.id });
+  const readCard = () => navigate({ name: 'role', roleId: role.id, levelId: raw.id });
 
   if (phase.name === 'intro') {
     const noHearts = progress.hearts <= 0;
@@ -125,21 +183,22 @@ export function LevelScreen({ levelId }: { levelId: string }) {
           <h1 className="mt-2 text-2xl font-black">{level.title}</h1>
           <RichText as="p" text={level.intro} className="mt-2 text-base leading-relaxed" />
           <ul className="mt-3 grid gap-1 text-sm text-muted">
-            <li>🎯 Answer {level.game.questions.length} quick questions.</li>
             <li>
-              ⏱️{' '}
-              {relaxed
-                ? 'Relaxed mode: no timer.'
-                : `${Math.round(level.game.secondsPerQuestion * world.timerScale)} seconds each. Faster is better.`}
+              🎯{' '}
+              {level.stages.length === 1
+                ? `One task: ${level.stages[0].title ?? 'do the job'}.`
+                : `${level.stages.length} stages: ${level.stages.map((s) => s.title).join(', ')}.`}
             </li>
+            <li>⏱️ {relaxed ? 'Relaxed mode: no timers.' : 'Timed stages. Faster is better.'}</li>
             <li>
-              ❤️ A wrong answer costs a heart{world.firstMistakeFree ? ' (first slip is free here)' : ''}.
+              ❤️ A mistake costs a heart{world.firstMistakeFree ? ' (first slip is free here)' : ''}.
+              Shortcuts cost meters instead.
             </li>
           </ul>
         </div>
         {!progress.tipsDismissed[tipId] && (
           <Speech mood="happy" className="mt-3" onDismiss={() => progress.dismissTip(tipId)}>
-            Tap the answer you think is right. Every answer comes with a short explanation, right or wrong.
+            Do the job the way the role card described it. Every wrong turn comes with an explanation.
           </Speech>
         )}
         {noHearts ? (
@@ -173,17 +232,16 @@ export function LevelScreen({ levelId }: { levelId: string }) {
         onQuit={goMap}
         onReadCard={readCard}
       >
-        <QuizBlitz
-          key={runKey}
-          questions={level.game.questions}
-          secondsPerQuestion={level.game.secondsPerQuestion}
-          timerScale={world.timerScale}
+        <StageRunner
+          key={seed}
+          level={level}
+          world={world}
+          seed={seed}
           relaxed={relaxed}
           paused={paused}
-          mode="level"
-          seed={seed}
-          shuffle={level.game.shuffleOptions ?? true}
           onMistake={onMistake}
+          onShortcut={onShortcut}
+          onMeters={applyDelta}
           onComplete={onComplete}
         />
       </TaskShell>
@@ -212,7 +270,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
     );
   }
 
-  const isLastLevel = world.nodes.filter((n) => n.kind === 'level').at(-1)?.id === level.id;
+  const isLastLevel = world.nodes.filter((n) => n.kind === 'level').at(-1)?.id === raw.id;
   const { result, score } = phase;
   return (
     <Debrief
@@ -224,6 +282,8 @@ export function LevelScreen({ levelId }: { levelId: string }) {
       learned={level.debrief.learned}
       handoffLine={level.debrief.handoffLine}
       mistakes={result.mistakes}
+      shortcuts={result.shortcuts}
+      artifacts={phase.artifacts}
       correct={result.correct}
       total={result.total}
       failed={score.stars === 0}
@@ -234,7 +294,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
       onContinue={goMap}
       onRetry={start}
       onReadCard={readCard}
-      continueLabel={isLastLevel ? 'Continue to the boss quiz' : 'Continue'}
+      continueLabel={isLastLevel ? 'Continue to the crisis' : 'Continue'}
     />
   );
 }

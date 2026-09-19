@@ -36,7 +36,8 @@ export interface QuizBlitzProps {
   /** Seed for option shuffling; the host picks one per run so renders stay pure. */
   seed?: number;
   /** Called on every wrong answer or timeout. Return value drives the feedback panel. */
-  onMistake: (m: Mistake) => MistakeFeedback;
+  /** Optional: Test Yourself passes none, so hearts and meters are unreachable from that mode. */
+  onMistake?: (m: Mistake) => MistakeFeedback;
   onComplete: (r: EngineResult) => void;
   /** Called after each answer so the host can track progress. */
   onProgress?: (answered: number, total: number) => void;
@@ -130,7 +131,7 @@ export function QuizBlitz({
           consequence: q.consequence,
         };
         setMistakes((prev) => [...prev, m]);
-        feedback = onMistake(m);
+        feedback = onMistake ? onMistake(m) : { heartLost: false };
         if (feedback.heartLost) setHeartsLost((n) => n + 1);
       }
       const a: Answered = { chosen, correct, timeLeftFraction, pointsEarned, feedback };

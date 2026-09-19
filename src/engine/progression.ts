@@ -4,7 +4,7 @@ export type NodeStatus = 'locked' | 'current' | 'available' | 'done' | 'planned'
 
 export interface ProgressSnapshot {
   levels: Record<string, { stars: number }>;
-  bosses: Record<string, { stars: number }>;
+  crises: Record<string, { stars: number }>;
   reviews: Record<string, { count: number }>;
   finaleSeen?: boolean;
 }
@@ -21,8 +21,8 @@ function isDone(node: MapNode, p: ProgressSnapshot): boolean {
   switch (node.kind) {
     case 'level':
       return (p.levels[node.id]?.stars ?? 0) > 0;
-    case 'boss':
-      return (p.bosses[node.id]?.stars ?? 0) > 0;
+    case 'crisis':
+      return (p.crises[node.id]?.stars ?? 0) > 0;
     case 'review':
       return (p.reviews[node.id]?.count ?? 0) > 0;
     case 'finale':
@@ -31,10 +31,8 @@ function isDone(node: MapNode, p: ProgressSnapshot): boolean {
 }
 
 /**
- * Derives the status of every node on the map.
- * Rules: worlds unlock in order once the previous boss is done. Within a world, level
- * and boss nodes unlock in order; the boss needs every level. Review nodes are optional:
- * available as soon as the node before them is done, never blocking.
+ * Worlds unlock in order once the previous crisis is done. Within a world, level and crisis
+ * nodes unlock in order; the crisis needs every level. Review nodes are optional.
  */
 export function computeMapState(worlds: World[], p: ProgressSnapshot): MapState {
   const nodeStatus: Record<string, NodeStatus> = {};
@@ -47,40 +45,35 @@ export function computeMapState(worlds: World[], p: ProgressSnapshot): MapState 
   for (const world of worlds) {
     const unlocked = previousWorldComplete;
     worldUnlocked[world.id] = unlocked;
-    const boss = world.nodes.find((n) => n.kind === 'boss');
-    const complete = !!boss && isDone(boss, p);
+    const crisis = world.nodes.find((n) => n.kind === 'crisis');
+    const complete = !!crisis && isDone(crisis, p);
     worldComplete[world.id] = complete;
 
     let previousRequiredDone = true;
-    world.nodes.forEach((node) => {
+    for (const node of world.nodes) {
       const done = isDone(node, p);
       if (!unlocked) {
         nodeStatus[node.id] = 'locked';
-        return;
+        continue;
       }
       if (world.status === 'planned' && !done) {
         nodeStatus[node.id] = 'planned';
-        return;
+        continue;
       }
       if (node.kind === 'review') {
         nodeStatus[node.id] = done ? 'done' : previousRequiredDone ? 'available' : 'locked';
-        return;
+        continue;
       }
-      if (done) {
-        nodeStatus[node.id] = 'done';
-      } else if (previousRequiredDone && currentNodeId === null) {
+      if (done) nodeStatus[node.id] = 'done';
+      else if (previousRequiredDone && currentNodeId === null) {
         nodeStatus[node.id] = 'current';
         currentNodeId = node.id;
         currentWorldId = world.id;
-      } else {
-        nodeStatus[node.id] = 'locked';
-      }
+      } else nodeStatus[node.id] = 'locked';
       previousRequiredDone = previousRequiredDone && done;
-    });
-
+    }
     previousWorldComplete = complete;
   }
-
   return { nodeStatus, worldUnlocked, worldComplete, currentNodeId, currentWorldId };
 }
 

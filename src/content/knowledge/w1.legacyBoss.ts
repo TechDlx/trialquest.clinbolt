@@ -1,6 +1,8 @@
-import type { BossQuiz } from '../../types';
+import type { QuizQuestion } from '../types';
+/** Legacy World 1 boss quiz, preserved verbatim as Test Yourself source material. */
+type LegacyBoss = { id: string; questions: QuizQuestion[] } & Record<string, unknown>;
 
-export const w1Boss: BossQuiz = {
+export const w1LegacyBoss: LegacyBoss = {
   id: 'w1-boss',
   worldId: 'w1',
   title: 'World 1 Boss: From need to molecule',
