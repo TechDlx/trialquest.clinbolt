@@ -2,7 +2,9 @@ import type { StoryBeat } from './types';
 
 /**
  * The finale: Maya's last scene, the journey stat card and the certificate text.
- * Real-world comparison figures are deliberately ranges; see docs/CONTENT_REVIEW.md rows 50–52.
+ * Real-world comparison figures are ranges with sources in docs/CONTENT_REVIEW.md rows 50–52
+ * (checked 2026-09-20): PhRMA for the timeline; Wouters 2020 (JAMA) and DiMasi 2016 (J Health Econ)
+ * for the cost range; BIO/Informa/QLS 2021 and Citeline 2024 for likelihood of approval.
  */
 export const finaleContent = {
   beat: {
@@ -25,8 +27,8 @@ export const finaleContent = {
     costPerTimelinePoint: 0.01,
     realWorld: {
       years: '10 to 15 years',
-      cost: 'about $1 to 2 billion or more, depending on how it is counted',
-      approval: 'roughly 1 in 10 molecules that enter human trials',
+      cost: 'about $1 billion to $2.6 billion per approved medicine, depending on how it is counted',
+      approval: 'fewer than 1 in 10 molecules that enter human trials (7 to 8 in 100 in the latest decade-long analyses)',
     },
   },
 
