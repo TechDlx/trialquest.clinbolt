@@ -6,7 +6,7 @@ export const DISCLAIMER =
   'Educational simulation. Veridian Syndrome and VX-101 are fictional. The process is simplified. Not medical or regulatory advice.';
 
 export function Disclaimer({ className = '' }: { className?: string }) {
-  return <p className={`text-center text-[11px] leading-snug text-muted ${className}`}>{DISCLAIMER}</p>;
+  return <p className={`text-center text-xs leading-snug text-muted ${className}`}>{DISCLAIMER}</p>;
 }
 
 const tabs: { route: Route; label: string; Icon: typeof MapIcon; testId: string }[] = [
@@ -32,7 +32,7 @@ export function BottomNav({ current }: { current: Route['name'] }) {
                 href={href(route)}
                 data-testid={testId}
                 aria-current={active ? 'page' : undefined}
-                className={`tap flex flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-semibold ${
+                className={`tap flex flex-col items-center justify-center gap-0.5 py-1.5 text-xs font-semibold ${
                   active ? 'text-brand-700 dark:text-brand-300' : 'text-muted'
                 }`}
               >

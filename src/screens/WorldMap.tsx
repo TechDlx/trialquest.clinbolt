@@ -139,7 +139,7 @@ function NodeButton({
       </button>
       <span className={`text-center text-xs font-semibold leading-tight ${playable ? '' : 'text-muted'}`}>
         {label}
-        {legacy && <span className="block text-[10px] font-normal text-muted">cleared (legacy quiz)</span>}
+        {legacy && <span className="block text-xs font-normal text-muted">cleared (legacy quiz)</span>}
       </span>
       {status === 'done' && stars > 0 && <Stars stars={stars} size={14} />}
       <Modal open={sheet} title={label} onClose={() => setSheet(false)}>

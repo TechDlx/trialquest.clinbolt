@@ -130,7 +130,7 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
             <BadgeGlyph icon={role.badgeIcon} size={28} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-white">
+            <p className="text-xs font-bold uppercase tracking-wide text-white">
               {face === 'front' ? 'Front' : 'Back'} · Works for the {employerLabel[role.employer]}
             </p>
             <h1 className="text-lg font-black leading-tight">{role.title}</h1>

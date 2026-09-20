@@ -46,7 +46,7 @@ export function CodexScreen({ roleId }: { roleId?: string }) {
                       {viewed ? <BadgeGlyph icon={role.badgeIcon} size={28} /> : <LockIcon size={22} />}
                     </span>
                     <span
-                      className={`text-center text-[11px] font-semibold leading-tight ${viewed ? '' : 'text-muted'}`}
+                      className={`text-center text-xs font-semibold leading-tight ${viewed ? '' : 'text-muted'}`}
                     >
                       {viewed ? role.shortTitle : '???'}
                     </span>
