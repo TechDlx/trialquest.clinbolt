@@ -181,7 +181,10 @@ export const w2Crisis: CrisisBoss = {
         prompt: 'Split $10M between answering the letter and keeping the study alive.',
         seconds: 20,
         total: 10,
-        context: ['Answering the letter (writing and analysis): $2–4M', 'Keeping sites and drug ready: $6–8M'],
+        context: [
+          'Answering the letter (writing and analysis): $2–4M',
+          'Keeping sites and drug ready: $6–8M',
+        ],
         categories: [
           {
             id: 'response',

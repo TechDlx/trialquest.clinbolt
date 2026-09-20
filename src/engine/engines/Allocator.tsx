@@ -399,7 +399,9 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
           aria-live="polite"
         >
           Total: {Number(runningTotal.toFixed(2))} of {p.config.total}
-          {totalOk ? '' : ` (${runningTotal > p.config.total ? 'over' : 'under'} by ${Number(Math.abs(runningTotal - p.config.total).toFixed(2))})`}
+          {totalOk
+            ? ''
+            : ` (${runningTotal > p.config.total ? 'over' : 'under'} by ${Number(Math.abs(runningTotal - p.config.total).toFixed(2))})`}
         </p>
       )}
       {phase === 'adjust' && p.config.presets && !pending && (
@@ -481,6 +483,18 @@ function Reveal({
   const dr = band.visual as DoseResponseVisual;
   const tp = band.visual as TrialPowerVisual;
   const pa = band.visual as PriceAccessVisual;
+  // When a curve shares a name with a visual field, the reveal reads it at the committed value,
+  // so the projection agrees with the live preview instead of quoting the band's representative case.
+  const curveAt = (id: string) => {
+    const c = sim.curves?.find((x) => x.id === id);
+    return c ? interpolateCurve(c, value) : undefined;
+  };
+  const power = curveAt('power') ?? tp.power;
+  const costMillions = curveAt('cost') ?? tp.costMillions;
+  const months = curveAt('months') ?? tp.months;
+  const successes = curveAt('power') !== undefined ? Math.round(power) : tp.successfulRunsOf100;
+  const coveragePct = curveAt('coverage') ?? pa.coveragePct;
+  const patientsReachedPct = curveAt('reached') ?? pa.patientsReachedPct;
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -503,16 +517,16 @@ function Reveal({
       )}
       {sim.kind === 'trial-power' && (
         <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
-          <Stat label="Power" value={`${tp.power}%`} />
-          <Stat label="Cost" value={`${tp.costMillions}M`} />
-          <Stat label="Months" value={String(tp.months)} />
-          <Stat label="Successes of 100 runs" value={String(tp.successfulRunsOf100)} />
+          <Stat label="Power" value={`${Math.round(power)}%`} />
+          <Stat label="Cost" value={`$${Number(costMillions.toFixed(1))}M`} />
+          <Stat label="Months" value={String(Math.round(months))} />
+          <Stat label="Successes of 100 runs" value={String(successes)} />
         </dl>
       )}
       {sim.kind === 'price-access' && (
         <dl className="mt-2 grid grid-cols-3 gap-2 text-sm">
-          <Stat label="Payer coverage" value={`${pa.coveragePct}%`} />
-          <Stat label="Patients reached" value={`${pa.patientsReachedPct}%`} />
+          <Stat label="Payer coverage" value={`${Math.round(coveragePct)}%`} />
+          <Stat label="Patients reached" value={`${Math.round(patientsReachedPct)}%`} />
           <Stat label="Revenue index" value={String(pa.revenueIndex)} />
         </dl>
       )}

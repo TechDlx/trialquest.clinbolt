@@ -259,9 +259,11 @@ export function DashManager(p: EngineProps<DashConfig>) {
                   {it.label}
                   {p.cameo?.itemId === it.id && <MayaTag label={p.cameo.label} />}
                 </span>
-                <span className="text-xs text-muted">
-                  next: {p.config.stations.find((s) => s.id === it.steps[l.step])?.label}
-                </span>
+                {p.hints !== false && (
+                  <span className="text-xs text-muted">
+                    next: {p.config.stations.find((s) => s.id === it.steps[l.step])?.label}
+                  </span>
+                )}
               </div>
               <div
                 className="mt-1 h-2 overflow-hidden rounded-full bg-border"

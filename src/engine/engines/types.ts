@@ -36,6 +36,8 @@ export interface EngineProps<C> {
   onComplete: (r: EngineResult) => void;
   /** The engine is showing feedback, a reveal or a sandbox: the host may hold its clock. */
   onHold?: (held: boolean) => void;
+  /** First-play hints (the dash queue's "next: station" line). Off on retries and reviews. */
+  hints?: boolean;
   /** One item in this stage is Maya (anonymous until the debrief). Engines mark it with a MayaTag. */
   cameo?: { itemId: string; label: string; presentation: MayaPresentation };
   /** Restore in-progress state saved by `onSnapshot` (same config and seed). */

@@ -106,10 +106,11 @@ describe('Branching', () => {
     fireEvent.click(screen.getByTestId('choice-c-later'));
     expect(h.onMeters).toHaveBeenCalledWith({ timeline: -5 }, expect.any(String));
     next();
-    fireEvent.click(screen.getByTestId('choice-c-fastest'));
+    // Declining the interviews takes the parallel branch (same decisions, -b ids).
+    fireEvent.click(screen.getByTestId('choice-c-fastest-b'));
     expect(h.onMistake).toHaveBeenCalledTimes(1);
     next();
-    fireEvent.click(screen.getByTestId('choice-c-hype'));
+    fireEvent.click(screen.getByTestId('choice-c-hype-b'));
     expect(h.onShortcut).toHaveBeenCalledTimes(1);
     expect(h.onMistake).toHaveBeenCalledTimes(1);
     next();
@@ -117,7 +118,7 @@ describe('Branching', () => {
     const r = h.onComplete.mock.calls[0]![0];
     expect(r.outcomes.endNode).toBe('end-hype');
     expect(r.accuracy).toBeCloseTo(0.5 / 3);
-    expect(r.itemResults['c-hype']).toBe('shortcut');
+    expect(r.itemResults['c-hype-b']).toBe('shortcut');
   });
 
   it('onlyItems replays a single decision and finishes after it', async () => {
@@ -374,7 +375,7 @@ describe('snapshots: an engine resumes exactly where it stopped', () => {
     const { unmount } = render(<Branching {...h} config={cfg} onSnapshot={(x) => snaps.push(x)} />);
     fireEvent.click(screen.getByTestId('choice-c-later'));
     next();
-    fireEvent.click(screen.getByTestId('choice-c-fastest')); // a mistake, explanation left open
+    fireEvent.click(screen.getByTestId('choice-c-fastest-b')); // a mistake, explanation left open
     expect(h.onMistake).toHaveBeenCalledTimes(1);
     const saved = snaps.at(-1)!;
     unmount();
@@ -384,14 +385,18 @@ describe('snapshots: an engine resumes exactly where it stopped', () => {
     expect(screen.getByTestId('engine-feedback')).toBeInTheDocument(); // same explanation still up
     expect(h2.onMistake).not.toHaveBeenCalled(); // not charged again
     next();
-    fireEvent.click(screen.getByTestId('choice-c-hype'));
+    fireEvent.click(screen.getByTestId('choice-c-hype-b'));
     next();
     fireEvent.click(screen.getByTestId('branching-finish'));
     const r = h2.onComplete.mock.calls[0]![0];
     expect(r.outcomes.endNode).toBe('end-hype');
     expect(r.mistakes).toHaveLength(1);
     expect(r.heartsLost).toBe(1);
-    expect(r.itemResults).toMatchObject({ 'c-later': 'wrong', 'c-fastest': 'wrong', 'c-hype': 'shortcut' });
+    expect(r.itemResults).toMatchObject({
+      'c-later': 'wrong',
+      'c-fastest-b': 'wrong',
+      'c-hype-b': 'shortcut',
+    });
   });
 
   it('allocator: a committed simulation resumes in the reveal with the binding value', () => {

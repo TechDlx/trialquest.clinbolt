@@ -6,6 +6,7 @@ export const w6Crisis: CrisisBoss = {
   worldId: 'w6',
   title: 'Interim week',
   situation: [
+    'Eight months before lock: interim week. A look back at the week the whole team was tested at once.',
     'The DSMB meets Friday. The interim data cut is due Monday, the datasets Wednesday, the closed-session report Thursday night. Every hand-off is a day.',
     'One slip and the board meets without data, and the trial runs three more months blind. Four roles, one week.',
   ],
@@ -230,6 +231,7 @@ export const w6Crisis: CrisisBoss = {
       paragraphs: [
         'The cut was clean, the run was validated, the report was neutral, and the board said one word to the sponsor.',
         'The trial continues, with closer liver monitoring. Nobody outside the closed session knows anything else, which is the point.',
+        'Back to the present: that week is why the lock you just signed holds.',
       ],
       mayaStatus: 'Continuing her extension visits.',
     },

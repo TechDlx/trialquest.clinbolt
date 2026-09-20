@@ -54,7 +54,7 @@ function Term({
   interactive: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [alignRight, setAlignRight] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
   const popId = useId();
   const term = content.glossaryById[id];
@@ -67,11 +67,14 @@ function Term({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
+    const onScroll = () => setOpen(false);
     document.addEventListener('pointerdown', onDoc);
     document.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
     return () => {
       document.removeEventListener('pointerdown', onDoc);
       document.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
     };
   }, [open]);
 
@@ -90,9 +93,12 @@ function Term({
         aria-expanded={open}
         aria-controls={popId}
         onClick={() => {
-          // Keep the popover on screen when the term sits near the right edge.
+          // Fixed positioning, clamped to the viewport: never clipped by a card or column.
           const r = ref.current?.getBoundingClientRect();
-          setAlignRight(!!r && r.left + 300 > window.innerWidth);
+          const margin = 16;
+          const width = Math.min(288, window.innerWidth - margin * 2);
+          const left = r ? Math.max(margin, Math.min(r.left, window.innerWidth - margin - width)) : margin;
+          setPos({ top: (r?.bottom ?? 0) + 4, left, width });
           setOpen((o) => !o);
         }}
         className={`inline rounded-sm font-semibold underline decoration-dotted decoration-2 underline-offset-2 ${linkClassName ?? 'text-brand-700 dark:text-brand-300'}`}
@@ -104,7 +110,8 @@ function Term({
           id={popId}
           role="dialog"
           aria-label={term.term}
-          className={`absolute top-full z-30 mt-1 block w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-3 text-left text-sm font-normal text-fg shadow-card ${alignRight ? 'right-0' : 'left-0'}`}
+          style={pos ? { top: pos.top, left: pos.left, width: pos.width } : undefined}
+          className="fixed z-30 block rounded-xl border border-border bg-surface p-3 text-left text-sm font-normal text-fg shadow-card"
         >
           <span className="block font-bold">{term.term}</span>
           <span className="mt-1 block">{term.short}</span>

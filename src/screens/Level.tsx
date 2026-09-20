@@ -181,8 +181,20 @@ export function LevelScreen({ levelId }: { levelId: string }) {
       if (!raw || !level) return;
       const s = useProgress.getState();
       s.clearAttempt(raw.id);
-      const score = scoreLevel(result, { firstTime: !s.levels[raw.id]?.completedAt });
-      s.recordLevelResult(raw.id, { stars: score.stars, score: score.score, xp: score.xp });
+      const firstTime = !s.levels[raw.id]?.completedAt;
+      const earned = scoreLevel(result, { firstTime });
+      s.recordLevelResult(raw.id, { stars: earned.stars, score: earned.score, xp: earned.xp });
+      // The card's first-view XP was granted on the card screen; list it so the total matches the map.
+      const cardXp = firstTime && earned.stars > 0 ? economy.xp.roleCardFirstView : 0;
+      const score: typeof earned = cardXp
+        ? {
+            ...earned,
+            xp: {
+              total: earned.xp.total + cardXp,
+              lines: [{ label: 'Role card first read', xp: cardXp }, ...earned.xp.lines],
+            },
+          }
+        : earned;
       if (score.stars > 0) s.touchStreak();
       let artifacts: StoredArtifact[] = [];
       if (score.stars > 0) {
@@ -317,6 +329,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
           initialEngine={resumeFrom?.engine}
           initialRemaining={resumeFrom?.remaining}
           cameo={level.mayaCameo}
+          hints={!progress.levels[raw.id]?.attempts}
         />
         <HeartsSheet
           open={heartsGate}

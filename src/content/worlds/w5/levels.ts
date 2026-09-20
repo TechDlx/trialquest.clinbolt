@@ -585,7 +585,7 @@ export const w5Levels: Level[] = [
               confirm: 'SUSAR: serious, unexpected, possibly related. Expedite.',
               conceptId: 'susar',
               explanation:
-                'Serious, not in the reference safety information at this severity, and possibly [[causality|related]]: the regulators hear within 7 days.',
+                'Serious, unexpected at this severity, and possibly [[causality|related]]: regulators hear within 15 days (7 if it were fatal or life-threatening).',
               consequence: 'A late SUSAR is the most serious pharmacovigilance failure there is.',
             },
             {

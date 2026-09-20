@@ -287,7 +287,11 @@ export function Builder(p: EngineProps<BuilderConfig>) {
             >
               <span className="text-xs font-bold uppercase tracking-wide text-muted">{s.label}</span>
               <span className="text-sm font-semibold">
-                {part ? <RichText text={part.text} interactive={false} /> : (s.hint ?? 'Tap a part, then this slot')}
+                {part ? (
+                  <RichText text={part.text} interactive={false} />
+                ) : (
+                  (s.hint ?? 'Tap a part, then this slot')
+                )}
               </span>
             </button>
           );

@@ -88,6 +88,8 @@ export interface ProgressData {
   introSeen: boolean;
   finaleSeen: boolean;
   tipsDismissed: Record<string, boolean>;
+  /** Rank title the player has been congratulated for; the map shows a banner when it changes. */
+  rankSeen: string;
   createdAt: string;
   /** In-progress level attempts: completed stage results, so leaving to collect hearts does not restart the level. */
   attempts: Record<string, LevelAttempt>;
@@ -140,6 +142,7 @@ export interface ProgressActions {
   setIntroSeen: () => void;
   setFinaleSeen: () => void;
   dismissTip: (id: string) => void;
+  markRankSeen: (title: string) => void;
   saveAttempt: (levelId: string, attempt: Omit<LevelAttempt, 'savedAt'>, now?: Date) => void;
   clearAttempt: (levelId: string) => void;
   resetProgress: () => void;
@@ -167,6 +170,7 @@ export function initialProgress(now: Date = new Date()): ProgressData {
     introSeen: false,
     finaleSeen: false,
     tipsDismissed: {},
+    rankSeen: 'Intern',
     createdAt: now.toISOString(),
     attempts: {},
   };
@@ -460,6 +464,7 @@ export const useProgress = create<ProgressState>()(
       setIntroSeen: () => set({ introSeen: true }),
       setFinaleSeen: () => set({ finaleSeen: true }),
       dismissTip: (id) => set({ tipsDismissed: { ...get().tipsDismissed, [id]: true } }),
+      markRankSeen: (title) => set({ rankSeen: title }),
       saveAttempt: (levelId, attempt, now = new Date()) =>
         set({ attempts: { ...get().attempts, [levelId]: { ...attempt, savedAt: now.toISOString() } } }),
       clearAttempt: (levelId) => {
@@ -494,6 +499,7 @@ export const useProgress = create<ProgressState>()(
           introSeen,
           finaleSeen,
           tipsDismissed,
+          rankSeen,
           createdAt,
           attempts,
         } = s;
@@ -516,6 +522,7 @@ export const useProgress = create<ProgressState>()(
           introSeen,
           finaleSeen,
           tipsDismissed,
+          rankSeen,
           createdAt,
           attempts,
         };

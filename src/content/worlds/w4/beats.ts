@@ -15,7 +15,7 @@ export const w4Outro: StoryBeat = {
   id: 'w4-outro',
   title: 'A safe range',
   paragraphs: [
-    'The hold is lifted. The escalation ends with a dose range the committee can defend: measurable exposure, manageable side effects, a liver that is watched at every visit.',
+    'With the hold behind it and the cohort 5 signal caught in time, the escalation ends with a dose range the committee can defend: measurable exposure, manageable side effects, a liver that is watched at every visit.',
     'Most molecules that reach this point still fail. But VX-101 now has something it did not have before: a dose a patient could be given.',
   ],
   mayaStatus: 'Heard the Phase I finished. Her doctor mentioned a Phase II.',

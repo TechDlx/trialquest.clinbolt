@@ -1,4 +1,5 @@
 import type { StoryBeat } from './types';
+import { figures } from './figures';
 
 /**
  * The finale: Maya's last scene, the journey stat card and the certificate text.
@@ -28,8 +29,7 @@ export const finaleContent = {
     realWorld: {
       years: '10 to 15 years',
       cost: 'about $1 billion to $2.6 billion per approved medicine, depending on how it is counted',
-      approval:
-        'Fewer than 1 in 10 molecules that enter human trials (7 to 8 in 100 in the latest decade-long analyses) are ever approved.',
+      approval: `${figures.approval.short[0]!.toUpperCase()}${figures.approval.short.slice(1)} molecules that enter human trials (${figures.approval.detail}) are ever approved.`,
     },
   },
 

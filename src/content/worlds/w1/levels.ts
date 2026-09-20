@@ -1,4 +1,5 @@
 import type { Level } from '../../types';
+import { figures } from '../../figures';
 
 /** World 1 levels, retrofitted onto their intended engines (SPEC Amendment 1). */
 export const w1Levels: Level[] = [
@@ -40,7 +41,7 @@ export const w1Levels: Level[] = [
                   id: 'c-later',
                   text: 'Maybe later, when there is a treatment to talk about.',
                   quality: 'ok',
-                  next: 'n-outcome',
+                  next: 'n-outcome-later',
                   meters: { timeline: -5 },
                   conceptId: 'natural-history',
                   explanation:
@@ -52,7 +53,7 @@ export const w1Levels: Level[] = [
                   id: 'c-no',
                   text: 'No. They only want data; nothing ever comes back to patients.',
                   quality: 'bad',
-                  next: 'n-outcome',
+                  next: 'n-outcome-later',
                   conceptId: 'unmet-need',
                   explanation:
                     'That data is the start of everything that could come back. Nobody designs a trial for a disease they do not understand.',
@@ -112,8 +113,7 @@ export const w1Levels: Level[] = [
                   quality: 'best',
                   next: 'end-good',
                   conceptId: 'attrition',
-                  explanation:
-                    'Only about [[attrition|1 in 10]] molecules that reach human trials is ever approved. Honest hope survives that.',
+                  explanation: `Only ${figures.approval.short} [[attrition|molecules]] that reach human trials are ever approved. Honest hope survives that.`,
                   consequence:
                     'Communities sold a cure turn on the researchers when the first compound fails.',
                 },
@@ -142,6 +142,94 @@ export const w1Levels: Level[] = [
                   consequence: 'Rare diseases nobody hears about get no funding.',
                 },
               ],
+            },
+            // Branch taken when the interviews were declined: the same two decisions, without patient input.
+            {
+              id: 'n-outcome-later',
+              speaker: 'Researcher',
+              text: 'No interviews, so we are designing from the literature. We still need one main outcome. Which matters most to people with Veridian Syndrome?',
+              choices: [
+                {
+                  id: 'c-fatigue-b',
+                  text: 'Days without crushing fatigue, reported by the patients themselves',
+                  confirm: 'Yes: measure what patients actually feel.',
+                  quality: 'best',
+                  next: 'n-press-later',
+                  conceptId: 'patient-reported-outcome',
+                  explanation:
+                    'A [[patient-reported-outcome|patient-reported outcome]] captures how people actually feel and function.',
+                  consequence:
+                    'A drug can move a lab number while patients feel no better. Measuring the wrong thing wastes years and hope.',
+                },
+                {
+                  id: 'c-marker-b',
+                  text: 'The VRD-1 blood marker; it is objective and easy to measure',
+                  quality: 'ok',
+                  next: 'n-press-later',
+                  conceptId: 'biomarker',
+                  explanation:
+                    'A [[biomarker]] is useful, but a number can improve while people feel no better.',
+                  consequence: 'Drugs approved on markers alone sometimes fail to help anyone feel better.',
+                },
+                {
+                  id: 'c-fastest-b',
+                  text: 'Whatever gets the study approved fastest',
+                  quality: 'bad',
+                  next: 'n-press-later',
+                  meters: { integrity: -10 },
+                  conceptId: 'clinical-trial',
+                  explanation:
+                    'A [[clinical-trial|trial]] that answers the wrong question is not fast. It is wasted.',
+                  consequence: 'Regulators reject studies whose main outcome does not matter to patients.',
+                },
+              ],
+            },
+            {
+              id: 'n-press-later',
+              speaker: 'Patient group chair',
+              text: 'A journalist wants Maya\'s story for a piece titled "Miracle cure in the lab". Coverage would bring donations to the group and pressure on the company.',
+              choices: [
+                {
+                  id: 'c-honest-b',
+                  text: 'Give the interview, but insist on honest words: early research, no cure yet.',
+                  confirm: 'Honest hope. The community will remember it.',
+                  quality: 'best',
+                  next: 'end-later',
+                  conceptId: 'attrition',
+                  explanation: `Only ${figures.approval.short} molecules that reach human trials are ever approved. Honest hope survives that.`,
+                  consequence:
+                    'Communities sold a cure turn on the researchers when the first compound fails.',
+                },
+                {
+                  id: 'c-hype-b',
+                  text: 'Take the headline. Hope brings donations and speed.',
+                  quality: 'bad',
+                  next: 'end-hype',
+                  conceptId: 'attrition',
+                  shortcut: {
+                    meters: { timeline: 10, integrity: -15 },
+                    why: 'Hype raises money fast. It also raises hopes the science cannot yet keep, and people remember who promised.',
+                  },
+                  explanation: 'A headline is not a result. The science is years from knowing.',
+                  consequence: 'Overpromising to patients about experimental drugs is a real harm.',
+                },
+                {
+                  id: 'c-refuse-b',
+                  text: 'Refuse all press until there is a treatment.',
+                  quality: 'ok',
+                  next: 'end-later',
+                  meters: { timeline: -5 },
+                  conceptId: 'patient-advocate',
+                  explanation:
+                    'Silence protects nobody. Honest coverage brings patients to registries and trials.',
+                  consequence: 'Rare diseases nobody hears about get no funding.',
+                },
+              ],
+            },
+            {
+              id: 'end-later',
+              text: 'The lab has a main outcome and a community that understands the odds, but no patient interviews. The first protocol draft will guess at what a bad day looks like, and someone will have to fix that later.',
+              end: { summary: 'Research that starts without patients has to go back for them.' },
             },
             {
               id: 'end-good',

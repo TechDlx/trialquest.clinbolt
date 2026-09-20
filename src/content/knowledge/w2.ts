@@ -1,4 +1,5 @@
 import type { KnowledgeCheck, QuizQuestion } from '../types';
+import { figures } from '../figures';
 
 /** Test Yourself for World 2. Optional; never gates progress. */
 const q = (
@@ -272,7 +273,12 @@ const byRole: Record<string, QuizQuestion[]> = {
       2,
       'attrition',
       'Roughly what fraction of drugs entering human trials are eventually approved?',
-      ['About 1 in 10', 'About 9 in 10', 'About half', 'Almost all'],
+      [
+        `${figures.approval.short[0]!.toUpperCase()}${figures.approval.short.slice(1)} (${figures.approval.detail})`,
+        'About 9 in 10',
+        'About half',
+        'Almost all',
+      ],
       'Most programmes fail, so a portfolio spreads risk across several.',
       'Betting everything on one molecule is how companies disappear.',
     ),

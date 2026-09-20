@@ -1,4 +1,5 @@
 import type { GlossaryTerm } from './types';
+import { figures } from './figures';
 import { w2Terms } from './glossary/w2';
 import { w3Terms } from './glossary/w3';
 import { w4Terms } from './glossary/w4';
@@ -55,8 +56,7 @@ export const glossary: GlossaryTerm[] = [
   {
     id: 'attrition',
     term: 'Attrition',
-    short:
-      'The high failure rate of drug candidates: roughly 9 in 10 that enter human trials never get approved.',
+    short: `The high failure rate of drug candidates: ${figures.approval.failShort} that enter human trials never get approved (${figures.approval.detail} are approved).`,
     worldId: 'w1',
   },
   {

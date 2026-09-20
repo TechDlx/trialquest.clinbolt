@@ -266,7 +266,7 @@ export const w2Levels: Level[] = [
                 label: 'Adequately powered',
                 range: [180, 260],
                 narration:
-                  "Dose's projection: 80 to 89 of 100 trials find the effect. About 27 months and $13 million. This is the study you can defend.",
+                  "Dose's projection: most runs of a trial this size find the effect. The cost and calendar above are for the size you chose. This is the study you can defend.",
                 visual: { power: 84, costMillions: 13, months: 27, successfulRunsOf100: 84 },
               },
               {
@@ -274,7 +274,7 @@ export const w2Levels: Level[] = [
                 label: 'Oversized',
                 range: [260, 400],
                 narration:
-                  "Dose's projection: the effect is found almost every time, but enrolment takes four years and hundreds more patients get placebo.",
+                  "Dose's projection: the effect is found almost every time, but enrolment takes years longer and hundreds more patients get placebo.",
                 meters: { timeline: -10 },
                 consequence:
                   'Exposing more patients than needed to placebo is an ethical cost, not just a financial one.',

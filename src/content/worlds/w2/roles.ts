@@ -1,4 +1,5 @@
 import type { Role } from '../../types';
+import { figures } from '../../figures';
 import { roleRefById } from '../../roleIndex';
 
 const ref = (id: string) => {
@@ -148,8 +149,7 @@ export const w2Roles: Role[] = [
         'Probability of success model',
         'Portfolio dashboard',
       ],
-      funFact:
-        'Because roughly 9 in 10 programmes entering human trials never reach approval, a portfolio is priced as a set of options, not as a list of products.',
+      funFact: `Because ${figures.approval.failShort} programmes entering human trials never reach approval, a portfolio is priced as a set of options, not as a list of products.`,
     },
   },
 ];

@@ -112,3 +112,9 @@ Exit: SPEC.md acceptance criteria (as amended) all met; commit; summary.
 
 After each milestone: `npm run lint && npm run typecheck && npm test && npm run e2e`,
 commit, summarise what changed and what is next.
+
+## Parked for v0.2
+
+- World 6 crisis: rewrite the four interim-week rounds as the final-analysis week so the
+  crisis follows lock, programming and the CSR in story order. For now the crisis is
+  framed as an explicit look back ("Eight months before lock").

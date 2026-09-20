@@ -71,6 +71,8 @@ describe('DashManager clock', () => {
     await act(async () => {
       await new Promise((r) => setTimeout(r, 900));
     });
-    await waitFor(() => expect(screen.getByTestId('dash-item-second')).toBeInTheDocument(), { timeout: 2000 });
+    await waitFor(() => expect(screen.getByTestId('dash-item-second')).toBeInTheDocument(), {
+      timeout: 2000,
+    });
   });
 });

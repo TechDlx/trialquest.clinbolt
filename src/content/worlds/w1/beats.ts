@@ -1,4 +1,5 @@
 import type { ReviewNode, StoryBeat } from '../../types';
+import { figures } from '../../figures';
 
 export const w1Intro: StoryBeat = {
   id: 'w1-intro',
@@ -16,7 +17,7 @@ export const w1Outro: StoryBeat = {
   title: 'Most molecules never leave this room',
   paragraphs: [
     'Your lab found VX-101. It blocks VRD-1 in a dish and looks safe in animals at the doses tested. It is now a stable capsule with a batch record.',
-    'Enjoy the moment. Of every 5,000 compounds screened, only a handful reach this point, and only about [[attrition|1 in 10]] of those will ever be approved.',
+    `Enjoy the moment. Of every 5,000 compounds screened, only a handful reach this point, and ${figures.approval.short} of those will ever be [[attrition|approved]].`,
     'Next, someone has to design a study that could prove VX-101 works in people. Maya is waiting.',
   ],
   mayaStatus: 'Following the research news. Hopeful.',

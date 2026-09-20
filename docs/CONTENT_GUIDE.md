@@ -143,7 +143,9 @@ simulation: {
   `fine`, `mild`, `serious`, and `exposureCurve` naming a curve so the reveal shows the
   exposure at the committed value).
 - **Curves** are `[x, y]` points; the game draws straight lines between them. Cover the
-  whole slider.
+  whole slider. A curve whose id is `power`, `cost`, `months`, `coverage` or `reached` is
+  also read at the committed value in the reveal, so the projection matches the live
+  preview; keep band narration qualitative rather than quoting numbers the curve decides.
 - **The first commit is binding.** Score, band meters and the artifact come from it. After
   the reveal the player gets a free "What if?" sandbox; nothing there counts.
 - **A shortcut preset with a simulation:** its positive meters apply the moment it is

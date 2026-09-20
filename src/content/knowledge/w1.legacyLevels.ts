@@ -1,4 +1,5 @@
 import type { QuizQuestion } from '../types';
+import { figures } from '../figures';
 /** Legacy World 1 quiz levels, preserved verbatim as Test Yourself source material. */
 type LegacyLevel = {
   id: string;
@@ -111,7 +112,10 @@ export const w1LegacyLevels: LegacyLevel[] = [
           conceptId: 'attrition',
           prompt: 'Roughly what fraction of drug candidates that enter human trials ever get approved?',
           options: [
-            { text: 'About 1 in 10', correct: true },
+            {
+              text: `${figures.approval.short[0]!.toUpperCase()}${figures.approval.short.slice(1)}`,
+              correct: true,
+            },
             { text: 'About 9 in 10' },
             { text: 'Nearly all of them' },
             { text: 'About half' },

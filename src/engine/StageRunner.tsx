@@ -30,6 +30,8 @@ export interface StageRunnerProps extends Pick<
   initialRemaining?: number;
   /** Maya's anonymous appearance in one stage of this level (World 5 on). */
   cameo?: MayaCameo;
+  /** First-play hints; off on a retry. */
+  hints?: boolean;
   /** Called after every completed stage and after every engine state change, so the host can persist a checkpoint. */
   onCheckpoint?: (c: StageCheckpoint) => void;
 }
@@ -61,6 +63,7 @@ export function StageRunner({
   initialRemaining,
   onCheckpoint,
   cameo,
+  hints,
 }: StageRunnerProps) {
   const [index, setIndex] = useState(initialIndex);
   // A saved engine state means the player was mid-stage: skip the stage card and drop back in.
@@ -198,6 +201,7 @@ export function StageRunner({
         remainingFraction={timed ? countdown.fraction : 1}
         timeUp={timed && countdown.expired}
         mode="level"
+        hints={hints}
         cameo={
           cameo && cameo.stageId === stage.id
             ? { itemId: cameo.itemId, label: cameo.label, presentation: cameo.presentation }

@@ -165,6 +165,7 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
           remainingFraction={timed ? clock.fraction : 1}
           timeUp={timed && clock.expired}
           mode="review"
+          hints={false}
           onMistake={() => ({ heartLost: false, note: 'No heart lost in a review.' })}
           onShortcut={() => {}}
           onMeters={() => {}}
