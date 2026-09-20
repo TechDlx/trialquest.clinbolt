@@ -1,12 +1,12 @@
 import type { CrisisBoss } from '../../types';
 
-/** World 4 crisis: a liver enzyme spike in cohort 3. Four rounds, 100 s, pool 115 s. */
+/** World 4 crisis: after the hold is lifted, a second liver spike in cohort 5. Four rounds, 100 s, pool 115 s. */
 export const w4Crisis: CrisisBoss = {
   id: 'w4-crisis',
   worldId: 'w4',
-  title: 'Cohort 3, day 4',
+  title: 'Cohort 5, day 4',
   situation: [
-    "Day-4 labs are back for cohort 3. One volunteer's ALT is climbing: four times the upper limit and rising. He feels fine. The next cohort is scheduled for Monday.",
+    "The hold is lifted and dosing has resumed at a lower step. Now day-4 labs are back for cohort 5, and one volunteer's ALT is climbing: four times the upper limit and rising. He feels fine. The next cohort is scheduled for Monday.",
     'Screen, manage the visit, read the PK, and decide. Four roles, one afternoon.',
   ],
   rounds: [
@@ -14,7 +14,7 @@ export const w4Crisis: CrisisBoss = {
       id: 'r-pi',
       roleId: 'principal-investigator',
       seconds: 25,
-      brief: "You're the Investigator. Cohort 3 is in the unit. What happens to each volunteer today?",
+      brief: "You're the Investigator. Cohort 5 is in the unit. What happens to each volunteer today?",
       meterHit: { safety: -10 },
       game: {
         engine: 'bucket-sort',
@@ -214,7 +214,7 @@ export const w4Crisis: CrisisBoss = {
       title: 'Signal caught',
       paragraphs: [
         'The volunteer was referred the same day, the event was documented as it happened, the outlier exposure was understood, and dosing paused before Monday.',
-        'The hold that follows is short, because the committee could show it saw the signal first.',
+        'There is no second hold, because the committee could show the regulator it saw the signal first and acted.',
       ],
       mayaStatus: 'Heard the study paused. Worried, then reassured.',
     },
@@ -231,7 +231,7 @@ export const w4Crisis: CrisisBoss = {
       id: 'w4-crisis-fail',
       title: 'Dosed through it',
       paragraphs: [
-        'The cohort was dosed, the second case appeared, and the regulator imposed the hold the committee should have imposed on itself.',
+        'The cohort was dosed, the second case appeared, and the regulator imposed a second hold, the one the committee should have imposed on itself.',
         'The programme survives with a finding it will carry into every future submission.',
       ],
       mayaStatus: 'Read a news story about the trial. Not a good one.',

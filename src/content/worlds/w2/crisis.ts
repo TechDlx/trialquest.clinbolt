@@ -14,7 +14,7 @@ export const w2Crisis: CrisisBoss = {
       id: 'r-sci',
       roleId: 'clinical-scientist',
       seconds: 25,
-      brief: "You're the Clinical Scientist. The reviewer says the endpoint is vague. Replace it.",
+      brief: "You're the Medical Director. The reviewer says the endpoint is vague. Replace it.",
       meterHit: { integrity: -10 },
       game: {
         engine: 'builder',
@@ -181,6 +181,7 @@ export const w2Crisis: CrisisBoss = {
         prompt: 'Split $10M between answering the letter and keeping the study alive.',
         seconds: 20,
         total: 10,
+        context: ['Answering the letter (writing and analysis): $2–4M', 'Keeping sites and drug ready: $6–8M'],
         categories: [
           {
             id: 'response',

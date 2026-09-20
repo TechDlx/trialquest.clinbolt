@@ -54,9 +54,12 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
     (r: EngineResult) => {
       if (!round) return;
       const outcome = r.itemResults[round.itemId];
+      // A scenario replay records the choice the player made, not the missed one, so a
+      // decision counts as fixed when it was answered with the best choice and nothing wrong.
       const correct = round.isShortcut
         ? !r.outcomes.shortcutsTaken.includes(round.itemId)
-        : outcome === 'correct';
+        : outcome === 'correct' ||
+          (round.stage.game.engine === 'branching-scenario' && r.mistakes.length === 0 && r.accuracy >= 1);
       useProgress.getState().recordSituation(round.levelId, round.stage.id, round.itemId, correct);
       if (correct) setClean((n) => n + 1);
       setMistakes((m) => [...m, ...r.mistakes]);
@@ -146,7 +149,12 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
         onPause={setPaused}
         onQuit={goMap}
       >
-        <TimerBar fraction={clock.fraction} remaining={clock.remaining} relaxed={!timed} />
+        <TimerBar
+          fraction={clock.fraction}
+          remaining={clock.remaining}
+          relaxed={!timed}
+          label={relaxed ? undefined : 'Untimed round'}
+        />
         <EngineHost
           key={round.key}
           config={round.stage.game as MainPathConfig}
@@ -180,6 +188,7 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
       total={rounds.length}
       failed={false}
       canRetry={false}
+      hideRetry
       onContinue={goMap}
       onRetry={goMap}
       learned="Hearts refilled. Situations you missed will come back in a later review."

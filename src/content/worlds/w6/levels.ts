@@ -376,7 +376,7 @@ export const w6Levels: Level[] = [
             },
             {
               id: 'n-point',
-              text: "One point on the fatigue chart sits far above the rest of its arm: a patient doing remarkably well. The sponsor's observer asks which arm it is in.",
+              text: "One point on the fatigue chart sits at the edge of its arm: a patient whose good and bad weeks do not fit the average. The sponsor's observer asks which arm it is in.",
               choices: [
                 {
                   id: 'c-no-tell',

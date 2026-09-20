@@ -118,7 +118,7 @@ export function FinaleScreen() {
         </dl>
         <p className="mt-3 text-sm text-muted">
           Real-world averages: {finaleContent.journey.realWorld.years}, {finaleContent.journey.realWorld.cost}
-          . Only {finaleContent.journey.realWorld.approval} is ever approved.
+          . {finaleContent.journey.realWorld.approval}
         </p>
       </section>
 

@@ -202,7 +202,9 @@ export function Impostor(p: EngineProps<ImpostorConfig>) {
             >
               <span className="flex flex-col items-start gap-1">
                 {c.title}
-                {p.cameo?.itemId === c.id && <MayaTag label={p.cameo.label} />}
+                {p.cameo?.itemId === c.id && (
+                  <MayaTag label={p.cameo.label} labelHidden={p.cameo.label === c.title} />
+                )}
               </span>
               {state === 'correct' && <CheckIcon size={18} />}
               {state === 'wrong' && <XIcon size={18} />}

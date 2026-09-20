@@ -191,7 +191,7 @@ export function SequenceSort(p: EngineProps<SequenceSortConfig>) {
                 data-testid={`seq-${id}`}
                 className="tap flex-1 text-left text-sm font-semibold"
               >
-                <RichText text={item.text} />
+                <RichText text={item.text} interactive={false} />
               </button>
               <div className="flex flex-col">
                 <button

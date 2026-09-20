@@ -305,7 +305,12 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
         onPause={() => {}}
         onQuit={goMap}
       >
-        <TimerBar fraction={clock.fraction} remaining={clock.remaining} relaxed={!timed} />
+        <TimerBar
+          fraction={clock.fraction}
+          remaining={clock.remaining}
+          relaxed={!timed}
+          label={relaxed ? undefined : 'Untimed round'}
+        />
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -353,7 +358,12 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
         onPause={setPaused}
         onQuit={goMap}
       >
-        <TimerBar fraction={clock.fraction} remaining={clock.remaining} relaxed={!timed} />
+        <TimerBar
+          fraction={clock.fraction}
+          remaining={clock.remaining}
+          relaxed={!timed}
+          label={relaxed ? undefined : 'Untimed round'}
+        />
         <p className="text-sm font-semibold" data-testid="crisis-brief">
           <RichText text={current.brief} />
           <span className="ml-2 text-xs text-muted">(budget {current.round.seconds}s)</span>
@@ -388,6 +398,7 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
         mistakes={[]}
         correct={outcomes.filter((o) => o.cleared).length}
         total={rounds.length}
+        countLabel="rounds cleared"
         failed
         failReason={phase.reason}
         canRetry={progress.hearts > 0}
@@ -412,6 +423,7 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
           mistakes={allMistakes}
           correct={score.clearedCount}
           total={rounds.length}
+          countLabel="rounds cleared"
           failed={score.outcome !== 'success'}
           failReason={
             score.outcome === 'partial'

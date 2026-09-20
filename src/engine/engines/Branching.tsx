@@ -199,7 +199,7 @@ export function Branching(p: EngineProps<BranchingConfig>) {
   return (
     <div className="flex flex-1 flex-col gap-3" data-testid="branching">
       <p className="text-xs font-bold uppercase tracking-wide text-muted" data-testid="engine-progress">
-        Decision {decisions.length + 1}
+        Decision {decisions.length + (pending ? 0 : 1)}
       </p>
       <motion.div
         key={node.id}
@@ -234,7 +234,7 @@ export function Branching(p: EngineProps<BranchingConfig>) {
               }`}
             >
               <kbd className="mt-0.5 hidden rounded bg-black/10 px-1 text-xs sm:inline">{i + 1}</kbd>
-              <RichText text={c.text} />
+              <RichText text={c.text} interactive={false} />
             </button>
           ))}
         </div>

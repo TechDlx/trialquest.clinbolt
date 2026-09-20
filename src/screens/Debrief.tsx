@@ -35,6 +35,10 @@ export interface DebriefProps {
   failed: boolean;
   failReason?: string;
   canRetry: boolean;
+  /** Review nodes have no retry. */
+  hideRetry?: boolean;
+  /** What "N of M" counts: "correct" for levels, "rounds cleared" for a crisis. */
+  countLabel?: string;
   onContinue: () => void;
   onRetry: () => void;
   onReadCard?: () => void;
@@ -48,9 +52,9 @@ export function Debrief(p: DebriefProps) {
   const [showAll, setShowAll] = useState(false);
   const doseLine = p.failed
     ? (p.failReason ?? 'Out of hearts. Read the consequences below, then try again when a heart is back.')
-    : p.stars === 3
+    : p.stars === 3 && p.mistakes.length === 0
       ? 'Perfect. That is exactly how the pros do it.'
-      : p.stars === 2
+      : p.stars >= 2
         ? 'Solid work. One more pass would make it perfect.'
         : 'You got through. Check the consequences below so next time is cleaner.';
   const visibleMistakes = showAll ? p.mistakes : p.mistakes.slice(0, TOP_MISTAKES);
@@ -89,7 +93,7 @@ export function Debrief(p: DebriefProps) {
           <Stars stars={p.stars} size={40} />
         </motion.div>
         <p className="mt-1 text-sm text-muted" data-testid="debrief-score">
-          {p.correct} of {p.total} correct · score {p.score}
+          {p.correct} of {p.total} {p.countLabel ?? 'correct'} · score {p.score}
         </p>
         {p.xp.total > 0 && (
           <ul className="mt-3 grid gap-1 text-sm" aria-label="XP earned">
@@ -220,19 +224,23 @@ export function Debrief(p: DebriefProps) {
             {p.continueLabel ?? 'Continue'}
           </Button>
         )}
-        <Button
-          variant={p.failed ? 'primary' : 'secondary'}
-          full
-          onClick={p.onRetry}
-          disabled={!p.canRetry}
-          data-testid="debrief-retry"
-        >
-          {p.canRetry
-            ? p.failed
-              ? 'Try again'
-              : 'Retry for more stars'
-            : 'No hearts left: wait or review a Role Card'}
-        </Button>
+        {!p.hideRetry && (
+          <Button
+            variant={p.failed ? 'primary' : 'secondary'}
+            full
+            onClick={p.onRetry}
+            disabled={!p.canRetry}
+            data-testid="debrief-retry"
+          >
+            {p.canRetry
+              ? p.failed
+                ? 'Try again'
+                : p.stars === 3
+                  ? 'Play again'
+                  : 'Retry for more stars'
+              : 'No hearts left: wait or review a Role Card'}
+          </Button>
+        )}
         {p.onReadCard && (
           <Button variant="ghost" full onClick={p.onReadCard}>
             View Role Card

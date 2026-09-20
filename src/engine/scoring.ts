@@ -85,7 +85,7 @@ export function xpForLevel({ stars, perfect, firstTime }: LevelXpInput): XpBreak
   const lines: { label: string; xp: number }[] = [];
   if (stars > 0)
     lines.push({ label: `${stars} star${stars === 1 ? '' : 's'}`, xp: economy.xp.perStar * stars });
-  if (stars > 0 && perfect) lines.push({ label: 'Perfect run', xp: economy.xp.perfectRun });
+  if (stars > 0 && perfect) lines.push({ label: 'No wrong turns', xp: economy.xp.perfectRun });
   if (stars > 0 && firstTime) lines.push({ label: 'First completion', xp: economy.xp.firstCompletion });
   return { total: lines.reduce((s, l) => s + l.xp, 0), lines };
 }

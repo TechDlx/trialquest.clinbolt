@@ -144,7 +144,7 @@ export function MatchPairs(p: EngineProps<MatchPairsConfig>) {
               data-testid={`left-${pr.id}`}
               className={`tap rounded-2xl border-2 px-2 py-2 text-left text-sm font-semibold ${matched[pr.id] ? 'border-ok bg-ok-soft' : left === pr.id ? 'border-brand-600 bg-brand-50' : 'border-border bg-surface'}`}
             >
-              <RichText text={pr.left} />
+              <RichText text={pr.left} interactive={false} />
             </button>
           ))}
         </div>
@@ -158,7 +158,7 @@ export function MatchPairs(p: EngineProps<MatchPairsConfig>) {
               data-testid={`right-${pr.id}`}
               className={`tap rounded-2xl border-2 px-2 py-2 text-left text-sm ${matched[pr.id] ? 'border-ok bg-ok-soft' : 'border-border bg-surface'}`}
             >
-              <RichText text={pr.right} />
+              <RichText text={pr.right} interactive={false} />
             </button>
           ))}
         </div>

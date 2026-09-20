@@ -263,7 +263,7 @@ export const w7Levels: Level[] = [
             },
             {
               id: 'n-patient',
-              text: 'A letter from a trial participant is read into the public record: a year on placebo, no improvement, and a request that the drug be approved for everyone who was not so unlucky. The room is quiet.',
+              text: 'A letter from a trial participant is read into the public record: a year on placebo, good days that turned out to be hope, and a request that the drug be approved for everyone who was not so unlucky. The room is quiet.',
               choices: [
                 {
                   id: 'c-weigh',

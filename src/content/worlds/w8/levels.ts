@@ -22,10 +22,10 @@ export const w8Levels: Level[] = [
           seconds: 80,
           total: 40,
           context: [
-            '[[process-validation|Process validation]]: three consecutive full-scale batches must pass',
-            'Launch stock: enough for the first six months, released and on shelves',
-            'Quality systems and testing capacity for commercial volumes',
-            'Contingency: a failed batch costs $4M and eight weeks',
+            '[[process-validation|Process validation]]: three consecutive full-scale batches must pass ($10–14M)',
+            'Launch stock: enough for the first six months, released and on shelves ($12–18M)',
+            'Quality systems and testing capacity for commercial volumes ($8–12M)',
+            'Contingency: a failed batch costs $4M and eight weeks (keep $4–8M)',
           ],
           categories: [
             {

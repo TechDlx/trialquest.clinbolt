@@ -101,10 +101,15 @@ export function Builder(p: EngineProps<BuilderConfig>) {
       done.current = true;
       // With a simulation the first check is binding: score the committed build, not sandbox edits.
       const scored = sim && committed ? committed.placed : current;
-      const { itemResults, correct } = evaluate(scored);
+      const ev = evaluate(scored);
+      const itemResults = ev.itemResults;
+      let correct = ev.correct;
       let accuracy = slots.length ? correct / slots.length : 0;
       let band: string | undefined;
       if (sim && committed) {
+        // The simulation slot is right only when the committed band is the target band.
+        itemResults[sim.slotId] = committed.accuracy === 1 ? 'correct' : 'wrong';
+        correct = Object.values(itemResults).filter((v) => v === 'correct').length;
         accuracy = (accuracy + committed.accuracy) / 2;
         band = sim.bands[committed.bandIndex]!.tag;
       }
@@ -282,7 +287,7 @@ export function Builder(p: EngineProps<BuilderConfig>) {
             >
               <span className="text-xs font-bold uppercase tracking-wide text-muted">{s.label}</span>
               <span className="text-sm font-semibold">
-                {part ? part.text : (s.hint ?? 'Tap a part, then this slot')}
+                {part ? <RichText text={part.text} interactive={false} /> : (s.hint ?? 'Tap a part, then this slot')}
               </span>
             </button>
           );
@@ -305,7 +310,7 @@ export function Builder(p: EngineProps<BuilderConfig>) {
                   : 'border-border bg-surface'
             }`}
           >
-            <RichText text={x.text} />
+            <RichText text={x.text} interactive={false} />
           </button>
         ))}
       </div>
@@ -329,6 +334,7 @@ export function Builder(p: EngineProps<BuilderConfig>) {
           scored
           onDone={() => (p.config.sandbox === false ? finish(placed) : setPhase('sandbox'))}
           doneLabel={p.config.sandbox === false ? 'Continue' : 'Try "what if?"'}
+          onSkip={p.config.sandbox === false ? undefined : () => finish(placed)}
         />
       )}
       {sim && phase === 'sandbox' && (
@@ -372,12 +378,14 @@ function PkReveal({
   scored,
   onDone,
   doneLabel,
+  onSkip,
 }: {
   sim: BuilderSimulation;
   bandIndex: number;
   scored: boolean;
   onDone?: () => void;
   doneLabel?: string;
+  onSkip?: () => void;
 }) {
   const band = sim.bands[bandIndex]!;
   const v = band.visual as PkNextDoseVisual;
@@ -437,6 +445,11 @@ function PkReveal({
       {onDone && (
         <Button onClick={onDone} className="mt-3" full data-testid="reveal-done">
           {doneLabel ?? 'Continue'}
+        </Button>
+      )}
+      {onSkip && (
+        <Button variant="ghost" onClick={onSkip} className="mt-1" full data-testid="reveal-skip">
+          Continue
         </Button>
       )}
     </motion.div>

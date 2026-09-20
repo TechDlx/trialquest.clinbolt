@@ -212,9 +212,9 @@ export const w3Levels: Level[] = [
           seconds: 60,
           total: 240,
           context: [
-            'North America: 8 strong sites, high cost, fast ethics approval',
-            'Western Europe: 10 sites, moderate cost, country-by-country start dates',
-            'New region: 4 unproven sites, low cost, 6-month regulatory lead time',
+            'North America: 8 strong sites, high cost, fast ethics approval (plan for 90–130 patients)',
+            'Western Europe: 10 sites, moderate cost, country-by-country start dates (80–120 patients)',
+            'New region: 4 unproven sites, low cost, 6-month regulatory lead time (10–40 patients)',
           ],
           categories: [
             {

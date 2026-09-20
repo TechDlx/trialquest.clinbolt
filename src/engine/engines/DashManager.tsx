@@ -131,11 +131,26 @@ export function DashManager(p: EngineProps<DashConfig>) {
     [items, p],
   );
 
-  // Clock: arrivals, patience decay and expiry, all inside the tick.
+  // Callbacks and flags the clock reads live in refs, so the interval survives the host's
+  // 100 ms countdown re-renders instead of being torn down before it can fire.
+  const handleExpireRef = useRef(handleExpire);
+  const relaxedRef = useRef(p.relaxed);
+  useEffect(() => {
+    handleExpireRef.current = handleExpire;
+    relaxedRef.current = p.relaxed;
+  });
+
+  // Clock: arrivals, patience decay and expiry, all inside the tick, measured in wall-clock
+  // time so dropped or late ticks cannot drift from the stage countdown.
   useEffect(() => {
     if (p.paused || pending || done.current) return;
+    let last = Date.now();
     const id = window.setInterval(() => {
-      elapsedRef.current += TICK / 1000;
+      const now = Date.now();
+      const dt = (now - last) / 1000;
+      last = now;
+      const relaxed = relaxedRef.current;
+      elapsedRef.current += dt;
       const state = liveRef.current;
       const next = { ...state };
       let expiredId: string | undefined;
@@ -144,9 +159,9 @@ export function DashManager(p: EngineProps<DashConfig>) {
         if (!l && elapsedRef.current >= it.arrivesAt)
           next[it.id] = { id: it.id, step: 0, patience: it.patienceSeconds * patienceScale };
         else if (l && !l.outcome) {
-          const decay = p.relaxed ? TICK / 1000 / 3 : TICK / 1000;
+          const decay = relaxed ? dt / 3 : dt;
           const patience = l.patience - decay;
-          if (patience <= 0 && !p.relaxed && !expiredId) {
+          if (patience <= 0 && !relaxed && !expiredId) {
             expiredId = it.id;
             next[it.id] = { ...l, patience: 0, outcome: 'wrong' };
           } else next[it.id] = { ...l, patience };
@@ -155,10 +170,10 @@ export function DashManager(p: EngineProps<DashConfig>) {
       liveRef.current = next;
       setLive(next);
       setElapsed(elapsedRef.current);
-      if (expiredId) handleExpire(expiredId);
+      if (expiredId) handleExpireRef.current(expiredId);
     }, TICK);
     return () => window.clearInterval(id);
-  }, [p.paused, pending, items, patienceScale, p.relaxed, handleExpire]);
+  }, [p.paused, pending, items, patienceScale]);
 
   // All resolved or time up -> finish.
   useEffect(() => {

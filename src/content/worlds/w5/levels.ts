@@ -23,9 +23,9 @@ export const w5Levels: Level[] = [
           seconds: 60,
           total: 100,
           context: [
-            'Patient organisations and registries: most Veridian patients are known to one',
-            'Referring specialists: a few dozen clinics see almost every case',
-            'Social media ads: broad reach, mostly people without the disease',
+            'Patient organisations and registries: most Veridian patients are known to one (30–50%)',
+            'Referring specialists: a few dozen clinics see almost every case (30–50%)',
+            'Social media ads: broad reach, mostly people without the disease (10–30%)',
           ],
           categories: [
             {

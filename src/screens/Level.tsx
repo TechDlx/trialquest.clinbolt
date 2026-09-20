@@ -240,7 +240,14 @@ export function LevelScreen({ levelId }: { levelId: string }) {
                 ? `One task: ${level.stages[0].title ?? 'do the job'}.`
                 : `${level.stages.length} stages: ${level.stages.map((s) => s.title).join(', ')}.`}
             </li>
-            <li>⏱️ {relaxed ? 'Relaxed mode: no timers.' : 'Timed stages. Faster is better.'}</li>
+            <li>
+              ⏱️{' '}
+              {relaxed
+                ? 'Relaxed mode: no timers.'
+                : level.stages.some((s) => 'seconds' in s.game)
+                  ? 'Timed stages. Faster is better.'
+                  : 'Untimed: take your time on each decision.'}
+            </li>
             <li>
               ❤️ A mistake costs a heart{world.firstMistakeFree ? ' (first slip is free here)' : ''}.
               Shortcuts cost meters instead.

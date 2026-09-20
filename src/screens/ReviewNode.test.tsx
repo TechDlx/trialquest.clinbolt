@@ -55,4 +55,17 @@ describe('ReviewNode screen', () => {
     expect(s.hearts).toBe(5);
     expect(s.reviews['w1-r1']!.count).toBe(1);
   });
+
+  it('a missed scenario decision counts as fixed when replayed with the best choice', async () => {
+    const past = new Date('2020-01-01T00:00:00Z');
+    useProgress.getState().recordSituation('w1-l1', 'voice', 'c-no', false, past);
+    render(<ReviewNodeScreen reviewId="w1-r1" />);
+    fireEvent.click(screen.getByTestId('start-review'));
+    fireEvent.click(await screen.findByTestId('choice-c-yes', {}, { timeout: 3000 }));
+    await gone();
+    await screen.findByTestId('debrief', {}, { timeout: 3000 });
+    expect(screen.getByTestId('debrief-score')).toHaveTextContent('1 of 1');
+    expect(screen.queryByTestId('debrief-retry')).toBeNull(); // no retry on a review
+    expect(useProgress.getState().situations['w1-l1:voice:c-no']!.box).toBe(2);
+  });
 });

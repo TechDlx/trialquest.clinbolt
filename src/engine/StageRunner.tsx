@@ -183,7 +183,12 @@ export function StageRunner({
           Stage {index + 1} of {level.stages.length}: {stage.title}
         </p>
       )}
-      <TimerBar fraction={countdown.fraction} remaining={countdown.remaining} relaxed={!timed} />
+      <TimerBar
+        fraction={countdown.fraction}
+        remaining={countdown.remaining}
+        relaxed={!timed}
+        label={relaxed ? undefined : 'Untimed stage'}
+      />
       <EngineHost
         key={`${stage.id}:${seed}`}
         config={game}

@@ -298,6 +298,9 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
     else finish(values, shortcuts, committed);
   };
 
+  const runningTotal = Object.values(values).reduce((s, x) => s + x, 0);
+  const totalOk = p.config.total === undefined || Math.abs(runningTotal - p.config.total) < 1e-9;
+  const sandboxAvailable = !!sim && p.config.sandbox !== false && sim.preview === 'on-commit';
   const revealBand = committed && sim ? sim.bands[committed.bandIndex]! : undefined;
   const sandboxBand = sim && phase === 'sandbox' ? bandFor(sim, simValue).band : undefined;
 
@@ -389,6 +392,16 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
           })}
         </div>
       )}
+      {p.config.total !== undefined && phase === 'adjust' && (
+        <p
+          className={`text-sm font-semibold ${totalOk ? 'text-ok' : 'text-bad'}`}
+          data-testid="allocator-total"
+          aria-live="polite"
+        >
+          Total: {Number(runningTotal.toFixed(2))} of {p.config.total}
+          {totalOk ? '' : ` (${runningTotal > p.config.total ? 'over' : 'under'} by ${Number(Math.abs(runningTotal - p.config.total).toFixed(2))})`}
+        </p>
+      )}
       {phase === 'adjust' && p.config.presets && !pending && (
         <div className="flex flex-wrap gap-2">
           {p.config.presets.map((pr) => (
@@ -417,9 +430,8 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
           value={committed.value}
           scored
           onDone={finishReveal}
-          doneLabel={
-            p.config.sandbox !== false && sim.preview === 'on-commit' ? 'Try "what if?"' : 'Continue'
-          }
+          doneLabel={sandboxAvailable ? 'Try "what if?"' : 'Continue'}
+          onSkip={sandboxAvailable ? () => finish(values, shortcuts, committed) : undefined}
         />
       )}
       {phase === 'sandbox' && sim && sandboxBand && (
@@ -454,6 +466,7 @@ function Reveal({
   scored,
   onDone,
   doneLabel,
+  onSkip,
 }: {
   sim: AllocatorSimulation;
   band: AllocatorSimulation['bands'][number];
@@ -461,6 +474,7 @@ function Reveal({
   scored: boolean;
   onDone?: () => void;
   doneLabel?: string;
+  onSkip?: () => void;
 }) {
   const exposureCurveId = (band.visual as { exposureCurve?: string }).exposureCurve;
   const curve = sim.curves?.find((c) => c.id === exposureCurveId);
@@ -513,6 +527,11 @@ function Reveal({
       {onDone && (
         <Button onClick={onDone} className="mt-3" full data-testid="reveal-done">
           {doneLabel ?? 'Continue'}
+        </Button>
+      )}
+      {onSkip && (
+        <Button variant="ghost" onClick={onSkip} className="mt-1" full data-testid="reveal-skip">
+          Continue
         </Button>
       )}
     </motion.div>

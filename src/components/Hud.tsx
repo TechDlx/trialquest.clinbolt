@@ -104,17 +104,20 @@ export function TimerBar({
   remaining,
   relaxed,
   warn = 0.25,
+  label,
 }: {
   fraction: number;
   remaining: number;
   relaxed: boolean;
   warn?: number;
+  /** Text shown instead of the bar when there is no clock (defaults to the relaxed-mode line). */
+  label?: string;
 }) {
   if (relaxed) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted" aria-live="off">
         <ClockIcon size={16} />
-        <span>Relaxed mode: no timer</span>
+        <span>{label ?? 'Relaxed mode: no timer'}</span>
       </div>
     );
   }

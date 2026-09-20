@@ -13,7 +13,7 @@ export const w4Levels: Level[] = [
     roleId: 'principal-investigator',
     title: 'Screen the volunteers',
     intro:
-      'Six healthy volunteers are in the waiting room for [[screening]]. The protocol says 18–55, normal liver tests, no daily medicines. Decide who is eligible. The liver rule exists because of what the rats showed.',
+      'Five healthy volunteers are in the waiting room for [[screening]]. The protocol says 18–55, normal liver tests, no daily medicines. Decide who is eligible. The liver rule exists because of what the rats showed.',
     meterFocus: 'safety',
     stages: [
       {
@@ -116,7 +116,7 @@ export const w4Levels: Level[] = [
         when: { 'protocol.criteria': 'tight' },
         patch: {
           intro:
-            "Six healthy volunteers are in the waiting room for [[screening]]. The protocol's criteria are tight: 18–55, normal liver tests, no daily medicines, and more. Expect screen failures. The liver rule exists because of what the rats showed.",
+            "Five healthy volunteers are in the waiting room for [[screening]]. The protocol's criteria are tight: 18–55, normal liver tests, no daily medicines, and more. Expect screen failures. The liver rule exists because of what the rats showed.",
           meterOpening: { timeline: -5 },
         },
       },
@@ -124,7 +124,7 @@ export const w4Levels: Level[] = [
         when: { 'protocol.criteria': 'loose' },
         patch: {
           intro:
-            "Six healthy volunteers are in the waiting room for [[screening]]. The protocol's criteria are loose, so the sponsor added a note: check liver tests anyway. You are the last line between the rat data and a person.",
+            "Five healthy volunteers are in the waiting room for [[screening]]. The protocol's criteria are loose, so the sponsor added a note: check liver tests anyway. You are the last line between the rat data and a person.",
           meterOpening: { safety: -5 },
         },
       },
@@ -284,7 +284,7 @@ export const w4Levels: Level[] = [
           parts: [
             {
               id: 'read-linear',
-              text: 'Exposure doubled when the dose doubled; [[half-life]] about 8 hours; peak at 50% of the ceiling',
+              text: 'Exposure doubled when the dose doubled; [[half-life]] about 8 hours; peak at 40% of the ceiling',
               slotId: 'reading',
               confirm: 'Right: predictable, with room above.',
               conceptId: 'exposure',
@@ -329,7 +329,7 @@ export const w4Levels: Level[] = [
           prompt: 'How big a step for cohort 3?',
           seconds: 60,
           sandbox: true,
-          slots: [{ id: 'next-dose', label: 'Cohort 3 dose', hint: 'Cohort 2 peaked at 50% of the ceiling' }],
+          slots: [{ id: 'next-dose', label: 'Cohort 3 dose', hint: 'Cohort 2 peaked at 40% of the ceiling' }],
           parts: [
             {
               id: 'dose-slow',
@@ -345,7 +345,7 @@ export const w4Levels: Level[] = [
               slotId: 'next-dose',
               confirm: 'Standard: predicted peak at 80% of the ceiling.',
               conceptId: 'dose-escalation',
-              explanation: 'A doubling from 50% lands near 80% of the ceiling: measurable, with margin.',
+              explanation: 'A doubling from 40% lands at 80% of the ceiling: measurable, with margin.',
               consequence: 'This is the step the escalation plan was written for.',
             },
             {
@@ -353,7 +353,7 @@ export const w4Levels: Level[] = [
               text: 'Big step: 3.3 times cohort 2',
               slotId: 'next-dose',
               conceptId: 'dose-escalation',
-              explanation: 'From 50%, 3.3 times lands well above the ceiling. The curve told you that.',
+              explanation: 'From 40%, 3.3 times lands well above the ceiling. The curve told you that.',
               consequence: 'Over-shooting the ceiling is how liver signals appear in cohort 3.',
             },
             {

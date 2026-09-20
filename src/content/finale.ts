@@ -28,7 +28,8 @@ export const finaleContent = {
     realWorld: {
       years: '10 to 15 years',
       cost: 'about $1 billion to $2.6 billion per approved medicine, depending on how it is counted',
-      approval: 'fewer than 1 in 10 molecules that enter human trials (7 to 8 in 100 in the latest decade-long analyses)',
+      approval:
+        'Fewer than 1 in 10 molecules that enter human trials (7 to 8 in 100 in the latest decade-long analyses) are ever approved.',
     },
   },
 
