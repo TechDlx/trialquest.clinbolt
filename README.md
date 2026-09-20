@@ -33,7 +33,7 @@ or glossary links that point nowhere.
 ## Build and deploy
 
 ```bash
-npm run build        # outputs dist/ (PWA: manifest + service worker included)
+npm run build        # outputs dist/ (PWA: manifest + service worker; installable, offline after first load)
 npm run preview      # serve dist/ locally
 ```
 
@@ -50,22 +50,25 @@ or sub-folder with no rewrite rules.
 All game content lives under `src/content/` and is typed by `src/content/types.ts`.
 Nothing about roles, levels, quizzes or glossary terms is hard-coded in components.
 
-| What                                        | Where                                                          |
-| ------------------------------------------- | -------------------------------------------------------------- |
-| Role list (all 44, ids and titles)          | `src/content/roleIndex.ts`                                     |
-| Role Cards (full job descriptions)          | `src/content/worlds/<world>/roles.ts`                          |
-| Levels (mini-game configs + debriefs)       | `src/content/worlds/<world>/levels.ts`                         |
-| Boss quizzes                                | `src/content/worlds/<world>/boss.ts`                           |
-| Story beats and map nodes                   | `src/content/worlds.ts`, `src/content/worlds/<world>/index.ts` |
-| Glossary                                    | `src/content/glossary.ts`                                      |
-| Economy numbers (XP, hearts, stars, timers) | `src/content/economy.ts`                                       |
+| What                                        | Where                                                           |
+| ------------------------------------------- | --------------------------------------------------------------- |
+| Role list (all 44, ids and titles)          | `src/content/roleIndex.ts`                                      |
+| Role Cards (full job descriptions)          | `src/content/worlds/<world>/roles.ts`                           |
+| Levels (mini-game configs + debriefs)       | `src/content/worlds/<world>/levels.ts`                          |
+| Crisis bosses                               | `src/content/worlds/<world>/crisis.ts`                          |
+| Test Yourself questions                     | `src/content/knowledge/<world>.ts`                              |
+| Artifacts (hand-offs between levels)        | `src/content/artifacts.ts`                                      |
+| Finale text and journey figures             | `src/content/finale.ts`                                         |
+| Story beats and map nodes                   | `src/content/worlds.ts`, `src/content/worlds/<world>/index.ts`  |
+| Glossary                                    | `src/content/glossary.ts` and `src/content/glossary/<world>.ts` |
+| Economy numbers (XP, hearts, stars, timers) | `src/content/economy.ts`                                        |
 
 Copy fields accept glossary links: write `[[gcp]]` or `[[gcp|Good Clinical Practice]]`
-to make a tappable term. Every link must resolve to an id in `glossary.ts`; the validator
-checks this.
+to make a tappable term. Every link must resolve to a glossary id; the validator checks this.
+The full authoring guide (shortcuts, simulations, artifacts, word budgets) is `docs/CONTENT_GUIDE.md`.
 
 To add a role: add it to `roleIndex.ts`, write its card in the world's `roles.ts`, add a
-level in `levels.ts`, add a boss question tagged with its `roleId`, and register the
+level in `levels.ts`, give it a Test Yourself set in `knowledge/<world>.ts`, and register the
 world's files in `src/content/index.ts`. Run `npm test`; the validator tells you what is missing.
 
 Claims that need subject-matter review are logged in `docs/CONTENT_REVIEW.md`.

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import type { EngineMode } from './types';
+import { playSound } from '@/engine/sound';
 
 export type FeedbackKind = 'correct' | 'wrong' | 'shortcut' | 'info';
 
@@ -94,6 +95,9 @@ export function Feedback({
     const id = window.setTimeout(() => onNextRef.current(), ms);
     return () => window.clearTimeout(id);
   }, [auto, ms]);
+  useEffect(() => {
+    if (kind === 'correct' || kind === 'wrong' || kind === 'shortcut') playSound(kind);
+  }, [kind]);
 
   const cls =
     kind === 'correct'

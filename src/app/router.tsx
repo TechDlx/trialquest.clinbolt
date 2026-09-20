@@ -18,6 +18,7 @@ export type Route =
   | { name: 'codex'; roleId?: string }
   | { name: 'glossary'; termId?: string }
   | { name: 'handoff' }
+  | { name: 'finale' }
   | { name: 'settings' }
   | { name: 'lab' }
   | { name: 'notfound'; path: string };
@@ -58,6 +59,8 @@ export function parseHash(hash: string): Route {
       return a ? { name: 'glossary', termId: a } : { name: 'glossary' };
     case 'handoff':
       return { name: 'handoff' };
+    case 'finale':
+      return { name: 'finale' };
     case 'settings':
       return { name: 'settings' };
     case 'lab':
@@ -95,6 +98,8 @@ export function href(route: Route): string {
       return route.termId ? `#/glossary/${route.termId}` : '#/glossary';
     case 'handoff':
       return '#/handoff';
+    case 'finale':
+      return '#/finale';
     case 'settings':
       return '#/settings';
     case 'lab':

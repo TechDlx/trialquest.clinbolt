@@ -1,13 +1,13 @@
 import type { MapNode, StoryBeat, World, WorldId } from './types';
 import { roleIndex } from './roleIndex';
-import { w1Intro, w1Outro } from './worlds/w1';
-import { w2Intro, w2Outro } from './worlds/w2';
-import { w3Intro, w3Outro } from './worlds/w3';
-import { w4Intro, w4Outro } from './worlds/w4';
-import { w5Intro, w5Outro } from './worlds/w5';
-import { w6Intro, w6Outro } from './worlds/w6';
-import { w7Intro, w7Outro } from './worlds/w7';
-import { w8Intro, w8Outro } from './worlds/w8';
+import { w1Intro, w1Outro } from './worlds/w1/beats';
+import { w2Intro, w2Outro } from './worlds/w2/beats';
+import { w3Intro, w3Outro } from './worlds/w3/beats';
+import { w4Intro, w4Outro } from './worlds/w4/beats';
+import { w5Intro, w5Outro } from './worlds/w5/beats';
+import { w6Intro, w6Outro } from './worlds/w6/beats';
+import { w7Intro, w7Outro } from './worlds/w7/beats';
+import { w8Intro, w8Outro } from './worlds/w8/beats';
 
 function levelNodes(worldId: WorldId): MapNode[] {
   return roleIndex

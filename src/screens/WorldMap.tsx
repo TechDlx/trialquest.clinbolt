@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { MapNode, World } from '@/content/types';
-import { content } from '@/content';
+import { content, isWorldLoaded } from '@/content';
 import { economy, rankForXp } from '@/content/economy';
 import { computeMapState, isPlayable, type NodeStatus } from '@/engine/progression';
 import { useProgress } from '@/store/progress';
@@ -36,7 +36,7 @@ function routeFor(node: MapNode): Route {
     case 'review':
       return { name: 'review', reviewId: node.id };
     case 'finale':
-      return { name: 'map' };
+      return { name: 'finale' };
   }
 }
 
@@ -70,7 +70,8 @@ function NodeButton({
   const [sheet, setSheet] = useState(false);
   const ribbon = useProgress((s) => (role ? !!s.knowledge[role.id]?.ribbon : false));
   const legacy = useProgress((s) => (node.kind === 'crisis' ? !!s.crises[node.id]?.legacy : false));
-  const hasTest = !!role && !!content.knowledgeByRole[role.id];
+  // Every role has a Test Yourself set; assume so until its world's chunk is loaded.
+  const hasTest = !!role && (!isWorldLoaded(role.worldId) || !!content.knowledgeByRole[role.id]);
   const onTap = () => {
     if (status === 'done' && (hasTest || node.kind === 'crisis')) setSheet(true);
     else navigate(routeFor(node));

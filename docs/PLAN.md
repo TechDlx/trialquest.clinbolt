@@ -89,12 +89,24 @@ the map until then).
 
 Exit: all 8 worlds completable without Test Yourself; validator green; commit.
 
-## Milestone 4 — Meta and polish
+## Milestone 4 — Meta and polish — DONE 2026-09-19 (two items open, see below)
 
 Meters/setbacks, hearts refill, streak + freezes, spaced-repetition micro-rounds,
 finale + certificate (with optional knowledge-check line), PWA/offline, sound,
 accessibility pass (axe in Playwright, keyboard walkthrough), performance pass
 (Lighthouse mobile ≥ 90 / ≥ 95), README deploy + content guide.
+
+Delivered: finale screen (Maya's last scene, 44-step relay with the artifacts the player
+produced, journey stat card against real-world ranges, canvas certificate with Save image
+and a text fallback), service-worker registration (installable, offline after first load),
+synthesised sound set behind the Settings toggle, lane-diagram Handoff map with artifact
+edges, screen-level lazy loading, and per-world content packs (`worlds/<world>/pack.ts`
+loaded by `loadWorld`, gated by `ContentGate`): first paint is 133 KB core + 43 KB motion
+gzipped, plus ~17 KB per world on demand. Keyboard-only walkthrough e2e added.
+
+Open: (1) axe-core in Playwright needs the `@axe-core/playwright` dependency, not on the
+approved list; ask before adding. (2) Lighthouse was not run in this environment; bundle
+and lazy-loading targets are met, the audit itself is still to do on a real device.
 
 Exit: SPEC.md acceptance criteria (as amended) all met; commit; summary.
 

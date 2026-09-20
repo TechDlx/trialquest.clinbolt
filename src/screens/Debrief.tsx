@@ -9,6 +9,8 @@ import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import { Speech } from '@/components/Mascot';
 import { Maya } from '@/components/Maya';
+import { useEffect } from 'react';
+import { playSound } from '@/engine/sound';
 
 /** Mistakes shown before "See all". */
 export const TOP_MISTAKES = 2;
@@ -40,6 +42,9 @@ export interface DebriefProps {
 }
 
 export function Debrief(p: DebriefProps) {
+  useEffect(() => {
+    if (!p.failed && p.stars > 0) playSound('star');
+  }, [p.failed, p.stars]);
   const [showAll, setShowAll] = useState(false);
   const doseLine = p.failed
     ? (p.failReason ?? 'Out of hearts. Read the consequences below, then try again when a heart is back.')

@@ -101,9 +101,18 @@ export function StoryScreen({ worldId, beat }: { worldId: string; beat: 'intro' 
     <StoryBeatView
       beat={beat === 'intro' ? world.intro : world.outro}
       kicker={beat === 'intro' ? `World ${world.number}` : `End of World ${world.number}`}
-      cta={beat === 'outro' && next ? `On to World ${next.number}` : 'Back to the map'}
+      cta={
+        beat === 'outro' && next
+          ? `On to World ${next.number}`
+          : beat === 'outro'
+            ? 'See the finale'
+            : 'Back to the map'
+      }
       testId={`story-${beat}`}
-      onContinue={() => navigate({ name: 'map', worldId: beat === 'outro' && next ? next.id : world.id })}
+      onContinue={() => {
+        if (beat === 'outro' && !next) navigate({ name: 'finale' });
+        else navigate({ name: 'map', worldId: beat === 'outro' && next ? next.id : world.id });
+      }}
     />
   );
 }

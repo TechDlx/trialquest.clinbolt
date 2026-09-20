@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { loadAllWorlds } from '@/content';
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeEach } from 'vitest';
 
@@ -43,6 +44,9 @@ function ensureStorage(name: 'localStorage' | 'sessionStorage') {
 }
 ensureStorage('localStorage');
 ensureStorage('sessionStorage');
+
+// The app loads world content on demand; tests see everything from the start.
+await loadAllWorlds();
 
 beforeEach(() => {
   try {

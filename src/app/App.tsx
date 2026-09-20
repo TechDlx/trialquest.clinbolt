@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { useRoute } from './router';
 import { useSettings, resolveTheme } from '@/store/settings';
@@ -10,14 +10,45 @@ import { BadgeSwapScreen } from '@/screens/BadgeSwap';
 import { RoleCardScreen } from '@/screens/RoleCard';
 import { LevelScreen } from '@/screens/Level';
 import { CrisisScreen } from '@/screens/Crisis';
-import { TestYourselfScreen } from '@/screens/TestYourself';
-import { ReviewNodeScreen } from '@/screens/ReviewNode';
-import { CodexScreen } from '@/screens/Codex';
-import { GlossaryScreen } from '@/screens/Glossary';
-import { HandoffScreen } from '@/screens/Handoff';
-import { SettingsScreen } from '@/screens/Settings';
-import { LabScreen } from '@/screens/Lab';
 import { Page, TopBar } from '@/components/Layout';
+import { ContentGate } from '@/components/ContentGate';
+import { content, worldIdOf, worldsOfRoles } from '@/content';
+import type { WorldId } from '@/content/types';
+
+const ALL_WORLDS = content.worlds.map((w) => w.id);
+const roleWorld = (roleId?: string): WorldId | undefined =>
+  roleId ? content.roleRefById[roleId]?.worldId : undefined;
+/** Worlds whose cards the player has collected (Codex, Handoff map, hearts sheet). */
+const viewedWorlds = (): WorldId[] => worldsOfRoles(Object.keys(useProgress.getState().cardsViewed));
+/** A review replays situations from any world the player has been wrong in. */
+const reviewWorlds = (reviewId: string): (WorldId | undefined)[] => [
+  worldIdOf(reviewId),
+  ...new Set(Object.keys(useProgress.getState().situations).map((k) => worldIdOf(k.split(':')[0]))),
+];
+
+// Screens off the main play loop load on demand, keeping the first paint small.
+const TestYourselfScreen = lazy(() =>
+  import('@/screens/TestYourself').then((m) => ({ default: m.TestYourselfScreen })),
+);
+const ReviewNodeScreen = lazy(() =>
+  import('@/screens/ReviewNode').then((m) => ({ default: m.ReviewNodeScreen })),
+);
+const CodexScreen = lazy(() => import('@/screens/Codex').then((m) => ({ default: m.CodexScreen })));
+const GlossaryScreen = lazy(() => import('@/screens/Glossary').then((m) => ({ default: m.GlossaryScreen })));
+const HandoffScreen = lazy(() => import('@/screens/Handoff').then((m) => ({ default: m.HandoffScreen })));
+const SettingsScreen = lazy(() => import('@/screens/Settings').then((m) => ({ default: m.SettingsScreen })));
+const LabScreen = lazy(() => import('@/screens/Lab').then((m) => ({ default: m.LabScreen })));
+const FinaleScreen = lazy(() => import('@/screens/Finale').then((m) => ({ default: m.FinaleScreen })));
+
+function Loading() {
+  return (
+    <Page nav="map">
+      <p className="mt-8 text-center text-sm text-muted" role="status">
+        Loading…
+      </p>
+    </Page>
+  );
+}
 
 function useDocumentSettings() {
   const theme = useSettings((s) => s.theme);
@@ -73,40 +104,77 @@ export function App() {
       screen = <WorldMapScreen focusWorldId={route.worldId} />;
       break;
     case 'badge':
-      screen = <BadgeSwapScreen levelId={route.levelId} />;
+      screen = (
+        <ContentGate worlds={[worldIdOf(route.levelId)]}>
+          <BadgeSwapScreen levelId={route.levelId} />
+        </ContentGate>
+      );
       break;
     case 'role':
-      screen = <RoleCardScreen roleId={route.roleId} levelId={route.levelId} />;
+      screen = (
+        <ContentGate worlds={[roleWorld(route.roleId), worldIdOf(route.levelId)]}>
+          <RoleCardScreen roleId={route.roleId} levelId={route.levelId} />
+        </ContentGate>
+      );
       break;
     case 'level':
-      screen = <LevelScreen key={route.levelId} levelId={route.levelId} />;
+      screen = (
+        <ContentGate worlds={[worldIdOf(route.levelId), ...viewedWorlds()]}>
+          <LevelScreen key={route.levelId} levelId={route.levelId} />
+        </ContentGate>
+      );
       break;
     case 'crisis':
-      screen = <CrisisScreen key={route.crisisId} crisisId={route.crisisId} />;
+      screen = (
+        <ContentGate worlds={[worldIdOf(route.crisisId)]}>
+          <CrisisScreen key={route.crisisId} crisisId={route.crisisId} />
+        </ContentGate>
+      );
       break;
     case 'test':
       screen = (
-        <TestYourselfScreen
-          key={route.roleId ?? route.worldId}
-          roleId={route.roleId}
-          worldId={route.worldId}
-        />
+        <ContentGate worlds={[roleWorld(route.roleId), route.worldId as WorldId | undefined]}>
+          <TestYourselfScreen
+            key={route.roleId ?? route.worldId}
+            roleId={route.roleId}
+            worldId={route.worldId}
+          />
+        </ContentGate>
       );
       break;
     case 'review':
-      screen = <ReviewNodeScreen key={route.reviewId} reviewId={route.reviewId} />;
+      screen = (
+        <ContentGate worlds={reviewWorlds(route.reviewId)}>
+          <ReviewNodeScreen key={route.reviewId} reviewId={route.reviewId} />
+        </ContentGate>
+      );
       break;
     case 'story':
       screen = <StoryScreen worldId={route.worldId} beat={route.beat} />;
       break;
     case 'codex':
-      screen = <CodexScreen roleId={route.roleId} />;
+      screen = (
+        <ContentGate worlds={[...viewedWorlds(), roleWorld(route.roleId)]}>
+          <CodexScreen roleId={route.roleId} />
+        </ContentGate>
+      );
       break;
     case 'glossary':
       screen = <GlossaryScreen termId={route.termId} />;
       break;
     case 'handoff':
-      screen = <HandoffScreen />;
+      screen = (
+        <ContentGate worlds={viewedWorlds()}>
+          <HandoffScreen />
+        </ContentGate>
+      );
+      break;
+    case 'finale':
+      screen = (
+        <ContentGate worlds={ALL_WORLDS}>
+          <FinaleScreen />
+        </ContentGate>
+      );
       break;
     case 'settings':
       screen = <SettingsScreen />;
@@ -123,5 +191,9 @@ export function App() {
       );
   }
 
-  return <MotionConfig reducedMotion={reduced}>{screen}</MotionConfig>;
+  return (
+    <MotionConfig reducedMotion={reduced}>
+      <Suspense fallback={<Loading />}>{screen}</Suspense>
+    </MotionConfig>
+  );
 }
