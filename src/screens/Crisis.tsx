@@ -251,7 +251,13 @@ export function CrisisScreen({ crisisId }: { crisisId: string }) {
             <h1 className="text-xl font-black">{crisis.title}</h1>
           </div>
           {crisis.situation.map((s, i) => (
-            <RichText key={i} as="p" text={s} className="mt-2 text-sm leading-relaxed text-white/95" />
+            <RichText
+              key={i}
+              as="p"
+              text={s}
+              className="mt-2 text-sm leading-relaxed text-white"
+              linkClassName="text-white"
+            />
           ))}
           <ul className="mt-3 grid gap-1 text-sm">
             <li>

@@ -21,7 +21,8 @@ Requires Node 20 or newer.
 npm run typecheck    # tsc
 npm run lint         # eslint (includes jsx-a11y)
 npm test             # vitest: unit tests + content validation
-npm run e2e          # playwright smoke test at 360x740 (touch) and 1440x900
+npm run e2e          # playwright smoke + keyboard walkthrough at 360x740 (touch) and 1440x900;
+                     # every key screen is checked with axe (serious/critical violations fail)
 npm run e2e:install  # one-time: download Chromium for Playwright
 PACE=1 npm run e2e:pace   # reader-paced World 1 timing (set PACE=1 in the environment)
 ```

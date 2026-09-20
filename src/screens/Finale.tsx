@@ -133,6 +133,7 @@ export function FinaleScreen() {
             >
               <span
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white ${employerBg[step.role.employer]}`}
+                role="img"
                 aria-label={employerLabel[step.role.employer]}
               >
                 <BadgeGlyph icon={step.role.badgeIcon} size={20} />

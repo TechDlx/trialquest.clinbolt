@@ -209,7 +209,7 @@ function WorldSection({
           <h2 id={`world-${world.id}`} className="truncate text-base font-bold">
             {world.title}
           </h2>
-          <p className={`truncate text-xs ${unlocked ? 'text-white/85' : ''}`}>{world.subtitle}</p>
+          <p className={`truncate text-xs ${unlocked ? 'text-white' : ''}`}>{world.subtitle}</p>
         </div>
         {complete ? (
           <span className="text-xs font-bold">Complete</span>

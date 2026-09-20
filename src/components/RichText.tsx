@@ -11,10 +11,13 @@ export function RichText({
   text,
   className = '',
   as: Tag = 'span',
+  linkClassName,
 }: {
   text: string;
   className?: string;
   as?: 'span' | 'p';
+  /** Colour classes for glossary links; pass e.g. "text-white" on dark or coloured panels. */
+  linkClassName?: string;
 }) {
   const segments = parseRichText(text, (id) => content.glossaryById[id]?.term);
   return (
@@ -23,14 +26,14 @@ export function RichText({
         seg.type === 'text' ? (
           <span key={i}>{seg.text}</span>
         ) : (
-          <Term key={i} id={seg.id} label={seg.label} />
+          <Term key={i} id={seg.id} label={seg.label} linkClassName={linkClassName} />
         ),
       )}
     </Tag>
   );
 }
 
-function Term({ id, label }: { id: string; label: string }) {
+function Term({ id, label, linkClassName }: { id: string; label: string; linkClassName?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
   const popId = useId();
@@ -61,7 +64,7 @@ function Term({ id, label }: { id: string; label: string }) {
         aria-expanded={open}
         aria-controls={popId}
         onClick={() => setOpen((o) => !o)}
-        className="inline rounded-sm font-semibold text-brand-700 underline decoration-dotted decoration-2 underline-offset-2 dark:text-brand-300"
+        className={`inline rounded-sm font-semibold underline decoration-dotted decoration-2 underline-offset-2 ${linkClassName ?? 'text-brand-700 dark:text-brand-300'}`}
       >
         {label}
       </button>

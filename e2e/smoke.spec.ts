@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { w1Levels } from '../src/content/worlds/w1/levels';
+import { expectAccessible } from './axe';
 import type {
   AllocatorConfig,
   BranchingConfig,
@@ -27,15 +28,19 @@ async function openLevel(page: Page, levelId: string) {
   await expect(page.getByTestId('badge-swap')).toBeVisible();
   await page.getByTestId('badge-swap').click();
   await expect(page.getByTestId('rolecard-front')).toBeVisible();
+  await expectAccessible(page, `role card ${levelId}`);
   await expect(page.getByTestId('start-task')).toBeDisabled();
   await page.getByTestId('flip-card').click();
   await expect(page.getByTestId('rolecard-back')).toBeVisible();
   await page.getByTestId('start-task').click();
+  await expect(page.getByTestId('start-level')).toBeVisible();
+  await expectAccessible(page, `level intro ${levelId}`);
   await page.getByTestId('start-level').click();
 }
 
 async function finishLevel(page: Page, levelId: string, expectContinueLabel?: string) {
   await expect(page.getByTestId('debrief')).toBeVisible();
+  await expectAccessible(page, `debrief ${levelId}`);
   if (expectContinueLabel) await expect(page.getByTestId('debrief-continue')).toHaveText(expectContinueLabel);
   await page.getByTestId('debrief-continue').click();
   await expect(page.getByTestId(`node-${levelId}`)).toHaveAttribute('data-status', 'done');
@@ -53,10 +58,13 @@ test('new player completes World 1 end to end on the intended engines', async ({
   test.setTimeout(240_000);
   const t0 = Date.now();
   await expect(page).toHaveTitle(/Trial Quest/);
+  await expectAccessible(page, 'title');
   await page.getByTestId('play').click();
   await expect(page.getByTestId('intro')).toBeVisible();
+  await expectAccessible(page, 'intro');
   await page.getByTestId('story-continue').click();
   await expect(page.getByTestId('node-w1-l1')).toHaveAttribute('data-status', 'current');
+  await expectAccessible(page, 'world map');
   await expect(page.getByTestId('node-w1-l2')).toBeDisabled();
 
   // ---- w1-l1 branching scenario: best choices, plus the shortcut once to see the meters move.
@@ -136,6 +144,7 @@ test('new player completes World 1 end to end on the intended engines', async ({
   // ---- Crisis boss: four rounds, four engines, one clock.
   await timed('crisis', async () => {
     await page.getByTestId('node-w1-crisis').click();
+    await expectAccessible(page, 'crisis intro');
     await page.getByTestId('start-crisis').click();
     const { w1Crisis } = await import('../src/content/worlds/w1/crisis');
     for (let i = 0; i < w1Crisis.rounds.length; i++) {
@@ -170,8 +179,10 @@ test('new player completes World 1 end to end on the intended engines', async ({
       if (i + 1 < w1Crisis.rounds.length) await page.getByTestId('crisis-next-round').click();
     }
     await expect(page.getByTestId('crisis-success')).toBeVisible();
+    await expectAccessible(page, 'crisis resolution');
     await page.getByTestId('debrief-continue').click();
     await expect(page.getByTestId('story-outro')).toBeVisible();
+    await expectAccessible(page, 'story outro');
     await page.getByTestId('story-continue').click();
   });
   timings.total = (Date.now() - t0) / 1000;
@@ -199,8 +210,10 @@ test('a wrong turn explains itself, the shortcut costs meters not hearts, and th
   await page.getByTestId('start-task').click();
   await page.getByTestId('start-level').click();
   await page.getByTestId('start-stage-voice').click();
+  await expectAccessible(page, 'branching scenario');
   await page.getByTestId('choice-c-no').click();
   await expect(page.getByTestId('engine-feedback')).toHaveAttribute('data-kind', 'wrong');
+  await expectAccessible(page, 'wrong-turn feedback');
   await expect(page.getByTestId('engine-feedback')).toContainText('First slip in World 1 is free');
   await page.getByTestId('engine-next').click();
   await page.getByTestId('choice-c-fatigue').click();
@@ -221,15 +234,37 @@ test('settings: relaxed mode removes the timer and reset clears progress', async
   await page.getByTestId('play').click();
   await page.getByTestId('story-continue').click();
   await page.getByTestId('nav-settings').click();
+  await expectAccessible(page, 'settings');
   await page.getByTestId('setting-relaxed').check();
   await page.goto('/#/role/preclinical-toxicologist?level=w1-l3');
   await page.getByTestId('flip-card').click();
   await page.getByTestId('start-task').click();
   await page.getByTestId('start-level').click();
   await expect(page.getByTestId('stage-card-findings')).toContainText('Relaxed mode');
+  await expectAccessible(page, 'stage card');
+  await page.getByTestId('start-stage-findings').click();
+  await expect(page.getByTestId('bucket-card')).toBeVisible();
+  await expectAccessible(page, 'bucket sort');
   await page.goto('/#/settings');
   await page.getByTestId('reset-progress').click();
   await page.getByTestId('reset-confirm-input').fill('RESET');
   await page.getByTestId('reset-confirm').click();
   await expect(page.getByTestId('play')).toBeVisible();
+});
+
+test('secondary screens pass the accessibility gate', async ({ page }) => {
+  await page.getByTestId('play').click();
+  await page.getByTestId('story-continue').click();
+  for (const [hash, heading] of [
+    ['#/codex', 'Career Codex'],
+    ['#/glossary', 'Glossary'],
+    ['#/handoff', 'Handoff map'],
+  ] as const) {
+    await page.goto('/' + hash);
+    await expect(page.getByRole('heading', { name: heading })).toBeVisible();
+    await expectAccessible(page, heading);
+  }
+  await page.goto('/#/finale');
+  await expect(page.getByTestId('finale')).toBeVisible();
+  await expectAccessible(page, 'finale');
 });
