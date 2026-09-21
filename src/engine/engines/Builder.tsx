@@ -310,9 +310,7 @@ export function Builder(p: EngineProps<BuilderConfig>) {
             className={`tap rounded-2xl border-2 px-3 py-2 text-left text-sm font-semibold shadow-card transition ${
               selectedPart === x.id
                 ? 'border-brand-600 bg-brand-100 text-brand-800'
-                : x.shortcut
-                  ? 'border-star bg-star-soft text-amber-950'
-                  : 'border-border bg-surface'
+                : 'border-border bg-surface'
             }`}
           >
             <RichText text={x.text} interactive={false} />

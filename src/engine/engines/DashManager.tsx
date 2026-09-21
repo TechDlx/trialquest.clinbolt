@@ -296,7 +296,7 @@ export function DashManager(p: EngineProps<DashConfig>) {
             onClick={() => tapStation(s.id)}
             disabled={!selected || !!pending || p.paused}
             data-testid={`station-${s.id}`}
-            className={`tap rounded-2xl border-2 px-2 py-3 text-sm font-bold ${s.shortcut ? 'border-star bg-star-soft text-amber-950' : 'border-brand-600 bg-surface'} disabled:opacity-50`}
+            className={`tap rounded-2xl border-2 px-2 py-3 text-sm font-bold border-brand-600 bg-surface disabled:opacity-50`}
           >
             <kbd className="mr-1 hidden rounded bg-black/10 px-1 text-xs sm:inline">{i + 1}</kbd>
             {s.label}

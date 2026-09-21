@@ -231,7 +231,7 @@ export function Impostor(p: EngineProps<ImpostorConfig>) {
           onClick={signOff}
           disabled={p.paused}
           data-testid={`shortcut-${p.config.signOff.id}`}
-          className="tap rounded-2xl border-2 border-star bg-star-soft px-3 py-2 text-left text-sm font-semibold text-amber-950"
+          className="tap rounded-2xl border-2 border-border bg-surface px-3 py-2 text-left text-sm font-semibold"
         >
           {p.config.signOff.label}
         </button>

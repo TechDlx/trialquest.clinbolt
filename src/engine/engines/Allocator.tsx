@@ -16,6 +16,9 @@ import { RichText } from '@/components/RichText';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import type { EngineProps, ScoredSnapshot } from './types';
 
+/** Space between a number and its unit: none before a percent sign ("18% of target"). */
+const sep = (unit?: string) => (unit?.startsWith('%') ? '' : ' ');
+
 export function interpolateCurve(curve: PreviewCurve, x: number): number {
   const pts = curve.points;
   if (x <= pts[0]![0]) return pts[0]![1];
@@ -241,8 +244,8 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
         itemId: wrong.id,
         conceptId: wrong.conceptId,
         prompt: wrong.label,
-        chosen: `${values[wrong.id]} ${wrong.unit}`,
-        correctAnswer: `${wrong.target[0]}–${wrong.target[1]} ${wrong.unit}`,
+        chosen: `${values[wrong.id]}${sep(wrong.unit)}${wrong.unit}`,
+        correctAnswer: `${wrong.target[0]}–${wrong.target[1]}${sep(wrong.unit)}${wrong.unit}`,
         explanation: wrong.explanation,
         consequence: wrong.consequence,
       };
@@ -272,7 +275,7 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
         itemId: c.id,
         conceptId: c.conceptId,
         prompt: c.label,
-        chosen: `${simValue} ${c.unit}`,
+        chosen: `${simValue}${sep(c.unit)}${c.unit}`,
         correctAnswer: `${sim.bands.find((b) => b.tag === sim.targetBand)!.label}`,
         explanation: c.explanation,
         consequence: band.consequence ?? c.consequence,
@@ -339,7 +342,9 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
                     {c.label}
                   </label>
                   <output className="text-lg font-black tabular-nums" data-testid={`value-${c.id}`}>
-                    {Number(v.toFixed(2))} {c.unit}
+                    {Number(v.toFixed(2))}
+                    {sep(c.unit)}
+                    {c.unit}
                   </output>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
@@ -362,6 +367,7 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
                     disabled={!canEdit}
                     onChange={(e) => setValue(c.id, Number(e.target.value))}
                     className="h-11 flex-1 accent-brand-600"
+                    aria-valuetext={`${Number(v.toFixed(2))}${sep(c.unit)}${c.unit}`}
                     data-testid={`slider-${c.id}`}
                   />
                   <button
@@ -381,7 +387,8 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
                         <span className="text-muted">{cv.label}: </span>
                         <strong data-testid={`curve-${cv.id}`}>
                           {fmt(interpolateCurve(cv, v), cv.format)}
-                        </strong>{' '}
+                        </strong>
+                        {sep(cv.unit)}
                         {cv.unit}
                       </li>
                     ))}
@@ -413,7 +420,7 @@ export function Allocator(p: EngineProps<AllocatorConfig>) {
               onClick={() => applyPreset(pr.id)}
               disabled={p.paused}
               data-testid={`preset-${pr.id}`}
-              className={`tap rounded-2xl border-2 px-3 py-2 text-left text-sm font-semibold ${pr.shortcut ? 'border-star bg-star-soft text-amber-950' : 'border-border bg-surface'}`}
+              className={`tap rounded-2xl border-2 px-3 py-2 text-left text-sm font-semibold border-border bg-surface`}
             >
               {pr.label}
             </button>
@@ -504,7 +511,9 @@ function Reveal({
       data-band={band.tag}
     >
       <p className="text-xs font-bold uppercase tracking-wide text-muted">
-        {scored ? 'Projection' : 'What if?'} · {Number(value.toFixed(2))} {sim.input.unit} · {band.label}
+        {scored ? 'Projection' : 'What if?'} · {Number(value.toFixed(2))}
+        {sep(sim.input.unit)}
+        {sim.input.unit} · {band.label}
       </p>
       {sim.kind === 'dose-response' && (
         <CohortVisual
@@ -533,7 +542,8 @@ function Reveal({
       {curve && (
         <p className="mt-2 text-sm">
           {curve.label}:{' '}
-          <strong data-testid="reveal-exposure">{fmt(interpolateCurve(curve, value), curve.format)}</strong>{' '}
+          <strong data-testid="reveal-exposure">{fmt(interpolateCurve(curve, value), curve.format)}</strong>
+          {sep(curve.unit)}
           {curve.unit}
         </p>
       )}

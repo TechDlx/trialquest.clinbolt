@@ -227,11 +227,7 @@ export function Branching(p: EngineProps<BranchingConfig>) {
               onClick={() => choose(c)}
               disabled={p.paused}
               data-testid={`choice-${c.id}`}
-              className={`tap flex items-start gap-2 rounded-2xl border-2 px-3 py-3 text-left text-sm font-semibold shadow-card transition enabled:active:scale-[0.99] ${
-                c.shortcut
-                  ? 'border-star bg-star-soft text-amber-950'
-                  : 'border-border bg-surface hover:border-brand-500'
-              }`}
+              className={`tap flex items-start gap-2 rounded-2xl border-2 px-3 py-3 text-left text-sm font-semibold shadow-card transition enabled:active:scale-[0.99] border-border bg-surface hover:border-brand-500`}
             >
               <kbd className="mt-0.5 hidden rounded bg-black/10 px-1 text-xs sm:inline">{i + 1}</kbd>
               <RichText text={c.text} interactive={false} />

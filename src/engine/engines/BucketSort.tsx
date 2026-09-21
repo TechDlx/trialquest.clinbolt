@@ -195,9 +195,7 @@ export function BucketSort(p: EngineProps<BucketSortConfig>) {
             disabled={!!pending || p.paused}
             onClick={() => place(b.id)}
             data-testid={`bucket-${b.id}`}
-            className={`tap flex min-h-[64px] flex-col items-start justify-center rounded-2xl border-2 px-3 py-2 text-left shadow-card transition enabled:active:scale-[0.98] ${
-              b.shortcut ? 'border-star bg-star-soft text-amber-950' : 'border-brand-600 bg-surface text-fg'
-            }`}
+            className={`tap flex min-h-[64px] flex-col items-start justify-center rounded-2xl border-2 px-3 py-2 text-left shadow-card transition enabled:active:scale-[0.98] border-brand-600 bg-surface text-fg`}
           >
             <span className="text-base font-bold">
               <kbd className="mr-1.5 hidden rounded bg-black/10 px-1 text-xs sm:inline">{i + 1}</kbd>
