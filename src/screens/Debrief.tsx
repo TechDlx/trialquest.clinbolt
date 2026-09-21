@@ -62,7 +62,7 @@ export function Debrief(p: DebriefProps) {
 
   return (
     <div
-      className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-4 py-6 safe-top safe-bottom"
+      className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-4 py-6 safe-top safe-bottom lg:max-w-2xl"
       data-testid="debrief"
     >
       <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">

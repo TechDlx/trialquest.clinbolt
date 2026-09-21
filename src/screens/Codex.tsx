@@ -36,7 +36,7 @@ export function CodexScreen({ roleId }: { roleId?: string }) {
             <h2 id={`codex-${world.id}`} className="text-sm font-bold">
               World {world.number} · {world.title}
             </h2>
-            <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
               {roles.map((role) => {
                 const viewed = !!cardsViewed[role.id];
                 const inner = (

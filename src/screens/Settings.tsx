@@ -164,7 +164,7 @@ export function SettingsScreen() {
           Trial Quest v{__APP_VERSION__}. Content aligned with ICH-GCP E6 and general FDA / EMA pathways;
           simplified for learning.
         </p>
-        <Disclaimer className="mt-2 text-left" />
+        <Disclaimer className="mt-2 text-left lg:hidden" />
       </section>
 
       <Modal open={confirm} title="Reset all progress?" onClose={() => setConfirm(false)}>

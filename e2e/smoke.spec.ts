@@ -249,7 +249,11 @@ test('a wrong turn explains itself, the shortcut costs meters not hearts, and th
 test('settings: relaxed mode removes the timer and reset clears progress', async ({ page }) => {
   await page.getByTestId('play').click();
   await page.getByTestId('story-continue').click();
-  await page.getByTestId('nav-settings').click();
+  // The tabs sit at the bottom on a phone and in the left rail on desktop.
+  await page
+    .getByTestId(/^(side-)?nav-settings$/)
+    .filter({ visible: true })
+    .click();
   await expectAccessible(page, 'settings');
   await page.getByTestId('setting-relaxed').check();
   await markDone(page, { levels: ['w1-l1', 'w1-l2'] });
