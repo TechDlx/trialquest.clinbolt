@@ -45,6 +45,8 @@ or sub-folder with no rewrite rules.
   `npx gh-pages -d dist`, or a Pages workflow that uploads `dist/`). No base-path config needed.
 - **Netlify:** build command `npm run build`, publish directory `dist`. Optionally set
   `VITE_BASE=/` for absolute asset URLs.
+- **quest.clinbolt.com (Oracle Cloud VM, Caddy):** the VM clones this repo and builds it
+  with `deploy/update.sh`. See [deploy/DEPLOY.md](deploy/DEPLOY.md).
 
 ## Edit content
 
