@@ -48,7 +48,8 @@ export interface MistakeOutcome {
   outOfHearts: boolean;
 }
 
-export const FREE_MISTAKE_NOTE = 'Dose: "First slip in World 1 is free. The next one costs a heart."';
+export const FREE_MISTAKE_NOTE =
+  'Dose: "In World 1 your first slip on each try is free. The next one costs a heart."';
 
 export const setbackCopy: Record<MeterId, { title: string; text: string }> = {
   safety: {

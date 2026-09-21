@@ -182,19 +182,9 @@ export function LevelScreen({ levelId }: { levelId: string }) {
       const s = useProgress.getState();
       s.clearAttempt(raw.id);
       const firstTime = !s.levels[raw.id]?.completedAt;
-      const earned = scoreLevel(result, { firstTime, previousStars: s.levels[raw.id]?.stars ?? 0 });
-      s.recordLevelResult(raw.id, { stars: earned.stars, score: earned.score, xp: earned.xp });
-      // The card's first-view XP was granted on the card screen; list it so the total matches the map.
-      const cardXp = firstTime && earned.stars > 0 ? economy.xp.roleCardFirstView : 0;
-      const score: typeof earned = cardXp
-        ? {
-            ...earned,
-            xp: {
-              total: earned.xp.total + cardXp,
-              lines: [{ label: 'Role card first read', xp: cardXp }, ...earned.xp.lines],
-            },
-          }
-        : earned;
+      // Only what this run earns: the card's first-read XP was already added (and shown) on the card.
+      const score = scoreLevel(result, { firstTime, previousStars: s.levels[raw.id]?.stars ?? 0 });
+      s.recordLevelResult(raw.id, { stars: score.stars, score: score.score, xp: score.xp });
       if (score.stars > 0) s.touchStreak();
       let artifacts: StoredArtifact[] = [];
       if (score.stars > 0) {
@@ -261,8 +251,9 @@ export function LevelScreen({ levelId }: { levelId: string }) {
                   : 'Untimed: take your time on each decision.'}
             </li>
             <li>
-              ❤️ A mistake costs a heart{world.firstMistakeFree ? ' (first slip is free here)' : ''}.
-              Shortcuts cost meters instead.
+              ❤️ A mistake costs a heart
+              {world.firstMistakeFree ? ' (your first slip on each try is free here)' : ''}. Shortcuts cost
+              meters instead.
             </li>
           </ul>
         </div>
