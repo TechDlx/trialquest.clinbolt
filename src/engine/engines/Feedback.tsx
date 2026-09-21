@@ -11,6 +11,27 @@ export type FeedbackKind = 'correct' | 'wrong' | 'shortcut' | 'info';
 export const AUTO_ADVANCE_MS = 900;
 export const CRISIS_FLASH_MS = 600;
 
+/**
+ * A correct answer stays up long enough to read its one-line reason: the base time plus
+ * perCharMs per character, capped. Tests set perCharMs to 0 to keep flows fast.
+ */
+export const feedbackTiming = { perCharMs: 25, maxMs: 3200 };
+
+const words = (t: string) => t.toLowerCase().match(/[a-z0-9]+/g) ?? [];
+
+/** True when the reason mostly repeats the confirmation (80% of its words are already there). */
+function restates(title: string, why: string): boolean {
+  const seen = new Set(words(title));
+  const w = words(why);
+  return w.length > 0 && w.filter((x) => seen.has(x)).length / w.length >= 0.8;
+}
+
+/** The first sentence of an explanation: the "why" shown with a right answer. */
+export function firstSentence(text: string): string {
+  const m = text.match(/^.*?[.!?](?=\s|$)/s);
+  return (m ? m[0] : text).trim();
+}
+
 export interface BasePending {
   kind: FeedbackKind;
   title: string;
@@ -50,14 +71,15 @@ export function adaptFeedback<T extends BasePending>(
     };
   }
   if (pending.kind === 'correct') {
-    return {
-      ...pending,
-      auto: true,
-      inline: true,
-      ms: AUTO_ADVANCE_MS,
-      title: pending.confirm ?? pending.title,
-      explanation: '',
-    };
+    // Reinforce the right answer with its reason in one line, then move on by itself.
+    const title = pending.confirm ?? pending.title;
+    const why = pending.explanation ? firstSentence(pending.explanation) : '';
+    const explanation = why && !restates(title, why) ? why : '';
+    const ms = Math.min(
+      feedbackTiming.maxMs,
+      AUTO_ADVANCE_MS + feedbackTiming.perCharMs * explanation.length,
+    );
+    return { ...pending, auto: true, inline: true, ms, title, explanation };
   }
   return { ...pending, auto: false, inline: false, ms: 0 };
 }
@@ -110,7 +132,7 @@ export function Feedback({
 
   if (inline) {
     return (
-      <motion.p
+      <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         role="status"
@@ -118,11 +140,26 @@ export function Feedback({
         data-testid="engine-feedback"
         data-kind={kind}
         data-inline="true"
-        className={`rounded-xl border-2 px-3 py-2 text-sm font-bold ${cls}`}
+        className={`flex items-start gap-2 rounded-xl border-2 px-3 py-2 text-sm ${cls}`}
       >
-        {kind === 'correct' ? '✓ ' : kind === 'wrong' ? '✗ ' : ''}
-        <RichText text={title} />
-      </motion.p>
+        <div className="min-w-0 flex-1">
+          <p className="font-bold">
+            {kind === 'correct' ? '✓ ' : kind === 'wrong' ? '✗ ' : ''}
+            <RichText text={title} />
+          </p>
+          {explanation && <RichText as="p" text={explanation} className="mt-0.5" />}
+        </div>
+        {explanation && (
+          <button
+            type="button"
+            onClick={onNext}
+            className="tap shrink-0 rounded-lg px-2 text-xs font-bold underline underline-offset-2"
+            data-testid="engine-skip"
+          >
+            Next
+          </button>
+        )}
+      </motion.div>
     );
   }
 

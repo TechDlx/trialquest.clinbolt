@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { loadAllWorlds } from '@/content';
+import { feedbackTiming } from '@/engine/engines/Feedback';
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeEach } from 'vitest';
 
@@ -44,6 +45,9 @@ function ensureStorage(name: 'localStorage' | 'sessionStorage') {
 }
 ensureStorage('localStorage');
 ensureStorage('sessionStorage');
+
+// Right answers stay up for reading time in the app; tests advance at the base speed.
+feedbackTiming.perCharMs = 0;
 
 // The app loads world content on demand; tests see everything from the start.
 await loadAllWorlds();

@@ -113,7 +113,7 @@ export const w1Levels: Level[] = [
                   quality: 'best',
                   next: 'end-good',
                   conceptId: 'attrition',
-                  explanation: `Only ${figures.approval.short} [[attrition|molecules]] that reach human trials are ever approved. Honest hope survives that.`,
+                  explanation: `${figures.approval.shortStart} [[attrition|molecules]] that reach human trials are ever approved. Honest hope survives that.`,
                   consequence:
                     'Communities sold a cure turn on the researchers when the first compound fails.',
                 },
@@ -196,7 +196,7 @@ export const w1Levels: Level[] = [
                   quality: 'best',
                   next: 'end-later',
                   conceptId: 'attrition',
-                  explanation: `Only ${figures.approval.short} molecules that reach human trials are ever approved. Honest hope survives that.`,
+                  explanation: `${figures.approval.shortStart} molecules that reach human trials are ever approved. Honest hope survives that.`,
                   consequence:
                     'Communities sold a cure turn on the researchers when the first compound fails.',
                 },
