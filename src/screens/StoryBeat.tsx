@@ -6,6 +6,7 @@ import { ArrowLeftIcon, ArrowRightIcon } from '@/components/Icons';
 import { Maya, MayaPortrait } from '@/components/Maya';
 import { RichText } from '@/components/RichText';
 import { Speech } from '@/components/Mascot';
+import logoUrl from '@/assets/clinbolt-logo.png';
 import { content } from '@/content';
 import { href, navigate, type Route } from '@/app/router';
 import { useProgress } from '@/store/progress';
@@ -18,7 +19,7 @@ import { endSegment } from '@/engine/timing';
  */
 function PrologueScene({ status }: { status: string }) {
   return (
-    <div className="relative mx-auto w-full max-w-[350px] overflow-hidden rounded-card shadow-card">
+    <div className="relative mx-auto w-full max-w-[350px] overflow-hidden rounded-card shadow-card lg:max-w-[640px] lg:rounded-[28px]">
       <svg viewBox="0 0 350 210" className="block h-auto w-full" aria-hidden="true">
         <rect width="350" height="210" fill="#fdf6e3" />
         <rect x="244" y="10" width="98" height="88" rx="8" fill="#fffbe6" stroke="#e7d9a6" strokeWidth="3" />
@@ -50,9 +51,9 @@ function PrologueScene({ status }: { status: string }) {
         <path d="M314 206c-6-22 6-42 24-48-8 18-12 32-12 48z" fill="#34d399" />
       </svg>
       <MayaPortrait className="absolute bottom-0 max-w-none" style={{ left: '45%', width: '44%' }} />
-      <p className="absolute bottom-3 left-3 rounded-xl bg-surface px-3 py-2 shadow-card">
-        <span className="block text-[15px] font-extrabold">Maya, 29</span>
-        <span className="block text-xs text-muted">{status}</span>
+      <p className="absolute bottom-3 left-3 rounded-xl bg-surface px-3 py-2 shadow-card lg:bottom-5 lg:left-5 lg:rounded-2xl lg:px-4 lg:py-3">
+        <span className="block text-[15px] font-extrabold lg:text-xl">Maya, 29</span>
+        <span className="block text-xs text-muted lg:text-[15px]">{status}</span>
       </p>
     </div>
   );
@@ -85,18 +86,25 @@ export function StoryBeatView({
   /** Replaces the small Maya row with a full illustration. */
   scene?: ReactNode;
 }) {
+  // A beat with a full scene (the prologue) opens into two columns from 1024px: the picture
+  // left, the story right. Beats without one stay a single reading column at every width.
+  const wide = !!scene;
   const kickerText = (
-    <p className="text-xs font-extrabold uppercase tracking-wide text-brand-700 dark:text-brand-300">
+    <p
+      className={`text-xs font-extrabold uppercase tracking-wide text-brand-700 dark:text-brand-300 ${wide ? 'lg:text-sm' : ''}`}
+    >
       {kicker}
     </p>
   );
   return (
     <div
-      className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-4 safe-top safe-bottom"
+      className={`mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-4 safe-top safe-bottom ${
+        wide ? 'lg:max-w-[1440px] lg:px-12 lg:pb-10 lg:pt-7 xl:px-[88px]' : ''
+      }`}
       data-testid={testId}
     >
       {back ? (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between lg:justify-start lg:gap-3">
           <a
             href={href(back)}
             aria-label="Back"
@@ -104,54 +112,90 @@ export function StoryBeatView({
           >
             <ArrowLeftIcon size={26} />
           </a>
-          {kickerText}
-          <span className="w-9" />
+          <span className={wide ? 'lg:hidden' : ''}>{kickerText}</span>
+          {wide && (
+            <img
+              src={logoUrl}
+              alt="ClinBolt"
+              width="122"
+              height="30"
+              className="hidden h-[30px] w-auto lg:block dark:rounded-lg dark:bg-white dark:px-1.5"
+            />
+          )}
+          <span className="w-9 lg:hidden" />
         </div>
       ) : (
         kickerText
       )}
-      <h1 className="mt-1 text-[clamp(2rem,10vw,2.75rem)] font-black leading-[1.05] tracking-tight text-brand-800 dark:text-fg">
-        {beat.title}
-      </h1>
-
-      {scene ?? (
-        <div className="mt-4 flex items-center gap-3 rounded-card bg-surface p-3 shadow-card">
-          <Maya size={64} />
-          <div>
-            <p className="text-sm font-bold">Maya</p>
-            <p className="text-sm text-muted">{beat.mayaStatus}</p>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-4 flex flex-1 flex-col gap-3">
-        {beat.paragraphs.map((p, i) => (
-          <motion.p
-            key={i}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 * i, duration: 0.3 }}
-            className="text-base leading-relaxed"
+      <div
+        className={`flex flex-1 flex-col ${
+          wide
+            ? 'lg:grid lg:grid-cols-2 lg:content-center lg:items-center lg:gap-x-10 lg:gap-y-0 xl:grid-cols-[640px_minmax(0,1fr)] xl:gap-x-16'
+            : ''
+        }`}
+      >
+        <div className={wide ? 'lg:col-start-2 lg:row-start-1' : ''}>
+          {wide && back && <div className="hidden lg:block">{kickerText}</div>}
+          <h1
+            className={`mt-1 text-[clamp(2rem,10vw,2.75rem)] font-black leading-[1.05] tracking-tight text-brand-800 dark:text-fg ${wide ? 'lg:mt-2.5 lg:text-5xl lg:leading-none xl:text-[64px]' : ''}`}
           >
-            <RichText text={p} />
-          </motion.p>
-        ))}
-        {doseLine && (
-          <Speech mood="happy" className="mt-2" {...(doseLabel ? { label: doseLabel } : {})}>
-            {doseLine}
-          </Speech>
-        )}
-      </div>
+            {beat.title}
+          </h1>
+        </div>
 
-      <Button size="lg" full onClick={onContinue} className="mt-6" data-testid="story-continue">
-        {cta}
-        <ArrowRightIcon size={20} />
-      </Button>
-      {skippable && (
-        <Button variant="ghost" onClick={onContinue} className="mt-1" data-testid="story-skip">
-          {skipLabel}
-        </Button>
-      )}
+        {scene ? (
+          <div className="lg:col-start-1 lg:row-span-3 lg:row-start-1">{scene}</div>
+        ) : (
+          <div className="mt-4 flex items-center gap-3 rounded-card bg-surface p-3 shadow-card">
+            <Maya size={64} />
+            <div>
+              <p className="text-sm font-bold">Maya</p>
+              <p className="text-sm text-muted">{beat.mayaStatus}</p>
+            </div>
+          </div>
+        )}
+
+        <div
+          className={`mt-4 flex flex-1 flex-col gap-3 ${wide ? 'lg:col-start-2 lg:mt-6 lg:max-w-[560px] lg:flex-none lg:gap-3.5' : ''}`}
+        >
+          {beat.paragraphs.map((p, i) => (
+            <motion.p
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 * i, duration: 0.3 }}
+              className={`text-base leading-relaxed ${wide ? 'lg:text-lg xl:text-[19px]' : ''}`}
+            >
+              <RichText text={p} />
+            </motion.p>
+          ))}
+          {doseLine && (
+            <Speech mood="happy" className="mt-2" {...(doseLabel ? { label: doseLabel } : {})}>
+              {doseLine}
+            </Speech>
+          )}
+        </div>
+
+        <div
+          className={`mt-6 flex flex-col gap-1 ${wide ? 'lg:col-start-2 lg:mt-7 lg:flex-row lg:items-center lg:gap-5' : ''}`}
+        >
+          <Button
+            size="lg"
+            full
+            onClick={onContinue}
+            className={wide ? 'lg:w-[300px]' : ''}
+            data-testid="story-continue"
+          >
+            {cta}
+            <ArrowRightIcon size={20} />
+          </Button>
+          {skippable && (
+            <Button variant="ghost" onClick={onContinue} data-testid="story-skip">
+              {skipLabel}
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -169,7 +213,7 @@ export function IntroScreen() {
       skipLabel="Skip intro"
       back={{ name: 'title' }}
       scene={
-        <div className="mt-4">
+        <div className="mt-4 lg:mt-0">
           <PrologueScene status={world.intro.mayaStatus} />
         </div>
       }

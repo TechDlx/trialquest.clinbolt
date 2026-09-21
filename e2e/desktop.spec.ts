@@ -68,3 +68,24 @@ test('the frame matches the viewport: rail and panels on desktop, tabs on a phon
   }
   await expectAccessible(page, 'task frame');
 });
+
+test('home and intro: two columns on desktop, one column on a phone', async ({ page }, info) => {
+  const desktop = info.project.name.startsWith('desktop');
+  await page.goto('/');
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  // The picture sits beside the title on desktop and below it on a phone.
+  const title = await page.getByRole('heading', { name: 'Trial Quest' }).boundingBox();
+  const scene = await page.getByRole('img', { name: 'Maya' }).first().boundingBox();
+  if (desktop) expect(scene!.x).toBeGreaterThan(title!.x + title!.width);
+  else expect(scene!.y).toBeGreaterThan(title!.y + title!.height);
+  await expectAccessible(page, 'home layout');
+
+  await page.getByTestId('play').click();
+  const heading = await page.getByRole('heading', { name: 'A name for it' }).boundingBox();
+  const room = await page.getByTestId('intro').locator('svg[viewBox="0 0 350 210"]').boundingBox();
+  if (desktop) expect(room!.x + room!.width).toBeLessThan(heading!.x);
+  else expect(room!.y).toBeGreaterThan(heading!.y);
+  await expectAccessible(page, 'intro layout');
+});

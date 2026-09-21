@@ -58,7 +58,13 @@ export function SideNav({ current }: { current: Route['name'] }) {
       data-testid="side-nav"
     >
       <a href={href({ name: 'title' })} className="flex flex-col gap-1.5 px-2" aria-label="Trial Quest home">
-        <img src={logoUrl} alt="ClinBolt" width="122" height="30" className="block h-[30px] w-auto self-start" />
+        <img
+          src={logoUrl}
+          alt="ClinBolt"
+          width="122"
+          height="30"
+          className="block h-[30px] w-auto self-start"
+        />
         <span className="text-lg font-black tracking-tight text-brand-800 dark:text-brand-100">
           Trial Quest
         </span>
