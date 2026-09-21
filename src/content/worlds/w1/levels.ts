@@ -563,7 +563,7 @@ export const w1Levels: Level[] = [
               },
               {
                 tag: 'reckless',
-                label: 'No safety factor',
+                label: 'Little or no safety factor',
                 range: [2, 5],
                 narration:
                   "Dose's projection: one volunteer admitted with liver enzymes far above the limit. The study stops. The regulator opens a review.",
@@ -662,7 +662,7 @@ export const w1Levels: Level[] = [
             },
             {
               id: 'assay-dissolution',
-              text: 'Assay and [[dissolution]] test on every batch',
+              text: 'Assay and [[dissolution]] on every batch',
               slotId: 'test',
               conceptId: 'gmp',
               explanation:

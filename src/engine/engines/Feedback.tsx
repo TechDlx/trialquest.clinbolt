@@ -46,7 +46,7 @@ export function adaptFeedback<T extends BasePending>(
           ? (pending.confirm ?? 'Yes')
           : pending.kind === 'shortcut'
             ? 'Shortcut'
-            : 'No',
+            : pending.title,
     };
   }
   if (pending.kind === 'correct') {

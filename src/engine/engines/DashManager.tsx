@@ -30,6 +30,7 @@ type Snap = ScoredSnapshot & {
   live: Record<string, Live>;
   selected: string | null;
   pending: Pending | null;
+  wrongItems: string[];
 };
 
 /** Queue of items with patience bars; select an item, tap the right station in order. */
@@ -40,6 +41,8 @@ export function DashManager(p: EngineProps<DashConfig>) {
   const [, setElapsed] = useState(0);
   const [live, setLive] = useState<Record<string, Live>>(snap?.live ?? {});
   const [selected, setSelected] = useState<string | null>(snap?.selected ?? null);
+  // Items served after a wrong station: served, but not a clean run.
+  const [wrongItems, setWrongItems] = useState<string[]>(snap?.wrongItems ?? []);
   const [pending, setPending] = useState<Pending | null>(snap?.pending ?? null);
 
   const { onHold } = p;
@@ -67,12 +70,13 @@ export function DashManager(p: EngineProps<DashConfig>) {
       live: liveRef.current,
       selected,
       pending,
+      wrongItems,
       heartsLost,
       mistakes,
       shortcuts,
       usedCarriers: [...usedCarriers.current],
     } satisfies Snap);
-  }, [onSnapshot, liveKey, selected, pending, heartsLost, mistakes, shortcuts]);
+  }, [onSnapshot, liveKey, selected, pending, wrongItems, heartsLost, mistakes, shortcuts]);
 
   const finish = useCallback(
     (state: Record<string, Live>) => {
@@ -82,7 +86,8 @@ export function DashManager(p: EngineProps<DashConfig>) {
       let patienceLeft = 0;
       for (const it of items) {
         const l = state[it.id];
-        itemResults[it.id] = l?.outcome ?? 'skipped';
+        itemResults[it.id] =
+          l?.outcome === 'correct' && wrongItems.includes(it.id) ? 'wrong' : (l?.outcome ?? 'skipped');
         if (l?.outcome === 'correct')
           patienceLeft += Math.max(0, l.patience) / (it.patienceSeconds * patienceScale);
       }
@@ -99,7 +104,7 @@ export function DashManager(p: EngineProps<DashConfig>) {
         heartsLost,
       });
     },
-    [items, patienceScale, mistakes, shortcuts, heartsLost, p],
+    [items, patienceScale, mistakes, shortcuts, heartsLost, wrongItems, p],
   );
 
   const handleExpire = useCallback(
@@ -220,6 +225,7 @@ export function DashManager(p: EngineProps<DashConfig>) {
       consequence: it.consequence,
     };
     setMistakes((ms) => [...ms, m]);
+    setWrongItems((w) => (w.includes(it.id) ? w : [...w, it.id]));
     const fb = p.onMistake(m);
     if (fb.heartLost) setHeartsLost((h) => h + 1);
     setPending({

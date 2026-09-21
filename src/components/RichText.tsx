@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { parseRichText } from '@/content/richText';
+import { displayLabel, parseRichText } from '@/content/richText';
 import { content } from '@/content';
 import { navigate } from '@/app/router';
 
@@ -25,19 +25,16 @@ export function RichText({
   const segments = parseRichText(text, (id) => content.glossaryById[id]?.term);
   return (
     <Tag className={className}>
-      {segments.map((seg, i) =>
-        seg.type === 'text' ? (
-          <span key={i}>{seg.text}</span>
-        ) : (
-          <Term
-            key={i}
-            id={seg.id}
-            label={seg.label}
-            linkClassName={linkClassName}
-            interactive={interactive}
-          />
-        ),
-      )}
+      {segments.map((seg, i) => {
+        if (seg.type === 'text') return <span key={i}>{seg.text}</span>;
+        const prev = segments[i - 1];
+        const label = seg.explicit
+          ? seg.label
+          : displayLabel(seg.label, prev?.type === 'text' ? prev.text : '');
+        return (
+          <Term key={i} id={seg.id} label={label} linkClassName={linkClassName} interactive={interactive} />
+        );
+      })}
     </Tag>
   );
 }

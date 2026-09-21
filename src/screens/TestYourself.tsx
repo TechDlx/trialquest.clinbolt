@@ -21,7 +21,12 @@ export function TestYourselfScreen({ roleId, worldId }: { roleId?: string; world
   const progress = useProgress();
   const relaxed = useSettings((s) => s.relaxed);
   const [phase, setPhase] = useState<'intro' | 'playing' | 'done'>('intro');
-  const [result, setResult] = useState<{ fraction: number; xp: number; ribbonNew: boolean } | null>(null);
+  const [result, setResult] = useState<{
+    fraction: number;
+    xp: number;
+    ribbonNew: boolean;
+    missed: string[];
+  } | null>(null);
   const [seed, setSeed] = useState(1);
   const roleIds = useMemo(() => {
     if (roleId) return [roleId];
@@ -69,7 +74,10 @@ export function TestYourselfScreen({ roleId, worldId }: { roleId?: string; world
         r.mistakes,
       ))
         s.recordConcept(c.conceptId, c.correct);
-      setResult({ fraction, xp: useProgress.getState().xp - s.xp + xp, ribbonNew });
+      const missed = [
+        ...new Set(r.mistakes.map((m) => content.glossaryById[m.conceptId]?.term ?? m.conceptId)),
+      ];
+      setResult({ fraction, xp: useProgress.getState().xp - s.xp + xp, ribbonNew, missed });
       setPhase('done');
     },
     [roleIds, questions],
@@ -92,8 +100,9 @@ export function TestYourselfScreen({ roleId, worldId }: { roleId?: string; world
           <p className="text-xs font-bold uppercase tracking-wide text-muted">Optional knowledge check</p>
           <h1 className="text-xl font-black">{title}</h1>
           <p className="mt-2 text-sm text-muted">
-            {questions.length} questions. No hearts, no meters, nothing to unlock. Score 80% for the Knowledge
-            Check ribbon. Missed concepts come first.
+            {questions.length} questions. No hearts, no meters, nothing to unlock. Get{' '}
+            {Math.ceil(questions.length * economy.knowledge.ribbonFraction)} of {questions.length} right for
+            the Knowledge Check ribbon. Missed concepts come first.
           </p>
           <div className="mt-3 flex gap-2" aria-hidden="true">
             <span className="rounded-lg bg-ans-red p-1.5 text-white">
@@ -153,6 +162,12 @@ export function TestYourselfScreen({ roleId, worldId }: { roleId?: string; world
         {result?.ribbonNew && (
           <p className="mt-1 font-bold text-brand-700 dark:text-brand-300">
             🎗️ Knowledge Check ribbon earned
+          </p>
+        )}
+        {result && !result.ribbonNew && result.fraction < economy.knowledge.ribbonFraction && (
+          <p className="mt-1 text-sm text-muted" data-testid="test-ribbon-gap">
+            Ribbon needs {Math.ceil(questions.length * economy.knowledge.ribbonFraction)} of{' '}
+            {questions.length}.{result.missed.length > 0 && ` Missed: ${result.missed.join(', ')}.`}
           </p>
         )}
         {result && result.xp > 0 && <p className="mt-1 text-sm">+{result.xp} XP (bonus)</p>}

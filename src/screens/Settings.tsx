@@ -29,6 +29,7 @@ function Toggle({
       <input
         type="checkbox"
         role="switch"
+        aria-label={label}
         aria-checked={checked}
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
@@ -174,6 +175,7 @@ export function SettingsScreen() {
           Type <strong>RESET</strong> to confirm
           <input
             value={typed}
+            aria-label="Type RESET to confirm"
             onChange={(e) => setTyped(e.target.value)}
             className="tap mt-1 w-full rounded-xl border-2 border-border bg-surface-2 px-3 py-2"
             data-testid="reset-confirm-input"

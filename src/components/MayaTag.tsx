@@ -18,9 +18,10 @@ export function MayaTag({
     <span
       className={`inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted ${className}`}
       data-testid="maya-tag"
+      aria-hidden={labelHidden || undefined}
     >
       <Maya size={16} />
-      <span className={labelHidden ? 'sr-only' : undefined}>{label}</span>
+      {!labelHidden && <span>{label}</span>}
     </span>
   );
 }

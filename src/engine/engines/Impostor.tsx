@@ -82,7 +82,7 @@ export function Impostor(p: EngineProps<ImpostorConfig>) {
         itemResults: all,
         outcomes: { ...emptyOutcomes(), accused: acc, shortcutsTaken: sc.map((s) => s.itemId) },
         correct: correctAcc,
-        total: impostorCount,
+        total: denom || impostorCount,
         heartsLost,
       });
     },

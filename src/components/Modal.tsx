@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 export function Modal({
   open,
@@ -53,7 +54,8 @@ export function Modal({
   }, [open, onClose]);
 
   if (!open) return null;
-  return (
+  // Portalled to <body>: a transformed ancestor (map nodes) would otherwise become the containing block.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center">
       <div
         ref={panelRef}
@@ -68,6 +70,7 @@ export function Modal({
         </h2>
         <div className="mt-3">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

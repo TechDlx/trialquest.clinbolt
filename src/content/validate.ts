@@ -161,6 +161,17 @@ export function validateContent(c: Content): Issue[] {
             `Glossary link [[${term}]] points to a term that does not exist.`,
             `Add "${term}" to glossary.ts or fix the link.`,
           );
+      for (const m of s.matchAll(/\[\[([a-z0-9-]+)(?:\|([^\]]+))?\]\]\s+([A-Za-z-]+)/g)) {
+        const label = m[2] ?? c.glossaryById[m[1]!]?.term ?? '';
+        const lastWord = label.trim().split(/\s+/).pop()?.toLowerCase();
+        if (lastWord && lastWord === m[3]!.toLowerCase())
+          warn(
+            file,
+            id,
+            `Glossary link "${label}" is followed by "${m[3]}", repeating its last word.`,
+            'Drop the repeated word or give the link a shorter label.',
+          );
+      }
       for (const { key, field } of extractInterpolations(s)) {
         if (!isArtifactKey(key))
           fail(

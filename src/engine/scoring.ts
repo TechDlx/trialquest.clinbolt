@@ -74,6 +74,8 @@ export interface LevelXpInput {
   stars: Stars;
   perfect: boolean;
   firstTime: boolean;
+  /** Best stars before this play (replays pay for improvement only). */
+  previousStars?: number;
 }
 
 export interface XpBreakdown {
@@ -81,8 +83,18 @@ export interface XpBreakdown {
   lines: { label: string; xp: number }[];
 }
 
-export function xpForLevel({ stars, perfect, firstTime }: LevelXpInput): XpBreakdown {
+export function xpForLevel({ stars, perfect, firstTime, previousStars = 0 }: LevelXpInput): XpBreakdown {
   const lines: { label: string; xp: number }[] = [];
+  if (!firstTime) {
+    // A replay pays only for improvement, so stars cannot be farmed.
+    const gain = Math.max(0, stars - previousStars);
+    if (gain > 0)
+      lines.push({
+        label: `Improved to ${stars} star${stars === 1 ? '' : 's'}`,
+        xp: economy.xp.perStar * gain,
+      });
+    return { total: lines.reduce((s, l) => s + l.xp, 0), lines };
+  }
   if (stars > 0)
     lines.push({ label: `${stars} star${stars === 1 ? '' : 's'}`, xp: economy.xp.perStar * stars });
   if (stars > 0 && perfect) lines.push({ label: 'No wrong turns', xp: economy.xp.perfectRun });

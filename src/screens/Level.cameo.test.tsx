@@ -20,8 +20,11 @@ describe('Level screen: w5-l2 cameo', () => {
     render(<LevelScreen levelId="w5-l2" />);
     fireEvent.click(screen.getByTestId('start-level'));
     fireEvent.click(screen.getByTestId('start-stage-sdv'));
-    // The cameo card carries the tag; the debrief line is not shown yet.
-    expect(screen.getByTestId('maya-tag')).toHaveTextContent(level.mayaCameo!.label);
+    // The card title already reads the label, so the tag shows the portrait only (no double name).
+    expect(screen.getByTestId('maya-tag')).toBeInTheDocument();
+    expect(screen.getByTestId('card-p-0417')).toHaveTextContent(
+      new RegExp('^' + level.mayaCameo!.label + '$'),
+    );
     expect(screen.queryByTestId('debrief-maya')).toBeNull();
 
     // Inspect and accuse the deviation; a correct accusation auto-advances to the debrief.

@@ -19,10 +19,13 @@ export function HeartsSheet({
   open,
   onContinue,
   onQuit,
+  worldId,
 }: {
   open: boolean;
   onContinue: () => void;
   onQuit: () => void;
+  /** Cards from this world are listed first. */
+  worldId?: string;
 }) {
   const hearts = useProgress((s) => s.hearts);
   const heartsUpdatedAt = useProgress((s) => s.heartsUpdatedAt);
@@ -45,7 +48,8 @@ export function HeartsSheet({
   const today = dayKey();
   const claimable = Object.keys(cardsViewed)
     .map((id) => content.roleById[id])
-    .filter((r): r is NonNullable<typeof r> => !!r && cardsViewed[r.id]?.lastHeartClaimDay !== today);
+    .filter((r): r is NonNullable<typeof r> => !!r && cardsViewed[r.id]?.lastHeartClaimDay !== today)
+    .sort((a, b) => Number(b.worldId === worldId) - Number(a.worldId === worldId));
   const wait = msToNextHeart({ hearts, heartsUpdatedAt });
   const readingRole = reading ? content.roleById[reading] : undefined;
 
@@ -88,7 +92,7 @@ export function HeartsSheet({
           </div>
         ) : (
           hearts === 0 && (
-            <ul className="grid gap-1" aria-label="Role cards you can review">
+            <ul className="grid max-h-[40dvh] gap-1 overflow-y-auto" aria-label="Role cards you can review">
               {claimable.length === 0 && (
                 <li className="text-sm text-muted">
                   Every card has been reviewed today. Wait for the refill.

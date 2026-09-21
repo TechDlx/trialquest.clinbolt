@@ -9,7 +9,7 @@ export const w5Levels: Level[] = [
     roleId: 'recruitment-specialist',
     title: 'Find 200 patients',
     intro:
-      'The [[phase-2|Phase II]] study needs 200 people with Veridian Syndrome in 27 months. Spend the [[patient-recruitment|recruitment]] budget where patients really are, then check the campaign before the ethics committee does.',
+      'The [[phase-2|Phase II]] study needs 200 people with Veridian Syndrome in about two years. Spend the [[patient-recruitment|recruitment]] budget where patients really are, then check the campaign before the ethics committee does.',
     meterFocus: 'integrity',
     stages: [
       {
@@ -163,7 +163,7 @@ export const w5Levels: Level[] = [
         when: { 'phase1.hold': 'severe' },
         patch: {
           intro:
-            'The [[phase-2|Phase II]] study needs 200 people with Veridian Syndrome in 27 months, and the {{phase1.hold.days}}-day hold already ate into that. Spend the [[patient-recruitment|recruitment]] budget where patients really are, then check the campaign before the ethics committee does.',
+            'The [[phase-2|Phase II]] study needs 200 people with Veridian Syndrome in about two years, and the {{phase1.hold.days}}-day hold already ate into that. Spend the [[patient-recruitment|recruitment]] budget where patients really are, then check the campaign before the ethics committee does.',
         },
       },
     ],

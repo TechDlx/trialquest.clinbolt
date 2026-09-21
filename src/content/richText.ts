@@ -5,7 +5,8 @@
  */
 import { artifactRegistry, isArtifactKey, type ArtifactStore } from './artifacts';
 
-export type RichSegment = { type: 'text'; text: string } | { type: 'term'; id: string; label: string };
+export type RichSegment =
+  { type: 'text'; text: string } | { type: 'term'; id: string; label: string; explicit: boolean };
 
 const LINK_RE = /\[\[([a-z0-9-]+)(?:\|([^\]]+))?\]\]/g;
 const INTERP_RE = /\{\{([a-z0-9]+\.[a-z0-9]+)\.([A-Za-z0-9]+)\}\}/g;
@@ -17,11 +18,27 @@ export function parseRichText(input: string, termLabel: (id: string) => string |
     const start = m.index ?? 0;
     if (start > last) out.push({ type: 'text', text: input.slice(last, start) });
     const id = m[1]!;
-    out.push({ type: 'term', id, label: m[2] ?? termLabel(id) ?? id });
+    out.push({ type: 'term', id, label: m[2] ?? termLabel(id) ?? id, explicit: m[2] !== undefined });
     last = start + m[0].length;
   }
   if (last < input.length) out.push({ type: 'text', text: input.slice(last) });
   return out;
+}
+
+/**
+ * Display form of a glossary term used without an explicit label: lower-cased mid-sentence
+ * unless it starts with an acronym or brand-style casing (GCP, eCRF, MedDRA), kept as-is at
+ * the start of a sentence.
+ */
+export function displayLabel(label: string, precedingText: string): string {
+  const first = label.split(/\s+/)[0] ?? '';
+  const acronymLike =
+    /^[A-Z0-9][A-Z0-9-]+$/.test(first) || /^[a-z]+[A-Z]/.test(first) || /^[A-Z][a-z]*[A-Z]/.test(first);
+  if (acronymLike) return label;
+  const before = precedingText.trimEnd();
+  const sentenceStart = before === '' || /[.!?:]$/.test(before);
+  if (sentenceStart) return label;
+  return label.charAt(0).toLowerCase() + label.slice(1);
 }
 
 export function extractTermIds(input: string): string[] {

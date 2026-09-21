@@ -216,8 +216,9 @@ test('a wrong turn explains itself, the shortcut costs meters not hearts, and th
   await expectAccessible(page, 'wrong-turn feedback');
   await expect(page.getByTestId('engine-feedback')).toContainText('First slip in World 1 is free');
   await page.getByTestId('engine-next').click();
-  await page.getByTestId('choice-c-fatigue').click();
-  await page.getByTestId('choice-c-hype').click();
+  // Declining the interviews takes the parallel branch (-b ids).
+  await page.getByTestId('choice-c-fatigue-b').click();
+  await page.getByTestId('choice-c-hype-b').click();
   await expect(page.getByTestId('engine-feedback')).toHaveAttribute('data-kind', 'shortcut');
   const hearts = await page.evaluate(
     () => JSON.parse(window.localStorage.getItem('trialquest.progress')!).state.hearts,

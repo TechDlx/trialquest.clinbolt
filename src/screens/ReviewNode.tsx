@@ -6,7 +6,7 @@ import { navigate } from '@/app/router';
 import { useProgress } from '@/store/progress';
 import { useSettings } from '@/store/settings';
 import { xpForReview, type EngineResult } from '@/engine/scoring';
-import { buildReviewRound, dueSituations, type ReviewRound } from '@/engine/review';
+import { buildReviewRound, dueSituations, roundCorrect, type ReviewRound } from '@/engine/review';
 import { EngineHost } from '@/engine/EngineHost';
 import { useCountdown } from '@/engine/useCountdown';
 import { TaskShell } from '@/engine/TaskShell';
@@ -53,13 +53,7 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
   const onRoundComplete = useCallback(
     (r: EngineResult) => {
       if (!round) return;
-      const outcome = r.itemResults[round.itemId];
-      // A scenario replay records the choice the player made, not the missed one, so a
-      // decision counts as fixed when it was answered with the best choice and nothing wrong.
-      const correct = round.isShortcut
-        ? !r.outcomes.shortcutsTaken.includes(round.itemId)
-        : outcome === 'correct' ||
-          (round.stage.game.engine === 'branching-scenario' && r.mistakes.length === 0 && r.accuracy >= 1);
+      const correct = roundCorrect(round, r);
       useProgress.getState().recordSituation(round.levelId, round.stage.id, round.itemId, correct);
       if (correct) setClean((n) => n + 1);
       setMistakes((m) => [...m, ...r.mistakes]);
@@ -118,8 +112,9 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
         ) : (
           <>
             <Speech mood="think" className="mt-3">
-              {dueRounds.length} situation{dueRounds.length === 1 ? '' : 's'} to revisit,{' '}
-              {review.roundSeconds ?? economy.review.roundSeconds} seconds each. No hearts at stake.
+              {dueRounds.length} situation{dueRounds.length === 1 ? '' : 's'} to revisit, up to{' '}
+              {review.roundSeconds ?? economy.review.roundSeconds} seconds each; scenario replays are untimed.
+              No hearts at stake.
             </Speech>
             <Button
               size="lg"

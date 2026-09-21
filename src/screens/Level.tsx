@@ -182,7 +182,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
       const s = useProgress.getState();
       s.clearAttempt(raw.id);
       const firstTime = !s.levels[raw.id]?.completedAt;
-      const earned = scoreLevel(result, { firstTime });
+      const earned = scoreLevel(result, { firstTime, previousStars: s.levels[raw.id]?.stars ?? 0 });
       s.recordLevelResult(raw.id, { stars: earned.stars, score: earned.score, xp: earned.xp });
       // The card's first-view XP was granted on the card screen; list it so the total matches the map.
       const cardXp = firstTime && earned.stars > 0 ? economy.xp.roleCardFirstView : 0;
@@ -332,6 +332,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
           hints={!progress.levels[raw.id]?.attempts}
         />
         <HeartsSheet
+          worldId={world.id}
           open={heartsGate}
           onContinue={() => setHeartsGate(false)}
           onQuit={() => navigate({ name: 'map', worldId: world.id })}

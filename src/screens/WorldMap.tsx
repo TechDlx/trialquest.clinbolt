@@ -82,7 +82,7 @@ function NodeButton({
       : status === 'planned'
         ? 'coming soon'
         : status === 'done'
-          ? `done, ${stars} stars`
+          ? `done, ${stars} star${stars === 1 ? '' : 's'}`
           : status === 'current'
             ? 'up next'
             : 'available';
@@ -305,24 +305,24 @@ export function WorldMapScreen({ focusWorldId }: { focusWorldId?: string }) {
   return (
     <Page nav="map">
       <div ref={containerRef}>
-        {rank.current.title !== progress.rankSeen && (
-          <div
-            role="status"
-            className="mb-2 flex items-center justify-between gap-2 rounded-2xl border-2 border-star bg-star-soft px-3 py-2 text-sm font-bold text-amber-950"
-            data-testid="rank-banner"
-          >
-            <span>Promoted: {rank.current.title}</span>
-            <button
-              type="button"
-              onClick={() => progress.markRankSeen(rank.current.title)}
-              className="tap rounded-lg px-2 py-1 text-xs font-semibold"
-              aria-label="Dismiss"
-            >
-              OK
-            </button>
-          </div>
-        )}
         <header className="sticky top-0 z-30 -mx-4 bg-bg/95 px-4 pb-2 pt-1 backdrop-blur">
+          {rank.current.title !== progress.rankSeen && (
+            <div
+              role="status"
+              className="mb-2 flex items-center justify-between gap-2 rounded-2xl border-2 border-star bg-star-soft px-3 py-2 text-sm font-bold text-amber-950"
+              data-testid="rank-banner"
+            >
+              <span>Promoted: {rank.current.title}</span>
+              <button
+                type="button"
+                onClick={() => progress.markRankSeen(rank.current.title)}
+                className="tap rounded-lg px-2 py-1 text-xs font-semibold"
+                aria-label="Dismiss"
+              >
+                OK
+              </button>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate text-sm font-bold">{rank.current.title}</p>

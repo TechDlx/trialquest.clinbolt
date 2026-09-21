@@ -3,6 +3,7 @@
  * padded with context so the round is meaningful. Deterministic (seeded by the situation key).
  */
 import type { Content } from '@/content';
+import type { EngineResult } from '@/engine/scoring';
 import { economy } from '@/content/economy';
 import type { MainPathConfig, Stage } from '@/content/types';
 import { getCollection, findNodeOfChoice } from './registry';
@@ -19,6 +20,19 @@ export interface ReviewRound {
   itemId: string;
   /** True when the item is a shortcut carrier: "correct" means not taking it. */
   isShortcut: boolean;
+}
+
+/**
+ * Did the replay fix the situation? Most engines key results by the item under review.
+ * A scenario records the choice made (not the missed one) and an impostor round marks
+ * every un-accused card "skipped", so those two are judged on the round as a whole.
+ */
+export function roundCorrect(round: ReviewRound, r: EngineResult): boolean {
+  if (round.isShortcut) return !r.outcomes.shortcutsTaken.includes(round.itemId);
+  const engine = round.stage.game.engine;
+  if (engine === 'branching-scenario') return r.mistakes.length === 0 && r.accuracy >= 1;
+  if (engine === 'spot-the-impostor') return r.mistakes.length === 0 && r.correct > 0;
+  return r.itemResults[round.itemId] === 'correct';
 }
 
 function hash(s: string): number {

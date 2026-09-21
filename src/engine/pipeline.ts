@@ -119,10 +119,18 @@ export interface LevelScore {
   perfect: boolean;
 }
 
-export function scoreLevel(result: EngineResult, opts: { firstTime: boolean }): LevelScore {
+export function scoreLevel(
+  result: EngineResult,
+  opts: { firstTime: boolean; previousStars?: number },
+): LevelScore {
   const { score, stars } = computeScore(result.accuracy, result.speed);
-  const perfect = result.heartsLost === 0 && result.mistakes.length === 0;
-  const xp = xpForLevel({ stars, perfect, firstTime: opts.firstTime });
+  const perfect = result.heartsLost === 0 && result.mistakes.length === 0 && result.accuracy >= 1 - 1e-9;
+  const xp = xpForLevel({
+    stars,
+    perfect,
+    firstTime: opts.firstTime,
+    previousStars: opts.previousStars ?? 0,
+  });
   return { stars, score, xp, perfect };
 }
 

@@ -140,7 +140,8 @@ export function Builder(p: EngineProps<BuilderConfig>) {
     setPlaced(next);
     setSelectedPart(null);
     const part = parts.find((x) => x.id === partId);
-    if (part?.shortcut && !usedCarriers.current.has(part.id)) {
+    // "What if?" placements are exploration: no shortcut event, no meters, no review situation.
+    if (phase !== 'sandbox' && part?.shortcut && !usedCarriers.current.has(part.id)) {
       usedCarriers.current.add(part.id);
       const ev = { itemId: part.id, meters: part.shortcut.meters, why: part.shortcut.why };
       p.onShortcut(ev);
