@@ -4,7 +4,8 @@ import type { Mistake, ShortcutEvent, Stars as StarCount, XpBreakdown } from '@/
 import type { StoredArtifact } from '@/content/artifacts';
 import { artifactRegistry } from '@/content/artifacts';
 import type { StoryBeat } from '@/content/types';
-import { Stars } from '@/components/Hud';
+import { Stars, meterMeta } from '@/components/Hud';
+import type { MeterId } from '@/content/types';
 import { Button } from '@/components/Button';
 import { RichText } from '@/components/RichText';
 import { Speech } from '@/components/Mascot';
@@ -187,8 +188,11 @@ export function Debrief(p: DebriefProps) {
                 className="rounded-xl border border-star/60 bg-star-soft p-3 text-sm text-amber-950"
               >
                 <p className="font-semibold">
-                  {Object.entries(s.meters)
-                    .map(([m, d]) => `${m} ${(d ?? 0) > 0 ? '+' : ''}${d}`)
+                  {(Object.entries(s.meters) as [MeterId, number][])
+                    .map(
+                      ([m, d]) =>
+                        `${meterMeta[m].label} ${d > 0 ? '+' : ''}${d}${s.capped?.includes(m) ? ' (already full, so no gain)' : ''}`,
+                    )
                     .join(', ')}
                 </p>
                 <RichText as="p" text={s.why} className="mt-1" />

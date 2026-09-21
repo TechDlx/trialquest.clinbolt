@@ -18,6 +18,8 @@ export interface ShortcutEvent {
   itemId: string;
   meters: Partial<Record<MeterId, number>>;
   why: string;
+  /** Gains that did not fully land because the meter was already at its maximum (set by the host). */
+  capped?: MeterId[];
 }
 
 export type ItemOutcome = 'correct' | 'wrong' | 'shortcut' | 'skipped';

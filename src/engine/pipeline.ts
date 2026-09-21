@@ -213,6 +213,13 @@ export interface MeterOutcome {
 }
 
 /** Applies a meter delta (no hearts). A meter hitting zero is a setback, exactly as for mistakes. */
+/** Meters whose gain would push them past the maximum: the promised boost cannot fully show. */
+export function cappedGains(meters: Meters, delta: Partial<Record<MeterId, number>>): MeterId[] {
+  return (['safety', 'integrity', 'timeline'] as MeterId[]).filter(
+    (m) => (delta[m] ?? 0) > 0 && meters[m] + delta[m]! > economy.meters.max,
+  );
+}
+
 export function applyMeterDelta(
   snapshot: PipelineSnapshot,
   delta: Partial<Record<MeterId, number>>,

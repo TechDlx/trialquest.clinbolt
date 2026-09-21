@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   aggregateStages,
   applyMistake,
+  cappedGains,
   conceptOutcomes,
   failureReason,
   FREE_MISTAKE_NOTE,
@@ -243,5 +244,15 @@ describe('scoreCrisis', () => {
     expect(mz.outcome).toBe('fail');
     expect(mz.stars).toBe(0);
     expect(mz.xp.total).toBe(0);
+  });
+});
+
+describe('cappedGains', () => {
+  const full = { safety: 100, integrity: 80, timeline: 100 };
+  it('names gains that would pass the maximum, and ignores losses and room to grow', () => {
+    expect(cappedGains(full, { timeline: 10, integrity: -10 })).toEqual(['timeline']);
+    expect(cappedGains(full, { integrity: 10 })).toEqual([]);
+    expect(cappedGains({ ...full, timeline: 95 }, { timeline: 10 })).toEqual(['timeline']);
+    expect(cappedGains(full, { safety: -5 })).toEqual([]);
   });
 });

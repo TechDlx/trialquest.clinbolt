@@ -11,6 +11,7 @@ import type { EngineResult, Mistake, ShortcutEvent } from '@/engine/scoring';
 import {
   applyMeterDelta,
   applyMistake,
+  cappedGains,
   failureReason,
   scoreLevel,
   setbackCopy,
@@ -61,6 +62,8 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   const savedAttempt = isLab ? undefined : progress.attempts[levelId];
   const freeUsed = useRef(false);
   const usedCarriers = useRef(new Set<string>());
+  // Shortcut gains that hit a full meter, by carrier, so the debrief can say so.
+  const capped = useRef<Record<string, ShortcutEvent['capped']>>({});
   const hasCardFlipped = isLab || (raw ? !!progress.cardsViewed[raw.roleId]?.flipped : false);
   // Built once per attempt so the artifact assignment is fixed for the run.
   const [level, setLevel] = useState(() =>
@@ -87,6 +90,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
     (attempt?: LevelAttempt) => {
       freeUsed.current = attempt?.freeUsed ?? false;
       usedCarriers.current.clear();
+      capped.current = {};
       setPaused(false);
       setHeartsGate(false);
       setSeed(attempt?.seed ?? (Date.now() % 1_000_000) + 1);
@@ -165,6 +169,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
       if (!raw) return;
       if (usedCarriers.current.has(ev.itemId)) return;
       usedCarriers.current.add(ev.itemId);
+      capped.current[ev.itemId] = cappedGains(snap().meters, ev.meters);
       applyDelta(ev.meters);
       // A shortcut that hurts safety or integrity is a situation to review later.
       if ((ev.meters.safety ?? 0) < 0 || (ev.meters.integrity ?? 0) < 0) {
@@ -200,7 +205,8 @@ export function LevelScreen({ levelId }: { levelId: string }) {
         }
       }
       startSegment(`debrief ${raw.id}`);
-      setPhase({ name: 'debrief', result, score, artifacts });
+      const shortcuts = result.shortcuts.map((ev) => ({ ...ev, capped: capped.current[ev.itemId] }));
+      setPhase({ name: 'debrief', result: { ...result, shortcuts }, score, artifacts });
     },
     [raw, level],
   );
@@ -267,7 +273,7 @@ export function LevelScreen({ levelId }: { levelId: string }) {
             <p className="font-bold">No hearts left.</p>
             <p className="mt-1 text-muted">
               Next heart in about {wait ? Math.ceil(wait / 60_000) : economy.hearts.refillMinutes} minutes, or
-              review any Role Card in the Codex for +1 heart.
+              review a Role Card in the Codex for +1 heart (up to {economy.hearts.codexDailyMax} a day).
             </p>
             <Button variant="secondary" full className="mt-3" onClick={() => navigate({ name: 'codex' })}>
               Open the Codex

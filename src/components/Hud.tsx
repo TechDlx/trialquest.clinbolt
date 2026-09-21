@@ -58,7 +58,7 @@ export function Stars({
   );
 }
 
-const meterMeta: Record<MeterId, { label: string; color: string; Icon: typeof ShieldIcon }> = {
+export const meterMeta: Record<MeterId, { label: string; color: string; Icon: typeof ShieldIcon }> = {
   safety: { label: 'Patient safety', color: 'bg-meter-safety', Icon: ShieldIcon },
   integrity: { label: 'Data integrity', color: 'bg-meter-integrity', Icon: DatabaseIcon },
   timeline: { label: 'Timeline & budget', color: 'bg-meter-timeline', Icon: ClockIcon },
