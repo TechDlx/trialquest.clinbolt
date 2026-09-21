@@ -27,6 +27,7 @@ import { Page, TopBar } from '@/components/Layout';
 import { RichText } from '@/components/RichText';
 import { Speech } from '@/components/Mascot';
 import { Chip, Hearts } from '@/components/Hud';
+import { BadgeGlyph } from '@/components/BadgeGlyph';
 import { HeartsSheet } from '@/components/HeartsSheet';
 import { Debrief } from './Debrief';
 import { employerLabel } from './BadgeSwap';
@@ -299,8 +300,67 @@ export function LevelScreen({ levelId }: { levelId: string }) {
   }
 
   if (phase.name === 'playing') {
+    const card = content.roleById[raw.roleId]?.card;
+    const stageRule = relaxed
+      ? 'Relaxed mode: no timers.'
+      : level.stages.some((s) => 'seconds' in s.game)
+        ? 'Timed stages. Faster is better.'
+        : 'Untimed: take your time on each decision.';
+    const aside = (
+      <>
+        <section className="overflow-hidden rounded-card bg-surface shadow-card" data-testid="task-aside">
+          <div className="flex items-center gap-3 bg-brand-600 px-4 py-3 text-white">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20">
+              <BadgeGlyph icon={role.badgeIcon} size={26} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wide">
+                Your badge · Works for the {employerLabel[role.employer]}
+              </p>
+              <p className="truncate text-base font-black">{role.title}</p>
+            </div>
+          </div>
+          {card && (
+            <div className="flex flex-col gap-3 p-4 text-sm">
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-wide text-muted">What I do</h2>
+                <RichText as="p" text={card.whatIDo} className="mt-1 leading-relaxed" />
+              </div>
+              {card.handsOffTo.length > 0 && (
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wide text-muted">I hand off to</h2>
+                  <ul className="mt-1 flex flex-wrap gap-1.5">
+                    {card.handsOffTo.map((id) => (
+                      <li
+                        key={id}
+                        className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs font-semibold text-muted"
+                      >
+                        {content.roleRefById[id]?.shortTitle ?? id}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <Button variant="ghost" onClick={readCard}>
+                Read the full card
+              </Button>
+            </div>
+          )}
+        </section>
+        <section className="flex flex-col gap-1.5 rounded-card bg-surface p-4 text-sm shadow-card">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-muted">This task</h2>
+          <p className="text-base font-extrabold">{level.title}</p>
+          <p className="text-muted">
+            {stageRule} A mistake costs a heart
+            {world.firstMistakeFree ? ' (your first slip on each try is free here)' : ''}. Shortcuts cost
+            meters instead.
+          </p>
+        </section>
+      </>
+    );
     return (
       <TaskShell
+        aside={aside}
         title={level.title}
         hearts={progress.hearts}
         meters={progress.meters}
