@@ -12,6 +12,8 @@ import { FlagIcon, FlameIcon, LockIcon, RefreshIcon, RibbonIcon, SirenIcon } fro
 import { Modal } from '@/components/Modal';
 import { useState } from 'react';
 import { Dose, Speech } from '@/components/Mascot';
+import { Maya } from '@/components/Maya';
+import { employerLabel } from './BadgeSwap';
 import { Button } from '@/components/Button';
 import { navigate, type Route } from '@/app/router';
 
@@ -38,6 +40,22 @@ function routeFor(node: MapNode): Route {
     case 'finale':
       return { name: 'finale' };
   }
+}
+
+/** Where Maya is in the story, in one line. */
+function MayaStatus({ status, className = '' }: { status: string; className?: string }) {
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-card bg-surface p-3 shadow-card ${className}`}
+      data-testid="maya-status"
+    >
+      <Maya size={44} />
+      <div className="min-w-0">
+        <p className="text-sm font-bold">Maya, 29</p>
+        <p className="text-sm text-muted">{status}</p>
+      </div>
+    </div>
+  );
 }
 
 function nodeLabel(node: MapNode): string {
@@ -307,13 +325,94 @@ export function WorldMapScreen({ focusWorldId }: { focusWorldId?: string }) {
     : undefined;
   const currentWorld = mapState.currentWorldId ? content.worldById[mapState.currentWorldId] : undefined;
   const allReadyDone = !currentNode;
+  // Maya's status for where the player is: the current world's opening beat, or the ending once done.
+  const mayaStatus = currentWorld ? currentWorld.intro.mayaStatus : content.worlds.at(-1)!.outro.mayaStatus;
+  const nextRole = currentNode?.kind === 'level' ? content.roleRefById[currentNode.roleId] : undefined;
+  const nextLabel = currentNode
+    ? currentNode.kind === 'crisis'
+      ? 'Face the crisis'
+      : `Next: ${nodeLabel(currentNode)}`
+    : '';
+  const heartsNote = `Hearts refill 1 every ${economy.hearts.refillMinutes} minutes, or review a Role Card in the Codex (up to ${economy.hearts.codexDailyMax} a day).`;
+  const xpPct = rank.next
+    ? Math.round(((progress.xp - rank.current.xp) / (rank.next.xp - rank.current.xp)) * 100)
+    : 100;
+  const aside = (
+    <>
+      <section
+        className="flex flex-col gap-3 rounded-card bg-surface p-4 shadow-card"
+        data-testid="map-aside"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">
+              Rank
+            </p>
+            <p className="truncate text-xl font-black">{rank.current.title}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span
+              className="inline-flex items-center gap-1 text-sm font-semibold"
+              aria-label={`${progress.streak.count} day streak`}
+            >
+              <FlameIcon size={18} className={progress.streak.count > 0 ? 'text-star' : 'text-locked'} />
+              {progress.streak.count}
+            </span>
+            <Hearts hearts={progress.hearts} />
+          </div>
+        </div>
+        <div>
+          <div className="h-2.5 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
+            <div className="h-full bg-star" style={{ width: `${xpPct}%` }} />
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            {progress.xp} XP{rank.next && ` · ${rank.next.xp - progress.xp} to ${rank.next.title}`}
+          </p>
+        </div>
+        <div className="border-t border-border pt-3">
+          <Meters meters={progress.meters} />
+        </div>
+      </section>
+      {currentNode && currentWorld && (
+        <section
+          className="flex flex-col gap-3 rounded-card bg-brand-100 p-4 dark:bg-brand-800"
+          data-testid="map-next-up"
+        >
+          <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-100">
+            Next up
+          </p>
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white">
+              {nextRole ? <BadgeGlyph icon={nextRole.badgeIcon} size={26} /> : <SirenIcon size={26} />}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-lg font-extrabold">
+                {currentNode.kind === 'crisis'
+                  ? `World ${currentWorld.number} crisis`
+                  : nodeLabel(currentNode)}
+              </p>
+              <p className="text-sm text-muted dark:text-brand-100">
+                {nextRole ? `Works for the ${employerLabel[nextRole.employer]} · ` : ''}World{' '}
+                {currentWorld.number}
+              </p>
+            </div>
+          </div>
+          <Button size="lg" full onClick={() => navigate(routeFor(currentNode))}>
+            {currentNode.kind === 'crisis' ? 'Face the crisis' : 'Put on the badge'}
+          </Button>
+        </section>
+      )}
+      <MayaStatus status={mayaStatus} />
+      <p className="text-xs text-muted">{heartsNote}</p>
+    </>
+  );
   const tipId = 'map-first';
   const showTip = !progress.tipsDismissed[tipId] && Object.keys(progress.levels).length === 0;
 
   return (
-    <Page nav="map">
+    <Page nav="map" aside={aside}>
       <div ref={containerRef}>
-        <header className="sticky top-0 z-30 -mx-4 bg-bg/95 px-4 pb-2 pt-1 backdrop-blur">
+        <header className="sticky top-0 z-30 -mx-4 bg-bg/95 px-4 pb-2 pt-1 backdrop-blur lg:-mx-8 lg:px-8 xl:hidden">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate text-sm font-bold">{rank.current.title}</p>
@@ -364,13 +463,14 @@ export function WorldMapScreen({ focusWorldId }: { focusWorldId?: string }) {
           <Button
             size="lg"
             full
-            className="mt-3"
+            className="mt-3 xl:hidden"
             onClick={() => navigate(routeFor(currentNode))}
             data-testid="continue-current"
           >
-            {currentNode.kind === 'crisis' ? 'Face the crisis' : `Next: ${nodeLabel(currentNode)}`}
+            {nextLabel}
           </Button>
         )}
+        <MayaStatus status={mayaStatus} className="mt-3 xl:hidden" />
         {allReadyDone && (
           <div className="mt-3 rounded-card bg-surface p-4 text-sm shadow-card">
             <p className="font-bold">You have finished everything that is built so far.</p>
@@ -397,11 +497,8 @@ export function WorldMapScreen({ focusWorldId }: { focusWorldId?: string }) {
             }
           />
         ))}
-        <p className="mt-6 text-center text-xs text-muted">
-          Hearts refill 1 every {economy.hearts.refillMinutes} minutes, or review a Role Card in the Codex (up
-          to {economy.hearts.codexDailyMax} a day).
-        </p>
-        <Disclaimer className="mt-3" />
+        <p className="mt-6 text-center text-xs text-muted xl:hidden">{heartsNote}</p>
+        <Disclaimer className="mt-3 lg:hidden" />
       </div>
     </Page>
   );
