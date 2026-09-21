@@ -96,7 +96,8 @@ find "$SITE_ROOT" -type f -exec chmod 644 {} +
 # --------------------------------------------------------------- 6. caddy
 log "Updating the Caddy configuration"
 if bash "$REPO_ROOT/deploy/caddy_site.sh" "$REPO_ROOT/deploy/quest.caddy"; then
-  systemctl reload caddy
+  # reload-or-restart also starts Caddy if it is down.
+  systemctl reload-or-restart caddy
   log "Caddy reloaded"
 else
   warn "the Caddy config did not validate; Caddy was left running the old config."

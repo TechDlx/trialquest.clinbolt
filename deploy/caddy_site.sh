@@ -80,11 +80,24 @@ fi
 install -o root -g root -m 644 "$SITE_FILE" "$target"
 log "Installed $target"
 
-if caddy validate --config "$CADDY_MAIN" --adapter caddyfile >/dev/null 2>&1; then
+# `caddy validate` opens every log writer in the config, so running it as root
+# creates any new site's log file as root:root 0600.  The caddy service user
+# then cannot open it and Caddy fails to start on the next restart.  Hand the
+# log files back to caddy after every validation.
+validate() {
+  local rc=0
+  caddy validate --config "$CADDY_MAIN" --adapter caddyfile "$@" || rc=$?
+  if id -u caddy >/dev/null 2>&1 && [[ -d /var/log/caddy ]]; then
+    chown -R caddy:caddy /var/log/caddy
+  fi
+  return "$rc"
+}
+
+if validate >/dev/null 2>&1; then
   log "Caddy config validates"
 else
   warn "the Caddy config does not validate:"
-  caddy validate --config "$CADDY_MAIN" --adapter caddyfile 2>&1 | tail -5 >&2 || true
+  validate 2>&1 | tail -5 >&2 || true
   warn "restoring the previous files."
   if [[ -f "$backup_dir/Caddyfile" ]]; then cp -p "$backup_dir/Caddyfile" "$CADDY_MAIN"; fi
   if [[ -f "$backup_dir/$name" ]]; then
