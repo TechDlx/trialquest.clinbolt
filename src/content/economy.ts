@@ -32,7 +32,8 @@ export const economy = {
     { title: 'VP Development', xp: 3800 },
     { title: 'Chief Development Officer', xp: 4400 },
   ],
-  hearts: { max: 5, refillMinutes: 30, codexReviewRefill: 1 },
+  // Re-reading a collected card refills a heart, once per card per day and codexDailyMax in total a day.
+  hearts: { max: 5, refillMinutes: 30, codexReviewRefill: 1, codexDailyMax: 2 },
   meters: {
     max: 100,
     worldStartMinimum: 60,

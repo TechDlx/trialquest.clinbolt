@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { content } from '@/content';
 import { economy } from '@/content/economy';
 import { navigate, href } from '@/app/router';
-import { useProgress } from '@/store/progress';
+import { codexHeartsLeft, useProgress } from '@/store/progress';
 import { useSettings, resolveReducedMotion } from '@/store/settings';
 import { endSegment, startSegment } from '@/engine/timing';
 import { Button } from '@/components/Button';
@@ -60,6 +60,7 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
   const world = role ? content.worldById[role.worldId] : undefined;
   const cardRecord = useProgress((s) => s.cardsViewed[roleId]);
   const hearts = useProgress((s) => s.hearts);
+  const codexLeft = useProgress((s) => codexHeartsLeft(s));
   const markCardViewed = useProgress((s) => s.markCardViewed);
   const claimCodexHeart = useProgress((s) => s.claimCodexHeart);
   const tipsDismissed = useProgress((s) => s.tipsDismissed);
@@ -97,8 +98,9 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
   const flipped = !!cardRecord?.flipped;
   const canStart = flipped && !!level;
   const fromCodex = !level;
-  const canClaimHeart =
+  const heartWanted =
     fromCodex && flipped && hearts < economy.hearts.max && cardRecord?.lastHeartClaimDay !== todayKey();
+  const canClaimHeart = heartWanted && codexLeft > 0;
   const tipId = 'rolecard-first';
   const flipAnim =
     flips === 0 ? { rotateY: 0, opacity: 1 } : reduced ? { opacity: [0.4, 1] } : { rotateY: [90, 0] };
@@ -258,6 +260,11 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
               {ribbon ? '🎗️ Test Yourself again (optional)' : 'Test Yourself (optional)'}
             </Button>
           )}
+        {heartWanted && !canClaimHeart && !heartToast && (
+          <p className="text-center text-sm text-muted" data-testid="codex-hearts-used">
+            You have claimed today's {economy.hearts.codexDailyMax} Codex hearts. More tomorrow.
+          </p>
+        )}
         {canClaimHeart && (
           <Button
             variant="secondary"

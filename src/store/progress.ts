@@ -93,6 +93,8 @@ export interface ProgressData {
   createdAt: string;
   /** In-progress level attempts: completed stage results, so leaving to collect hearts does not restart the level. */
   attempts: Record<string, LevelAttempt>;
+  /** Hearts claimed from Codex reviews on `day` (local YYYY-MM-DD), for the daily cap. */
+  codexHearts: { day: string; count: number };
 }
 
 export interface LevelAttempt {
@@ -173,7 +175,14 @@ export function initialProgress(now: Date = new Date()): ProgressData {
     rankSeen: 'Intern',
     createdAt: now.toISOString(),
     attempts: {},
+    codexHearts: { day: '', count: 0 },
   };
+}
+
+/** Codex heart claims still open today. */
+export function codexHeartsLeft(s: Pick<ProgressData, 'codexHearts'>, now = new Date()): number {
+  const used = s.codexHearts?.day === dayKey(now) ? s.codexHearts.count : 0;
+  return Math.max(0, economy.hearts.codexDailyMax - used);
 }
 
 const clampMeter = (n: number) => Math.max(0, Math.min(economy.meters.max, Math.round(n)));
@@ -253,11 +262,17 @@ export const useProgress = create<ProgressState>()(
         const card = s.cardsViewed[roleId];
         const today = dayKey(now);
         if (!card || card.lastHeartClaimDay === today || s.hearts >= economy.hearts.max) return false;
+        const left = codexHeartsLeft(s, now);
+        if (left <= 0) return false;
         const next = gainHearts(
           { hearts: s.hearts, heartsUpdatedAt: s.heartsUpdatedAt },
           economy.hearts.codexReviewRefill,
         );
-        set({ ...next, cardsViewed: { ...s.cardsViewed, [roleId]: { ...card, lastHeartClaimDay: today } } });
+        set({
+          ...next,
+          cardsViewed: { ...s.cardsViewed, [roleId]: { ...card, lastHeartClaimDay: today } },
+          codexHearts: { day: today, count: economy.hearts.codexDailyMax - left + 1 },
+        });
         return true;
       },
 
@@ -502,6 +517,7 @@ export const useProgress = create<ProgressState>()(
           rankSeen,
           createdAt,
           attempts,
+          codexHearts,
         } = s;
         return {
           xp,
@@ -525,6 +541,7 @@ export const useProgress = create<ProgressState>()(
           rankSeen,
           createdAt,
           attempts,
+          codexHearts,
         };
       },
     },

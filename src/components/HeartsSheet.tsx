@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { content } from '@/content';
 import { economy } from '@/content/economy';
-import { useProgress } from '@/store/progress';
+import { codexHeartsLeft, useProgress } from '@/store/progress';
 import { dayKey } from '@/engine/dates';
 import { msToNextHeart } from '@/engine/hearts';
 import { Modal } from './Modal';
@@ -12,7 +12,7 @@ import { BadgeGlyph } from './BadgeGlyph';
 
 /**
  * Shown inside a level when hearts hit zero. The player can re-read any collected Role Card
- * here and claim a heart (once per card per day), or wait for the refill, then continue
+ * here and claim a heart (once per card per day, a few a day in all), or wait for the refill, then continue
  * exactly where they stopped. Nothing is unmounted, so no progress is lost.
  */
 export function HeartsSheet({
@@ -31,6 +31,7 @@ export function HeartsSheet({
   const heartsUpdatedAt = useProgress((s) => s.heartsUpdatedAt);
   const cardsViewed = useProgress((s) => s.cardsViewed);
   const claim = useProgress((s) => s.claimCodexHeart);
+  const codexLeft = useProgress((s) => codexHeartsLeft(s));
   const syncHearts = useProgress((s) => s.syncHearts);
   const [reading, setReading] = useState<string | null>(null);
   const [, tick] = useState(0);
@@ -46,7 +47,7 @@ export function HeartsSheet({
   }, [open, syncHearts]);
 
   const today = dayKey();
-  const claimable = Object.keys(cardsViewed)
+  const claimable = (codexLeft > 0 ? Object.keys(cardsViewed) : [])
     .map((id) => content.roleById[id])
     .filter((r): r is NonNullable<typeof r> => !!r && cardsViewed[r.id]?.lastHeartClaimDay !== today)
     .sort((a, b) => Number(b.worldId === worldId) - Number(a.worldId === worldId));
@@ -95,7 +96,9 @@ export function HeartsSheet({
             <ul className="grid max-h-[40dvh] gap-1 overflow-y-auto" aria-label="Role cards you can review">
               {claimable.length === 0 && (
                 <li className="text-sm text-muted">
-                  Every card has been reviewed today. Wait for the refill.
+                  {codexLeft > 0
+                    ? 'Every card has been reviewed today. Wait for the refill.'
+                    : `You have claimed today's ${economy.hearts.codexDailyMax} Codex hearts. Wait for the refill.`}
                 </li>
               )}
               {claimable.map((r) => (

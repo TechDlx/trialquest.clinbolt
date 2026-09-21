@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { initialProgress, migrateProgress, PROGRESS_VERSION, useProgress } from './progress';
+import { codexHeartsLeft, initialProgress, migrateProgress, PROGRESS_VERSION, useProgress } from './progress';
 import { STORAGE_KEYS } from './storage';
 
 beforeEach(() => {
@@ -14,6 +14,24 @@ describe('progress store', () => {
     expect(second.xpGained).toBe(0);
     expect(useProgress.getState().xp).toBe(5);
     expect(useProgress.getState().cardsViewed['patient-advocate']?.flipped).toBe(true);
+  });
+
+  it('Codex reviews refill at most two hearts a day in total, one per card', () => {
+    const day1 = new Date(2026, 8, 21, 10);
+    const s = () => useProgress.getState();
+    for (const id of ['patient-advocate', 'discovery-scientist', 'preclinical-toxicologist'])
+      s().markCardViewed(id, day1);
+    for (let i = 0; i < 4; i++) s().loseHeart(day1);
+    expect(s().hearts).toBe(1);
+    expect(s().claimCodexHeart('patient-advocate', day1)).toBe(true);
+    expect(s().claimCodexHeart('patient-advocate', day1)).toBe(false); // same card again
+    expect(s().claimCodexHeart('discovery-scientist', day1)).toBe(true);
+    expect(s().claimCodexHeart('preclinical-toxicologist', day1)).toBe(false); // daily cap
+    expect(s().hearts).toBe(3);
+    expect(codexHeartsLeft(s(), day1)).toBe(0);
+    const day2 = new Date(2026, 8, 22, 10);
+    expect(codexHeartsLeft(s(), day2)).toBe(2);
+    expect(s().claimCodexHeart('preclinical-toxicologist', day2)).toBe(true);
   });
 
   it('keeps best stars and score across attempts', () => {

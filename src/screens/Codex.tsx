@@ -1,4 +1,5 @@
 import { content } from '@/content';
+import { economy } from '@/content/economy';
 import { href } from '@/app/router';
 import { useProgress } from '@/store/progress';
 import { Page, TopBar } from '@/components/Layout';
@@ -26,7 +27,7 @@ export function CodexScreen({ roleId }: { roleId?: string }) {
       <TopBar title="Career Codex" />
       <p className="text-sm text-muted">
         {viewedCount} of {content.roleIndex.length} roles collected. Tap a collected badge to re-read its card
-        (and claim a heart once a day).
+        (and claim a heart, up to {economy.hearts.codexDailyMax} a day).
       </p>
       {content.worlds.map((world) => {
         const roles = content.roleIndex.filter((r) => r.worldId === world.id);

@@ -398,7 +398,8 @@ export function WorldMapScreen({ focusWorldId }: { focusWorldId?: string }) {
           />
         ))}
         <p className="mt-6 text-center text-xs text-muted">
-          Hearts refill 1 every {economy.hearts.refillMinutes} minutes, or review a Role Card in the Codex.
+          Hearts refill 1 every {economy.hearts.refillMinutes} minutes, or review a Role Card in the Codex (up
+          to {economy.hearts.codexDailyMax} a day).
         </p>
         <Disclaimer className="mt-3" />
       </div>
