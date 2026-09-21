@@ -17,7 +17,7 @@ import { Speech } from '@/components/Mascot';
 import { RefreshIcon } from '@/components/Icons';
 import { Debrief } from './Debrief';
 
-/** Review node: replays missed situations as 20-second micro-rounds of their original engine. */
+/** Review node: replays missed situations as short timed rounds of their original engine. */
 export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
   const review = content.reviewById[reviewId];
   const world = review ? content.worldById[review.worldId] : undefined;
@@ -55,11 +55,14 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
       if (!round) return;
       const correct = roundCorrect(round, r);
       useProgress.getState().recordSituation(round.levelId, round.stage.id, round.itemId, correct);
-      if (correct) setClean((n) => n + 1);
+      // A round counts as cleared only with no slip on any card in it, so the score, the XP and
+      // the mistakes listed on the debrief always agree.
+      const cleared = correct && r.mistakes.length === 0;
+      if (cleared) setClean((n) => n + 1);
       setMistakes((m) => [...m, ...r.mistakes]);
       if (index + 1 < rounds.length) setIndex(index + 1);
       else {
-        const perfect = clean + (correct ? 1 : 0) === rounds.length;
+        const perfect = clean + (cleared ? 1 : 0) === rounds.length;
         useProgress.getState().recordReview(review!.id, xpForReview(perfect));
         useProgress.getState().touchStreak();
         setPhase('done');
@@ -112,9 +115,9 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
         ) : (
           <>
             <Speech mood="think" className="mt-3">
-              {dueRounds.length} situation{dueRounds.length === 1 ? '' : 's'} to revisit, up to{' '}
-              {review.roundSeconds ?? economy.review.roundSeconds} seconds each; scenario replays are untimed.
-              No hearts at stake.
+              {dueRounds.length} situation{dueRounds.length === 1 ? '' : 's'} to revisit. Timed rounds give
+              you {economy.review.secondsPerCard} seconds per card; scenario replays are untimed. No hearts at
+              stake.
             </Speech>
             <Button
               size="lg"
@@ -182,6 +185,7 @@ export function ReviewNodeScreen({ reviewId }: { reviewId: string }) {
       mistakes={mistakes}
       correct={clean}
       total={rounds.length}
+      countLabel="rounds cleared"
       failed={false}
       canRetry={false}
       hideRetry

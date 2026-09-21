@@ -68,4 +68,32 @@ describe('ReviewNode screen', () => {
     expect(screen.queryByTestId('debrief-retry')).toBeNull(); // no retry on a review
     expect(useProgress.getState().situations['w1-l1:voice:c-no']!.box).toBe(2);
   });
+
+  it('a slip on a padding card means the round is not cleared: score, XP and mistakes agree', async () => {
+    const past = new Date('2020-01-01T00:00:00Z');
+    useProgress.getState().recordSituation('w1-l3', 'findings', 'alt', false, past);
+    render(<ReviewNodeScreen reviewId="w1-r1" />);
+    fireEvent.click(screen.getByTestId('start-review'));
+    const cfg = content.levelById['w1-l3']!.stages[0]!.game as BucketSortConfig;
+    let slipped = false;
+    for (let i = 0; i < 3; i++) {
+      const text = (await screen.findByTestId('bucket-card')).textContent!.trim();
+      const card = cfg.cards.find((c) => strip(c.text) === text)!;
+      // Get the reviewed card right and exactly one other card wrong.
+      const wrong = !slipped && card.id !== 'alt';
+      const bucket = wrong ? cfg.buckets.find((b) => b.id !== card.bucketId && !b.shortcut)! : undefined;
+      fireEvent.click(screen.getByTestId(`bucket-${bucket?.id ?? card.bucketId}`));
+      if (wrong) {
+        slipped = true;
+        fireEvent.click(await screen.findByTestId('engine-next'));
+      }
+      await gone();
+    }
+    await screen.findByTestId('debrief', {}, { timeout: 3000 });
+    expect(screen.getByTestId('debrief-score')).toHaveTextContent('0 of 1 rounds cleared · score 0');
+    expect(screen.getByTestId('debrief-mistakes')).toBeInTheDocument();
+    expect(screen.queryByText('All correct')).toBeNull();
+    // The reviewed situation itself was fixed, so it still moves up a box.
+    expect(useProgress.getState().situations['w1-l3:findings:alt']!.box).toBe(2);
+  });
 });

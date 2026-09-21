@@ -63,7 +63,8 @@ export const economy = {
   knowledge: { ribbonFraction: 0.8 },
   quiz: { defaultSecondsPerQuestion: 20, bossSecondsPerQuestion: 15 },
   streak: { maxFreezes: 2 },
-  review: { maxItems: 6, roundSeconds: 20, boxDelaysDays: [0, 1, 3, 7] },
+  // A timed round gets secondsPerCard for each card on screen, and never less than roundSeconds.
+  review: { maxItems: 6, roundSeconds: 20, secondsPerCard: 10, boxDelaysDays: [0, 1, 3, 7] },
 } as const;
 
 export interface Rank {

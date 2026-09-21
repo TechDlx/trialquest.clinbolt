@@ -13,11 +13,11 @@ const sit = (levelId: string, stageId: string, itemId: string) => ({
 });
 
 describe('review micro-rounds', () => {
-  it('bucket-sort: the missed card plus two others, all buckets, 20 seconds', () => {
+  it('bucket-sort: the missed card plus two others, all buckets, 10 seconds per card', () => {
     const round = buildReviewRound(content, sit('w1-l3', 'findings', 'alt'))!;
     expect(round.onlyItems).toHaveLength(3);
     expect(round.onlyItems).toContain('alt');
-    expect((round.stage.game as BucketSortConfig).seconds).toBe(20);
+    expect((round.stage.game as BucketSortConfig).seconds).toBe(30);
     expect(round.isShortcut).toBe(false);
   });
 

@@ -572,6 +572,7 @@ export interface ReviewNode {
   worldId: WorldId;
   title: string;
   maxRounds?: number;
+  /** Minimum seconds for a timed round (default economy.review.roundSeconds). */
   roundSeconds?: number;
 }
 

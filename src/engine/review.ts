@@ -35,6 +35,9 @@ export function roundCorrect(round: ReviewRound, r: EngineResult): boolean {
   return r.itemResults[round.itemId] === 'correct';
 }
 
+/** Engines whose review round shows several cards, each one a separate decision. */
+const CARD_ENGINES = new Set<string>(['bucket-sort', 'sequence-sort', 'match-pairs', 'spot-the-impostor']);
+
 function hash(s: string): number {
   let h = 7;
   for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 1_000_003;
@@ -153,6 +156,11 @@ export function buildReviewRound(
     }
   }
   if (!isShortcut && !getCollection(g, 'x') && onlyItems.length === 0) return null;
+  // The clock covers the whole round, so it grows with the cards the player must place.
+  if ('seconds' in game && game !== g) {
+    const cards = CARD_ENGINES.has(g.engine) ? onlyItems.length : 1;
+    game = { ...game, seconds: Math.max(seconds, economy.review.secondsPerCard * cards) } as MainPathConfig;
+  }
   return {
     key: `${sit.levelId}:${sit.stageId}:${sit.itemId}`,
     levelId: level.id,
