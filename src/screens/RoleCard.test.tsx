@@ -29,9 +29,21 @@ describe('RoleCardScreen gating', () => {
   it('shows both faces of the card content', () => {
     render(<RoleCardScreen roleId="cmc-scientist" levelId="w1-l4" />);
     expect(screen.getByText(/What I do/i)).toBeInTheDocument();
-    expect(screen.getByText(/I receive from/i)).toBeInTheDocument();
+    // The relay: who hands work to the role, the role itself, who it hands work to.
+    const relay = screen.getByTestId('relay');
+    expect(relay).toHaveTextContent('Hands work to me');
+    expect(relay).toHaveTextContent('Me · CMC Scientist');
+    expect(relay).toHaveTextContent('I hand my work to');
     fireEvent.click(screen.getByTestId('flip-card'));
     expect(screen.getByText(/A day in the life/i)).toBeInTheDocument();
     expect(screen.getByText(/Key responsibilities/i)).toBeInTheDocument();
+  });
+
+  it('starts the relay with the patient, who receives from nobody', () => {
+    render(<RoleCardScreen roleId="patient-advocate" levelId="w1-l1" />);
+    const relay = screen.getByTestId('relay');
+    expect(relay).toHaveTextContent('The relay starts with me.');
+    expect(relay).not.toHaveTextContent('Hands work to me');
+    expect(relay).toHaveTextContent('I hand my work to');
   });
 });

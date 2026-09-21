@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { content } from '@/content';
 import { economy } from '@/content/economy';
@@ -12,7 +12,7 @@ import { Chip } from '@/components/Hud';
 import { BadgeGlyph } from '@/components/BadgeGlyph';
 import { RichText } from '@/components/RichText';
 import { Speech } from '@/components/Mascot';
-import { ArrowRightIcon, HeartIcon, LockIcon } from '@/components/Icons';
+import { HeartIcon, LockIcon } from '@/components/Icons';
 import { employerLabel } from './BadgeSwap';
 
 const employerBg: Record<string, string> = {
@@ -46,6 +46,67 @@ function RoleChip({ roleId }: { roleId: string }) {
     <span className={cls} title="Not met yet">
       {inner}
     </span>
+  );
+}
+
+/** A stop on the relay line: a dot on the rail, then its label and chips. */
+function RelayStop({ dot, children }: { dot: ReactNode; children: ReactNode }) {
+  return (
+    <li className="relative flex gap-3">
+      <span className="relative z-10 flex h-6 w-5 shrink-0 items-center justify-center">{dot}</span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </li>
+  );
+}
+
+/**
+ * Who hands work to this role, the role itself, and who it hands work to, as three stops on
+ * one vertical line: the player sees where they stand in the relay. A role nobody hands work
+ * to (the patient) starts the line.
+ */
+function Relay({ role }: { role: NonNullable<(typeof content.roleById)[string]> }) {
+  const from = role.card.receivesFrom;
+  const to = role.card.handsOffTo;
+  const small = <span className="h-3 w-3 rounded-full bg-locked" />;
+  return (
+    <ol className="relative mt-2 grid gap-3 text-sm" data-testid="relay">
+      <span
+        className="absolute bottom-3 left-[9px] top-3 w-[3px] rounded-full bg-border"
+        aria-hidden="true"
+      />
+      {from.length > 0 && (
+        <RelayStop dot={small}>
+          <p className="text-xs font-bold text-muted">Hands work to me</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {from.map((id) => (
+              <RoleChip key={id} roleId={id} />
+            ))}
+          </div>
+        </RelayStop>
+      )}
+      <RelayStop
+        dot={
+          <span
+            className={`h-4 w-4 rounded-full ring-4 ring-brand-100 dark:ring-brand-800 ${employerBg[role.employer]}`}
+          />
+        }
+      >
+        <p className="inline-block rounded-xl border-2 border-brand-100 bg-brand-50 px-3 py-1.5 text-xs font-extrabold text-brand-800 dark:border-brand-800 dark:bg-surface-2 dark:text-brand-100">
+          Me · {role.shortTitle}
+        </p>
+        {from.length === 0 && <p className="mt-1 text-xs text-muted">The relay starts with me.</p>}
+      </RelayStop>
+      {to.length > 0 && (
+        <RelayStop dot={small}>
+          <p className="text-xs font-bold text-muted">I hand my work to</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {to.map((id) => (
+              <RoleChip key={id} roleId={id} />
+            ))}
+          </div>
+        </RelayStop>
+      )}
+    </ol>
   );
 }
 
@@ -146,28 +207,8 @@ export function RoleCardScreen({ roleId, levelId }: { roleId: string; levelId?: 
               <RichText as="p" text={role.card.whatIDo} className="mt-1 text-base leading-relaxed" />
             </section>
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-wide text-muted">
-                I receive from → I hand off to
-              </h2>
-              <div className="mt-1 flex flex-col gap-2 text-sm">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {role.card.receivesFrom.length === 0 ? (
-                    <span className="text-muted">It starts with me.</span>
-                  ) : (
-                    role.card.receivesFrom.map((id) => <RoleChip key={id} roleId={id} />)
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-muted">
-                  <ArrowRightIcon size={18} />
-                  <span className="text-xs">then me, then</span>
-                  <ArrowRightIcon size={18} />
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {role.card.handsOffTo.map((id) => (
-                    <RoleChip key={id} roleId={id} />
-                  ))}
-                </div>
-              </div>
+              <h2 className="text-xs font-bold uppercase tracking-wide text-muted">My place in the relay</h2>
+              <Relay role={role} />
             </section>
           </div>
         ) : (
