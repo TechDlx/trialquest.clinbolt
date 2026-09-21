@@ -15,7 +15,7 @@ import { useCountdown } from '@/engine/useCountdown';
 import { CheckIcon, ShapeIcon, XIcon } from '@/components/Icons';
 import { TimerBar } from '@/components/Hud';
 import { Button } from '@/components/Button';
-import { RichText } from '@/components/RichText';
+import { RichText, plainCopy } from '@/components/RichText';
 
 export type QuizMode = 'level' | 'boss' | 'review';
 
@@ -248,14 +248,14 @@ export function QuizBlitz({
                 onClick={() => commit(i, countdown.fraction)}
                 data-testid="quiz-option"
                 data-state={state}
-                aria-label={`${SHAPE_NAMES[i]}: ${opt.text}`}
+                aria-label={`${SHAPE_NAMES[i]}: ${plainCopy(opt.text)}`}
                 className={`tap relative flex min-h-[64px] items-center gap-3 rounded-2xl px-3 py-3 text-left text-base font-semibold text-white shadow-card transition
                   ${COLORS[i]} ${state === 'dim' ? 'opacity-40' : ''} ${state === 'wrong' ? 'ring-4 ring-white/80' : ''} ${
                     state === 'correct' ? 'ring-4 ring-white' : ''
                   } enabled:hover:brightness-110 enabled:active:scale-[0.98]`}
               >
                 <ShapeIcon shape={SHAPES[i] ?? 'circle'} size={22} className="shrink-0 opacity-90" />
-                <span className="flex-1">{opt.text}</span>
+                <RichText text={opt.text} interactive={false} className="flex-1" />
                 <kbd className="hidden rounded bg-black/25 px-1.5 text-xs sm:inline">{i + 1}</kbd>
                 {state === 'correct' && <CheckIcon size={22} className="shrink-0" />}
                 {state === 'wrong' && <XIcon size={22} className="shrink-0" />}
@@ -281,12 +281,15 @@ export function QuizBlitz({
             </p>
             {!answered.correct && (
               <p className="mt-1 text-sm">
-                Correct answer: <strong>{q.options[correctIdx]!.text}</strong>
+                Correct answer:{' '}
+                <strong>
+                  <RichText text={q.options[correctIdx]!.text} />
+                </strong>
               </p>
             )}
-            <p className="mt-1 text-sm">{q.explanation}</p>
+            <RichText as="p" text={q.explanation} className="mt-1 text-sm" />
             {answered.feedback?.note && (
-              <p className="mt-1 text-sm font-semibold">{answered.feedback.note}</p>
+              <RichText as="p" text={answered.feedback.note} className="mt-1 text-sm font-semibold" />
             )}
             {(!answered.correct || relaxed) && (
               <Button onClick={next} className="mt-3" full data-testid="quiz-next">

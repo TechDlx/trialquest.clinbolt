@@ -3,7 +3,7 @@ import type { SequenceSortConfig } from '@/content/types';
 import { economy } from '@/content/economy';
 import { emptyOutcomes, type EngineResult, type ItemOutcome } from '@/engine/scoring';
 import { Button } from '@/components/Button';
-import { RichText } from '@/components/RichText';
+import { RichText, plainCopy } from '@/components/RichText';
 import { Feedback, adaptFeedback, type FeedbackKind } from './Feedback';
 import { seededShuffle, type EngineProps, type ScoredSnapshot } from './types';
 
@@ -196,7 +196,7 @@ export function SequenceSort(p: EngineProps<SequenceSortConfig>) {
               <div className="flex flex-col">
                 <button
                   type="button"
-                  aria-label={`Move ${item.text} up`}
+                  aria-label={`Move ${plainCopy(item.text)} up`}
                   onClick={() => move(id, -1)}
                   disabled={isLocked || i === 0 || !!pending || p.paused}
                   className="tap rounded-lg px-2 text-lg leading-none"
@@ -205,7 +205,7 @@ export function SequenceSort(p: EngineProps<SequenceSortConfig>) {
                 </button>
                 <button
                   type="button"
-                  aria-label={`Move ${item.text} down`}
+                  aria-label={`Move ${plainCopy(item.text)} down`}
                   onClick={() => move(id, 1)}
                   disabled={isLocked || i === order.length - 1 || !!pending || p.paused}
                   className="tap rounded-lg px-2 text-lg leading-none"

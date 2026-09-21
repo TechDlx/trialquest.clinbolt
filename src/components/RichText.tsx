@@ -1,7 +1,11 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { displayLabel, parseRichText } from '@/content/richText';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { displayLabel, parseRichText, plainText } from '@/content/richText';
 import { content } from '@/content';
 import { navigate } from '@/app/router';
+
+/** Copy with glossary markup resolved to plain words, for aria-labels and other attributes. */
+export const plainCopy = (text: string) => plainText(text, (id) => content.glossaryById[id]?.term);
 
 /**
  * Renders content copy with [[term]] glossary links as tappable, underlined terms.
@@ -19,7 +23,10 @@ export function RichText({
   as?: 'span' | 'p';
   /** Colour classes for glossary links; pass e.g. "text-white" on dark or coloured panels. */
   linkClassName?: string;
-  /** false renders terms as plain underlined text: use inside buttons (a button may not contain a button). */
+  /**
+   * false renders terms as plain words: use inside buttons (a button may not contain a button, so
+   * the term could not open its definition, and an underline would promise one).
+   */
   interactive?: boolean;
 }) {
   const segments = parseRichText(text, (id) => content.glossaryById[id]?.term);
@@ -51,15 +58,17 @@ function Term({
   interactive: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; above: number } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
+  const popRef = useRef<HTMLSpanElement>(null);
   const popId = useId();
   const term = content.glossaryById[id];
 
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: PointerEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (!ref.current?.contains(t) && !popRef.current?.contains(t)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
@@ -75,13 +84,19 @@ function Term({
     };
   }, [open]);
 
+  // Below the term when it fits; otherwise above it, so a term low on the screen stays readable.
+  useLayoutEffect(() => {
+    const el = popRef.current;
+    if (!open || !pos || !el) return;
+    const h = el.offsetHeight;
+    const margin = 8;
+    if (pos.top + h <= window.innerHeight - margin) return;
+    const top = Math.max(margin, pos.above - h);
+    if (top !== pos.top) setPos({ ...pos, top });
+  }, [open, pos]);
+
   if (!term) return <span>{label}</span>;
-  if (!interactive)
-    return (
-      <span className={`underline decoration-dotted decoration-2 underline-offset-2 ${linkClassName ?? ''}`}>
-        {label}
-      </span>
-    );
+  if (!interactive) return <span>{label}</span>;
 
   return (
     <span ref={ref} className="relative inline">
@@ -95,35 +110,40 @@ function Term({
           const margin = 16;
           const width = Math.min(288, window.innerWidth - margin * 2);
           const left = r ? Math.max(margin, Math.min(r.left, window.innerWidth - margin - width)) : margin;
-          setPos({ top: (r?.bottom ?? 0) + 4, left, width });
+          setPos({ top: (r?.bottom ?? 0) + 4, left, width, above: (r?.top ?? 0) - 4 });
           setOpen((o) => !o);
         }}
         className={`inline rounded-sm font-semibold underline decoration-dotted decoration-2 underline-offset-2 ${linkClassName ?? 'text-brand-700 dark:text-brand-300'}`}
       >
         {label}
       </button>
-      {open && (
-        <span
-          id={popId}
-          role="dialog"
-          aria-label={term.term}
-          style={pos ? { top: pos.top, left: pos.left, width: pos.width } : undefined}
-          className="fixed z-30 block rounded-xl border border-border bg-surface p-3 text-left text-sm font-normal text-fg shadow-card"
-        >
-          <span className="block font-bold">{term.term}</span>
-          <span className="mt-1 block">{term.short}</span>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              navigate({ name: 'glossary', termId: term.id });
-            }}
-            className="tap mt-1 inline-flex items-center rounded-lg px-1 text-xs font-semibold text-brand-700 dark:text-brand-300"
+      {open &&
+        // Portalled to <body>: a transformed or overflow-clipped ancestor (a flipping card, an
+        // animated panel) would otherwise capture position:fixed and hide the popover.
+        createPortal(
+          <span
+            ref={popRef}
+            id={popId}
+            role="dialog"
+            aria-label={term.term}
+            style={pos ? { top: pos.top, left: pos.left, width: pos.width } : undefined}
+            className="fixed z-30 block rounded-xl border border-border bg-surface p-3 text-left text-sm font-normal text-fg shadow-card"
           >
-            Open in glossary
-          </button>
-        </span>
-      )}
+            <span className="block font-bold">{term.term}</span>
+            <span className="mt-1 block">{term.short}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                navigate({ name: 'glossary', termId: term.id });
+              }}
+              className="tap mt-1 inline-flex items-center rounded-lg px-1 text-xs font-semibold text-brand-700 dark:text-brand-300"
+            >
+              Open in glossary
+            </button>
+          </span>,
+          document.body,
+        )}
     </span>
   );
 }

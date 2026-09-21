@@ -145,13 +145,21 @@ export function Debrief(p: DebriefProps) {
           <ul className="mt-1 grid gap-2">
             {visibleMistakes.map((m, i) => (
               <li key={i} className="rounded-xl border border-bad/40 bg-bad-soft p-3 text-sm text-red-950">
-                <p className="font-semibold">{m.prompt}</p>
+                <RichText as="p" text={m.prompt} className="font-semibold" />
                 <p className="mt-1">
-                  You chose <em>{m.chosen}</em>. Correct: <strong>{m.correctAnswer}</strong>.
+                  You chose{' '}
+                  <em>
+                    <RichText text={m.chosen} />
+                  </em>
+                  . Correct:{' '}
+                  <strong>
+                    <RichText text={m.correctAnswer} />
+                  </strong>
+                  .
                 </p>
                 <RichText as="p" text={m.explanation} className="mt-1" />
                 <p className="mt-1">
-                  <span className="font-bold">Real-world consequence:</span> {m.consequence}
+                  <span className="font-bold">Real-world consequence:</span> <RichText text={m.consequence} />
                 </p>
               </li>
             ))}
@@ -183,7 +191,7 @@ export function Debrief(p: DebriefProps) {
                     .map(([m, d]) => `${m} ${(d ?? 0) > 0 ? '+' : ''}${d}`)
                     .join(', ')}
                 </p>
-                <p className="mt-1">{s.why}</p>
+                <RichText as="p" text={s.why} className="mt-1" />
               </li>
             ))}
           </ul>

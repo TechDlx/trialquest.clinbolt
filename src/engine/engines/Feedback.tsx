@@ -121,7 +121,7 @@ export function Feedback({
         className={`rounded-xl border-2 px-3 py-2 text-sm font-bold ${cls}`}
       >
         {kind === 'correct' ? '✓ ' : kind === 'wrong' ? '✗ ' : ''}
-        {title}
+        <RichText text={title} />
       </motion.p>
     );
   }
@@ -136,14 +136,17 @@ export function Feedback({
       data-kind={kind}
       className={`rounded-card border-2 p-4 ${cls}`}
     >
-      <p className="font-bold">{title}</p>
+      <RichText as="p" text={title} className="font-bold" />
       {correctAnswer && (
         <p className="mt-1 text-sm">
-          Correct: <strong>{correctAnswer}</strong>
+          Correct:{' '}
+          <strong>
+            <RichText text={correctAnswer} />
+          </strong>
         </p>
       )}
       {explanation && <RichText as="p" text={explanation} className="mt-1 text-sm" />}
-      {note && <p className="mt-1 text-sm font-semibold">{note}</p>}
+      {note && <RichText as="p" text={note} className="mt-1 text-sm font-semibold" />}
       <Button onClick={onNext} className="mt-3" full data-testid="engine-next">
         {nextLabel}
       </Button>
