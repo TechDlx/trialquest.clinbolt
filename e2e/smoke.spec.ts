@@ -46,6 +46,21 @@ async function finishLevel(page: Page, levelId: string, expectContinueLabel?: st
   await expect(page.getByTestId(`node-${levelId}`)).toHaveAttribute('data-status', 'done');
 }
 
+/** Marks nodes done in the saved game, so a deep link past the unlock gate is legitimate. */
+async function markDone(page: Page, ids: { levels?: string[]; crises?: string[] }) {
+  await page.evaluate((ids) => {
+    const raw = JSON.parse(window.localStorage.getItem('trialquest.progress') ?? '{"state":{},"version":2}');
+    const at = new Date().toISOString();
+    raw.state.levels ??= {};
+    raw.state.crises ??= {};
+    for (const id of ids.levels ?? [])
+      raw.state.levels[id] = { stars: 2, bestScore: 70, attempts: 1, completedAt: at };
+    for (const id of ids.crises ?? [])
+      raw.state.crises[id] = { stars: 2, bestPoints: 500, attempts: 1, completedAt: at };
+    window.localStorage.setItem('trialquest.progress', JSON.stringify(raw));
+  }, ids);
+}
+
 const strip = (s: string) => s.replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1').replace(/\[\[([^\]]+)\]\]/g, '$1');
 
 test.beforeEach(async ({ page }) => {
@@ -214,7 +229,7 @@ test('a wrong turn explains itself, the shortcut costs meters not hearts, and th
   await page.getByTestId('choice-c-no').click();
   await expect(page.getByTestId('engine-feedback')).toHaveAttribute('data-kind', 'wrong');
   await expectAccessible(page, 'wrong-turn feedback');
-  await expect(page.getByTestId('engine-feedback')).toContainText('First slip in World 1 is free');
+  await expect(page.getByTestId('engine-feedback')).toContainText('first slip on each try is free');
   await page.getByTestId('engine-next').click();
   // Declining the interviews takes the parallel branch (-b ids).
   await page.getByTestId('choice-c-fatigue-b').click();
@@ -237,6 +252,8 @@ test('settings: relaxed mode removes the timer and reset clears progress', async
   await page.getByTestId('nav-settings').click();
   await expectAccessible(page, 'settings');
   await page.getByTestId('setting-relaxed').check();
+  await markDone(page, { levels: ['w1-l1', 'w1-l2'] });
+  await page.reload();
   await page.goto('/#/role/preclinical-toxicologist?level=w1-l3');
   await page.getByTestId('flip-card').click();
   await page.getByTestId('start-task').click();
@@ -265,7 +282,18 @@ test('secondary screens pass the accessibility gate', async ({ page }) => {
     await expect(page.getByRole('heading', { name: heading })).toBeVisible();
     await expectAccessible(page, heading);
   }
+  // Locked until the journey is done, like any node.
   await page.goto('/#/finale');
+  await expect(page.getByTestId('locked-to-map')).toBeVisible();
+  await expectAccessible(page, 'locked deep link');
+  await markDone(page, {
+    crises: [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `w${n}-crisis`),
+    // Levels per world, W1 to W8: the finale is the last node, so every one must be done.
+    levels: [4, 5, 7, 4, 5, 7, 5, 7].flatMap((count, w) =>
+      Array.from({ length: count }, (_, i) => `w${w + 1}-l${i + 1}`),
+    ),
+  });
+  await page.reload();
   await expect(page.getByTestId('finale')).toBeVisible();
   await expectAccessible(page, 'finale');
 });

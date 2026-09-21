@@ -33,7 +33,15 @@ test('capture key screens', async ({ page }, info) => {
   await page.waitForTimeout(300);
   await shot('05-branching-feedback');
 
-  // Level 3 straight in (card gate): bucket sort, then the dose simulation and sandbox
+  // Level 3 straight in (card gate): bucket sort, then the dose simulation and sandbox.
+  // Deep links obey the unlock gate, so mark levels 1 and 2 done first.
+  await page.evaluate(() => {
+    const raw = JSON.parse(window.localStorage.getItem('trialquest.progress')!);
+    for (const id of ['w1-l1', 'w1-l2'])
+      raw.state.levels[id] = { stars: 2, bestScore: 70, attempts: 1, completedAt: new Date().toISOString() };
+    window.localStorage.setItem('trialquest.progress', JSON.stringify(raw));
+  });
+  await page.reload();
   await page.goto('/#/role/preclinical-toxicologist?level=w1-l3');
   await page.getByTestId('flip-card').click();
   await page.getByTestId('start-task').click();
