@@ -137,6 +137,16 @@ export const DatabaseIcon = ({ size = 18, ...p }: P) => (
   </svg>
 );
 
+/** ID badge: the title screen's "44 roles" tile. */
+export const BadgeIcon = ({ size = 22, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <rect x="4" y="3" width="16" height="18" rx="3" />
+    <path d="M9 3V2h6v1" />
+    <circle cx="12" cy="10.5" r="2.4" />
+    <path d="M8 17c.9-2.2 2.4-3.2 4-3.2s3.1 1 4 3.2" />
+  </svg>
+);
+
 export const ClockIcon = ({ size = 18, ...p }: P) => (
   <svg {...base(size, p)}>
     <circle cx="12" cy="12" r="9" />

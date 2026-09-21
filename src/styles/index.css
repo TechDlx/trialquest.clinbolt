@@ -44,6 +44,13 @@
   --color-meter-integrity: #1d4ed8;
   --color-meter-timeline: #b45309;
 
+  /* Illustration framing: Maya's halo and the two title-screen tiles. */
+  --color-maya: #fde68a;
+  --color-tile-role: #dff2e9;
+  --color-tile-role-dark: #134e4a;
+  --color-tile-time: #fcf1d6;
+  --color-tile-time-dark: #3b2a06;
+
   --radius-card: 1.25rem;
   --shadow-card: 0 6px 20px -8px rgb(15 23 42 / 0.25);
 }
