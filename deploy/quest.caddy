@@ -17,11 +17,14 @@ quest.clinbolt.com {
 		X-Frame-Options "SAMEORIGIN"
 		Permissions-Policy "geolocation=(), microphone=(), camera=(), interest-cohort=()"
 
-		# The build is fully self-contained: no CDN, no third-party requests and
-		# no inline <script>.  style-src keeps 'unsafe-inline' because
-		# framer-motion animates through style attributes.  The service worker
-		# and manifest are same-origin.
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		# The build is self-contained apart from Google Analytics (GA4): its
+		# loader comes from googletagmanager.com and hits go to google-analytics.com,
+		# google.com/g/collect and g.doubleclick.net (Google's documented GA4 hosts).  The one inline <script> is the Google
+		# tag in index.html, allowed by its sha256 only; if that script changes,
+		# update the hash (src/app/analytics.test.ts fails until they match).
+		# style-src keeps 'unsafe-inline' because framer-motion animates through
+		# style attributes.  The service worker and manifest are same-origin.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-GczIEnVrJOxuYTU35Es10/oshUotYHVeMROF+I1FemE=' https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com https://*.g.doubleclick.net https://*.google.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.g.doubleclick.net https://*.google.com; manifest-src 'self'; worker-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
 
 		-Server
 	}

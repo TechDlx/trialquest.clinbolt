@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { trackScreen } from './analytics';
 
 /**
  * Tiny hash router. Routes look like "#/level/w1-l1". Hash routing works on any static
@@ -129,6 +130,8 @@ export function useRoute(): Route {
   }, [onChange]);
   useEffect(() => {
     window.scrollTo({ top: 0 });
+    // Every screen, now and future, goes through here, so each one is counted once.
+    trackScreen(route);
   }, [route]);
   return route;
 }
