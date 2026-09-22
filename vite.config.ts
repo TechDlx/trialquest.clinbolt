@@ -33,8 +33,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // png covers the ClinBolt mark and Maya's portrait, so the shell still works offline.
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // png and webp cover the ClinBolt mark, Maya, Dose and the wordmark, so the shell still works offline.
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         // The share image is only for link-preview scrapers; players never need it offline.
         globIgnores: ['**/node_modules/**/*', 'og-image.png'],
         navigateFallback: 'index.html',

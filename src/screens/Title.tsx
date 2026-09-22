@@ -1,4 +1,5 @@
 import logoUrl from '@/assets/clinbolt-logo.png';
+import wordmarkUrl from '@/assets/trial-quest-wordmark.webp';
 import { Button } from '@/components/Button';
 import { Dose } from '@/components/Mascot';
 import { Maya } from '@/components/Maya';
@@ -177,13 +178,18 @@ export function TitleScreen() {
           <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-brand-700 lg:text-sm dark:text-brand-300">
             A clinical trial adventure
           </p>
-          <h1 className="text-[clamp(2.75rem,13vw,3.625rem)] font-black leading-none tracking-tight text-brand-800 lg:text-7xl xl:text-8xl dark:text-fg">
-            Trial Quest
+          {/* The game's wordmark is the page heading; its alt text is the heading's name. */}
+          <h1 className="-ml-1 my-0.5 lg:-ml-2 lg:my-1.5">
+            <img
+              src={wordmarkUrl}
+              alt="Trial Quest"
+              width="1200"
+              height="283"
+              className="block h-auto w-full max-w-[354px] lg:max-w-[568px]"
+            />
           </h1>
-          <p className="text-[clamp(1.5rem,7vw,1.75rem)] font-extrabold leading-tight text-brand-600 lg:mt-1.5 lg:text-4xl xl:text-[44px] dark:text-brand-300">
-            From molecule
-            <br />
-            to medicine.
+          <p className="text-[clamp(1.25rem,6.6vw,1.625rem)] font-extrabold leading-tight text-brand-600 lg:mt-1.5 lg:text-3xl xl:text-[40px] dark:text-brand-300">
+            From molecule to medicine.
           </p>
           <p className="max-w-[20rem] text-[17px] leading-relaxed lg:mt-2 lg:max-w-[470px] lg:text-lg xl:text-xl">
             Step into 44 roles. Learn how a treatment reaches the people who need it.
