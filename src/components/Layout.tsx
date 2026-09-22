@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { href, type Route } from '@/app/router';
 import { BookIcon, GearIcon, ListIcon, MapIcon, ShareIcon } from './Icons';
 import logoUrl from '@/assets/clinbolt-logo.png';
+import wordmarkUrl from '@/assets/trial-quest-wordmark.webp';
 
 export const DISCLAIMER =
   'Educational simulation. Veridian Syndrome and VX-101 are fictional. The process is simplified. Not medical or regulatory advice.';
@@ -57,17 +58,18 @@ export function SideNav({ current }: { current: Route['name'] }) {
       className="sticky top-0 hidden h-dvh w-[232px] shrink-0 flex-col gap-6 border-r border-border bg-surface px-4 py-6 lg:flex"
       data-testid="side-nav"
     >
-      <a href={href({ name: 'title' })} className="flex flex-col gap-1.5 px-2" aria-label="Trial Quest home">
-        <img
-          src={logoUrl}
-          alt="ClinBolt"
-          width="122"
-          height="30"
-          className="block h-[30px] w-auto self-start"
-        />
-        <span className="text-lg font-black tracking-tight text-brand-800 dark:text-brand-100">
-          Trial Quest
+      <a href={href({ name: 'title' })} className="flex flex-col gap-2 px-2" aria-label="Trial Quest home">
+        {/* Dark theme: the ClinBolt mark sits on a white chip, as on the home page. */}
+        <span className="inline-flex self-start rounded-lg dark:bg-white dark:px-1.5 dark:py-0.5">
+          <img src={logoUrl} alt="" width="122" height="30" className="block h-[30px] w-auto" />
         </span>
+        <img
+          src={wordmarkUrl}
+          alt=""
+          width="1200"
+          height="283"
+          className="-ml-1 block h-auto w-[180px] self-start"
+        />
       </a>
       <ul className="flex flex-col gap-1">
         {tabs.map(({ route, label, Icon, testId }) => {

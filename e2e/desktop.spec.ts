@@ -33,8 +33,12 @@ test('the frame matches the viewport: rail and panels on desktop, tabs on a phon
   if (desktop) {
     await expect(page.getByTestId('side-nav')).toBeVisible();
     // The rail is a flex column: the logo must keep its own width, not stretch to the rail's.
-    const logo = await page.getByTestId('side-nav').getByRole('img', { name: 'ClinBolt' }).boundingBox();
+    const rail = page.getByTestId('side-nav');
+    const logo = await rail.locator('img[src*="clinbolt-logo"]').boundingBox();
     expect(Math.round(logo!.width)).toBe(122);
+    const wordmark = await rail.locator('img[src*="trial-quest-wordmark"]').boundingBox();
+    expect(Math.round(wordmark!.width)).toBe(180);
+    await expect(rail.getByRole('link', { name: 'Trial Quest home' })).toBeVisible();
     await expect(page.getByTestId('bottom-nav')).toBeHidden();
     await expect(page.getByTestId('map-aside')).toBeVisible();
     await expect(page.getByTestId('map-next-up')).toContainText('CMC Scientist');
