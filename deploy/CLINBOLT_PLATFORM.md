@@ -10,8 +10,17 @@ clinbolt repo. The scripts it describes live in `deploy/` of an existing site re
 
 > **For an agent working in another repo:** read "Conventions", then "Adding a new site". Do not
 > invent a different layout: several sites share this VM and its Caddy, and one careless deploy
-> takes the others offline. Deploy only when the user asks; running `update.sh` publishes to the
-> live internet.
+> takes the others offline.
+>
+> **Two rules that override everything else in this file:**
+>
+> 1. **The agent never deploys.** Do not connect to the VM, do not run `update.sh`, `setup_vm.sh`
+>    or `caddy_site.sh`, and do not run anything over SSH against it — not even when the user says
+>    "deploy it". Finish the work locally, push it, then **print the exact commands** for the user
+>    to run themselves (§5, §6). Everything on the VM is the user's to run.
+> 2. **Live only ever comes from GitHub.** The VM deploys by pulling the repo's default branch from
+>    GitHub and building there. Never copy a local build or local files to the VM, and never deploy
+>    from a working tree. If a change is not pushed to GitHub, it cannot go live.
 
 ---
 
@@ -23,7 +32,7 @@ clinbolt repo. The scripts it describes live in `deploy/` of an existing site re
 | Web server | Caddy (apt package, Cloudsmith repo). Gets and renews Let's Encrypt certificates by itself.                                   |
 | Sites      | Several, all on this one VM and one Caddy. Known: `stats.clinbolt.com`, `quest.clinbolt.com`.                                 |
 | Build      | On the VM. Node (NodeSource apt, ≥ 20; 24 installed by default). No CI/CD, no containers, no registry.                        |
-| Access     | `ssh clinbolt` (an SSH config alias on the user's machine). Everything is run with `sudo bash …`.                             |
+| Access     | `ssh clinbolt`, by the user, from their own machine. Agents do not connect (see the rules above).                             |
 | DNS        | An `A` record per hostname pointing at the VM's public IP. All existing hostnames share one IP.                               |
 
 **Consequences worth knowing before designing anything:**
@@ -34,7 +43,8 @@ clinbolt repo. The scripts it describes live in `deploy/` of an existing site re
 - **No secrets are stored in these repos.** Nothing in `deploy/` reads an API key. If a site needs
   one, ask the user where it should live (systemd `EnvironmentFile` outside the repo is the pattern
   to propose); never commit it.
-- **A deploy is a publish.** There is no staging site. Build and test locally first.
+- **A deploy is a publish.** There is no staging site. Build and test locally, push, and let the
+  user deploy.
 
 ---
 
@@ -100,7 +110,9 @@ done in the Oracle console, not on the VM.
 
 ### `deploy/update.sh` — every deploy
 
-1. `--pull` (optional) pulls the repo as the invoking user (`git` refuses repos owned by others).
+1. `--pull` fetches the default branch from GitHub as the invoking user (`git` refuses repos owned
+   by others). This is how every release reaches the VM; without it the script rebuilds whatever
+   commit the VM's checkout is already on.
 2. `rsync` the checkout to `/opt/<slug>/src`, excluding `.git/`, `node_modules/`, `dist/`, test
    output and `*.tsbuildinfo`, then `chown` to the build user.
 3. `npm ci` **only** when `node -v` + the hash of `package-lock.json` differ from the stamp in
@@ -253,15 +265,34 @@ it competes for the VM's ~1 GB of RAM with everything else.
 3. **DNS.** The user adds an `A` record `<name>` → the VM's public IP. Confirm with
    `dig +short <name>.clinbolt.com` before deploying, or Caddy's certificate request fails and
    backs off.
-4. **On the VM:**
+4. **Push to GitHub.** The VM only ever builds what is on the default branch. Nothing unpushed can
+   go live.
+5. **Hand these commands to the user** (the agent does not run them; see the rules at the top):
+
    ```bash
+   # first time only
    ssh clinbolt
    git clone https://github.com/TechDlx/<repo>.git ~/<repo-dir>
    sudo bash ~/<repo-dir>/deploy/setup_vm.sh
    sudo bash ~/<repo-dir>/deploy/update.sh
    ```
-5. **Check** (see below). Then hand the user the update command:
-   `sudo bash ~/<repo-dir>/deploy/update.sh --pull`.
+
+6. **Check** (see below), and give the user the command they will use from then on.
+
+### The deploy command (every release)
+
+```bash
+ssh clinbolt
+sudo bash ~/<repo-dir>/deploy/update.sh --pull
+```
+
+`--pull` fetches the default branch from GitHub first, so this one command is the whole release:
+pull, build on the VM, publish only if the build succeeded, reload Caddy. Give the user this
+command whenever work is ready; state plainly that it is theirs to run, and say which commit they
+will be deploying.
+
+A release therefore looks like: agent commits and pushes → user runs the command above → both check
+the live site.
 
 ---
 
@@ -280,19 +311,24 @@ In a browser: no CSP errors in the console; for a PWA, Application → Service w
 
 ## 7. Troubleshooting
 
-| Symptom                                          | Cause and fix                                                                                                                               |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| No certificate, or connection refused            | DNS first (`dig +short`). If a sibling site serves HTTPS, ports are not the cause. Then `sudo journalctl -u caddy -n 50 --no-pager`.        |
-| Build killed / exit 137                          | Out of memory. `free -m` should show the swapfile; don't build during another site's heavy job.                                             |
-| `caddy_site.sh` refuses to convert the Caddyfile | Another site is still in the old single-file layout. Run that site's `update.sh` first.                                                     |
-| Caddy won't start after adding a site            | Usually the log-file ownership trap (§2). `sudo chown -R caddy:caddy /var/log/caddy`, then `sudo systemctl restart caddy`.                  |
-| Site serves an old build                         | Cache headers: `/assets/*` immutable, everything else `max-age=0, must-revalidate`. Check with `curl -I`.                                   |
-| One site's deploy broke another                  | Should be impossible: a repo may only write its own `sites/*.caddy`. If a repo writes `/etc/caddy/Caddyfile` directly, fix that repo.       |
-| Roll back                                        | `git -C ~/<repo-dir> checkout <good-commit> && sudo bash ~/<repo-dir>/deploy/update.sh`, then `git checkout main` before the next `--pull`. |
+| Symptom                                          | Cause and fix                                                                                                                                                                                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No certificate, or connection refused            | DNS first (`dig +short`). If a sibling site serves HTTPS, ports are not the cause. Then `sudo journalctl -u caddy -n 50 --no-pager`.                                                                                         |
+| Build killed / exit 137                          | Out of memory. `free -m` should show the swapfile; don't build during another site's heavy job.                                                                                                                              |
+| `caddy_site.sh` refuses to convert the Caddyfile | Another site is still in the old single-file layout. Run that site's `update.sh` first.                                                                                                                                      |
+| Caddy won't start after adding a site            | Usually the log-file ownership trap (§2). `sudo chown -R caddy:caddy /var/log/caddy`, then `sudo systemctl restart caddy`.                                                                                                   |
+| Site serves an old build                         | Cache headers: `/assets/*` immutable, everything else `max-age=0, must-revalidate`. Check with `curl -I`.                                                                                                                    |
+| One site's deploy broke another                  | Should be impossible: a repo may only write its own `sites/*.caddy`. If a repo writes `/etc/caddy/Caddyfile` directly, fix that repo.                                                                                        |
+| Roll back                                        | Revert on GitHub (`git revert`, push), then the user re-runs the deploy command. For an emergency, they can check out a known-good commit on the VM and run `update.sh` without `--pull`, then return to the default branch. |
 
 ## 8. Rules for an agent working on any of this
 
-- Deploy only when asked. `update.sh` publishes to the live internet.
+- **Never deploy.** No SSH to the VM, no `update.sh`, `setup_vm.sh` or `caddy_site.sh`, no remote
+  commands against it, whatever the wording of the request. Push, then hand over the command.
+- **Live comes from GitHub only.** Never copy a local build or local files onto the VM. Anything
+  that is not pushed cannot be live, so say so rather than working around it.
+- Editing anything in `deploy/` changes what the user's next deploy will do to a live, shared
+  server: treat those files with the same care as production code, and say what changed.
 - Never write `/etc/caddy/Caddyfile` from a site repo. One file under `/etc/caddy/sites/`, no more.
 - Never touch another site's directories, log files, systemd units or build user.
 - Keep every script idempotent and keep `caddy_site.sh` identical across repos.
